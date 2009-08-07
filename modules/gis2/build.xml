@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Simulator" default="default" basedir=".">
+
+	<description>Simulator Project.</description>
+
+	<property name="build.home" value="${basedir}/build"/>
+	<property name="dist.home" value="${basedir}/dist"/>
+	<property name="src.home" value="${basedir}/src"/>
+	<property name="lib.home" value="${basedir}/lib"/>
+	<property name="data.home" value="${basedir}/data"/>
+	<property name="backup.home" value="${basedir}/backup"/>
+	<property name="project.name" value="Simulator"/>
+	<property name="version" value="0.0.3"/>
+	<property name="main-class" value="Main"/>
+
+	<path id="compile.classpath">
+		<fileset dir="${lib.home}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<pathconvert property="libs.project" pathsep=" ">
+		<mapper>
+			<chainedmapper>
+				<flattenmapper />
+				<globmapper from="*" to="lib/*" />
+			</chainedmapper>
+		</mapper>
+		<path>
+			<fileset dir="${lib.home}">
+				<include name="**/*.jar" />
+			</fileset>
+		</path>
+	</pathconvert>
+
+	<target name="all" depends="clean,compile,jar,doc,backup"/>
+
+	<target name="default" depends="compile,jar,run" description="default build task."/>
+
+	<target name="compile" description="Compile sources.">
+		<mkdir dir="${build.home}/classes"/>
+		<javac srcdir="${src.home}"
+			destdir="${build.home}/classes"
+			 debug="true">
+			<classpath refid="compile.classpath"/>
+		</javac>
+	</target>
+
+	<target name="backup" depends="compile,jar,doc" description="">
+		<delete dir="${backup.home}/tmp"/>
+		<mkdir dir="${backup.home}"/>
+		<mkdir dir="${backup.home}/tmp"/>
+		<unzip dest="${backup.home}/tmp">
+			<fileset dir="${lib.home}">
+				<include name="**/*.jar"/>
+			</fileset>
+		</unzip>
+		<mkdir dir="${backup.home}/tmp/data"/>
+		<copy todir="${backup.home}/tmp/data">
+			<fileset dir="${data.home}"/>
+		</copy>
+		<mkdir dir="${backup.home}/tmp/src"/>
+		<copy todir="${backup.home}/tmp/src">
+			<fileset dir="${src.home}"/>
+		</copy>
+		<mkdir dir="${backup.home}/tmp/document"/>
+		<copy todir="${backup.home}/tmp/document">
+			<fileset dir="${basedir}/document"/>
+		</copy>
+		<unzip src="${dist.home}//${project.name}.jar" dest="${backup.home}/tmp"/>
+		<jar destfile="${backup.home}/${project.name}-${version}.jar" basedir="${backup.home}/tmp">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}"/>
+				<attribute name="Class-Path" value="${libs.project}"/>
+			</manifest>
+		</jar>
+		<echo file="${backup.home}/${project.name}-${version}.html">&lt;html&gt;
+&lt;body&gt;
+&lt;div&gt;This document is for Windows Firefox.&lt;/div&gt;
+&lt;h1&gt;Document&lt;/h1&gt;
+&lt;hr/&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;a href="jar:./${project.name}-${version}.jar!/document/index.html"&gt;Documentation&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;a href="jar:./${project.name}-${version}.jar!/document/api/index.html"&gt;API(Javadoc)&lt;/a&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;a href="jar:./${project.name}-${version}.jar!/src/"&gt;src&lt;/a&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;</echo>
+		<delete dir="${backup.home}/tmp"/>
+	</target>
+
+	<target name="jar" depends="compile" description="Create jar.">
+		<echo>pack
+from: ${build.home}
+to: ${dist.home}/${project.name}.jar
+manifest:
+	main-class: ${main-class}</echo>
+		<mkdir dir="${dist.home}"/>
+		<jar destfile="${dist.home}/${project.name}.jar" basedir="${build.home}/classes">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}"/>
+				<attribute name="Class-Path" value="${libs.project}" />  
+			</manifest>
+		</jar>
+		<mkdir dir="${dist.home}/lib"/>
+		<copy todir="${dist.home}/lib">
+			<fileset dir="${lib.home}"/>
+		</copy>
+		<mkdir dir="${dist.home}/data"/>
+		<copy todir="${dist.home}/data">
+			<fileset dir="${data.home}"/>
+		</copy>
+	</target>
+
+	<target name="run" depends="compile,jar" description="Run.">
+		<java fork="true" maxmemory="2048m" classname="${main-class}" dir="${dist.home}">
+			<classpath>
+				<path location="${dist.home}/${project.name}.jar"/>
+				<path refid="compile.classpath"/>
+			</classpath>
+		</java>
+	</target>
+
+	<target name="doc" description="javadoc.">
+		<mkdir dir="document/api"/>
+		<javadoc
+		    locale="en"
+			sourcepath="${src.home}"
+			destdir="document/api"
+			linksource="yes"
+			author="true"
+			version="true"
+			use="false" >
+			<fileset dir="src/" defaultexcludes="yes">
+				<include name="*"/>
+			</fileset>
+			<classpath>
+				<path refid="compile.classpath"/>
+			</classpath>
+		</javadoc>
+
+	</target>
+
+	<target name="clean" description="Delete old build and dist directories">
+		<echo>delete
+${build.home}
+${dist.home}</echo>
+		<delete dir="${build.home}"/>
+		<delete dir="${dist.home}"/>
+	</target>
+
+</project>
