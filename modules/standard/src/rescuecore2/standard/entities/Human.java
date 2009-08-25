@@ -14,9 +14,12 @@ import java.util.List;
    Abstract base class for Humans.
  */
 public abstract class Human extends StandardEntity {
+
+    private IntProperty x;
+    private IntProperty y;
     private EntityRefProperty position;
-    private IntProperty positionExtra;
     private EntityRefListProperty positionHistory;
+    private IntProperty travelDistance;
     private IntProperty direction;
     private IntProperty stamina;
     private IntProperty hp;
@@ -30,6 +33,9 @@ public abstract class Human extends StandardEntity {
     */
     protected Human(EntityID id, StandardEntityURN type) {
         super(id, type);
+        x = new IntProperty(StandardPropertyURN.X);
+        y = new IntProperty(StandardPropertyURN.Y);
+        travelDistance = new IntProperty(StandardPropertyURN.TRAVEL_DISTANCE);
         position = new EntityRefProperty(StandardPropertyURN.POSITION);
         positionExtra = new IntProperty(StandardPropertyURN.POSITION_EXTRA);
         positionHistory = new EntityRefListProperty(StandardPropertyURN.POSITION_HISTORY);
@@ -91,41 +97,16 @@ public abstract class Human extends StandardEntity {
 
     @Override
     public Pair<Integer, Integer> getLocation(WorldModel<? extends StandardEntity> world) {
-        if (!position.isDefined()) {
-            return null;
-        }
-        StandardEntity positionEntity = world.getEntity(position.getValue());
-        if (positionEntity == null) {
-            return null;
-        }
-        if (positionEntity instanceof Edge) {
-            // Work out the positionExtra
-            if (!positionExtra.isDefined()) {
-                return positionEntity.getLocation(world);
-            }
-            int extra = positionExtra.getValue();
-            Edge edge = (Edge)positionEntity;
-            double d = ((double)extra) / (double)edge.getLength();
-            StandardEntity head = edge.getHead(world);
-            StandardEntity tail = edge.getTail(world);
-            if (head == null || tail == null) {
-                return null;
-            }
-            Pair<Integer, Integer> headLocation = head.getLocation(world);
-            Pair<Integer, Integer> tailLocation = tail.getLocation(world);
-            double dx = tailLocation.first().intValue() - headLocation.first().intValue();
-            double dy = tailLocation.second().intValue() - headLocation.second().intValue();
-            dx *= d;
-            dy *= d;
-            int x = (int)(headLocation.first().intValue() + dx);
-            int y = (int)(headLocation.second().intValue() + dy);
-            return new Pair<Integer, Integer>(x, y);
-        }
-        else {
+        if (x.isDefined() && y.isDefined())
+            return new Pair<Integer, Integer>(x.getValue(), y.getValue());        
+        if(position.isDefined()) {
+            StandardEntity positionEntity = world.getEntity(position.getValue());
+            System.err.println(positionEntity);
             return positionEntity.getLocation(world);
         }
+        return null;
     }
-
+    
     /**
        Get the position property.
        @return The position property.
@@ -142,12 +123,23 @@ public abstract class Human extends StandardEntity {
         return position.getValue();
     }
 
+
     /**
        Set the position of this human.
        @param position The new position.
     */
     public void setPosition(EntityID position) {
         this.position.setValue(position);
+    }
+
+    /**
+       Set the position of this human.
+       @param position The new position.
+    */
+    public void setPosition(EntityID position, int x, int y) {
+        this.position.setValue(position);
+        this.x.setValue(x);
+        this.y.setValue(y);
     }
 
     /**
@@ -163,44 +155,6 @@ public abstract class Human extends StandardEntity {
     */
     public void undefinePosition() {
         position.undefine();
-    }
-    /**
-       Get the position extra property.
-       @return The position extra property.
-     */
-    public IntProperty getPositionExtraProperty() {
-        return positionExtra;
-    }
-
-    /**
-       Get the positionExtra of this human.
-       @return The positionExtra of this human.
-     */
-    public int getPositionExtra() {
-        return positionExtra.getValue();
-    }
-
-    /**
-       Set the positionExtra of this human.
-       @param positionExtra The new positionExtra.
-    */
-    public void setPositionExtra(int positionExtra) {
-        this.positionExtra.setValue(positionExtra);
-    }
-
-    /**
-       Find out if the positionExtra property has been defined.
-       @return True if the positionExtra property has been defined, false otherwise.
-     */
-    public boolean isPositionExtraDefined() {
-        return positionExtra.isDefined();
-    }
-
-    /**
-       Undefine the positionExtra property.
-    */
-    public void undefinePositionExtra() {
-        positionExtra.undefine();
     }
 
     /**

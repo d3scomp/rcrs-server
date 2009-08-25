@@ -17,14 +17,12 @@ import java.util.EnumSet;
 /**
    The Building object.
  */
-public class Building extends StandardEntity {
+public class Building extends Area {
     /**
        Fieryness levels that indicate burning.
     */
     public static final EnumSet<StandardEntityConstants.Fieryness> BURNING = EnumSet.of(StandardEntityConstants.Fieryness.HEATING, StandardEntityConstants.Fieryness.BURNING, StandardEntityConstants.Fieryness.INFERNO);
 
-    private IntProperty x;
-    private IntProperty y;
     private IntProperty floors;
     private BooleanProperty ignition;
     private IntProperty fieryness;
@@ -35,8 +33,6 @@ public class Building extends StandardEntity {
     private IntProperty totalArea;
     private IntProperty temperature;
     private IntProperty importance;
-    private EntityRefListProperty entrances;
-    private IntArrayProperty apexes;
 
     /**
        Construct a Building object with entirely undefined property values.
@@ -51,6 +47,7 @@ public class Building extends StandardEntity {
        @param id The ID of this entity.
        @param urn The real urn of this building.
     */
+<<<<<<< HEAD
     protected Building(EntityID id, StandardEntityURN urn) {
         super(id, urn);
         x = new IntProperty(StandardPropertyURN.X);
@@ -76,8 +73,6 @@ public class Building extends StandardEntity {
      */
     public Building(Building other) {
         super(other);
-        x = new IntProperty(other.x);
-        y = new IntProperty(other.y);
         floors = new IntProperty(other.floors);
         ignition = new BooleanProperty(other.ignition);
         fieryness = new IntProperty(other.fieryness);
@@ -143,85 +138,7 @@ public class Building extends StandardEntity {
 
     @Override
     public Pair<Integer, Integer> getLocation(WorldModel<? extends StandardEntity> world) {
-        return new Pair<Integer, Integer>(x.getValue(), y.getValue());
-    }
-
-    /**
-       Get the x coordinate property.
-       @return The x property.
-     */
-    public IntProperty getXProperty() {
-        return x;
-    }
-
-    /**
-       Get the x coordinate of the centre of this building.
-       @return The x coordinate.
-     */
-    public int getX() {
-        return x.getValue();
-    }
-
-    /**
-       Set the x coordinate of the center of this building.
-       @param x The new x coordinate.
-    */
-    public void setX(int x) {
-        this.x.setValue(x);
-    }
-
-    /**
-       Find out if the x coordinate has been defined.
-       @return True if the x coordinate has been defined, false otherwise.
-     */
-    public boolean isXDefined() {
-        return x.isDefined();
-    }
-
-    /**
-       Undefine the x coordinate.
-    */
-    public void undefineX() {
-        x.undefine();
-    }
-
-    /**
-       Get the y coordinate property.
-       @return The y property.
-     */
-    public IntProperty getYProperty() {
-        return y;
-    }
-
-    /**
-       Get the y coordinate of the centre of this building.
-       @return The y coordinate.
-     */
-    public int getY() {
-        return y.getValue();
-    }
-
-    /**
-       Set the y coordinate of the center of this building.
-       @param y The new y coordinate.
-    */
-    public void setY(int y) {
-        this.y.setValue(y);
-    }
-
-    /**
-       Find out if the y coordinate has been defined.
-       @return True if the y coordinate has been defined, false otherwise.
-     */
-    public boolean isYDefined() {
-        return y.isDefined();
-    }
-
-    /**
-       Undefine the y coordinate.
-    */
-    public void undefineY() {
-        y.undefine();
+        return new Pair<Integer, Integer>(getCenterX(), getCenterY());
     }
 
     /**
@@ -625,97 +542,13 @@ public class Building extends StandardEntity {
         importance.undefine();
     }
 
-    /**
-       Get the entrances property.
-       @return The entrances property.
-     */
-    public EntityRefListProperty getEntrancesProperty() {
-        return entrances;
-    }
-
-    /**
-       Get the entrances of this building.
-       @return The entrances.
-     */
-    public List<EntityID> getEntrances() {
-        return entrances.getValue();
-    }
-
-    /**
-       Set the entrances of this building.
-       @param entrances The new entrances.
-    */
-    public void setEntrances(List<EntityID> entrances) {
-        this.entrances.setValue(entrances);
-    }
-
-    /**
-       Find out if the entrances property has been defined.
-       @return True if the entrances property has been defined, false otherwise.
-     */
-    public boolean isEntrancesDefined() {
-        return entrances.isDefined();
-    }
-
-    /**
-       Undefine the entrances property.
-    */
-    public void undefineEntrances() {
-        entrances.undefine();
-    }
-
-    /**
-       Get the apexes property.
-       @return The apexes property.
-     */
-    public IntArrayProperty getApexesProperty() {
-        return apexes;
-    }
-
-    /**
-       Get the apexes of this building.
-       @return The building apexes.
-     */
-    public int[] getApexes() {
-        return apexes.getValue();
-    }
-
-    /**
-       Set the apexes of this building.
-       @param apexes The new apexes.
-    */
-    public void setApexes(int[] apexes) {
-        this.apexes.setValue(apexes);
-    }
-
-    /**
-       Find out if the apexes property has been defined.
-       @return True if the apexes property has been defined, false otherwise.
-     */
-    public boolean isApexesDefined() {
-        return apexes.isDefined();
-    }
-
-    /**
-       Undefine the apexes property.
-    */
-    public void undefineApexes() {
-        apexes.undefine();
-    }
 
     /**
        Get the apexes as a list of coordinates.
        @return A list of coordinates.
      */
     public List<Pair<Integer, Integer>> getApexesAsList() {
-        List<Pair<Integer, Integer>> result = new ArrayList<Pair<Integer, Integer>>();
-        if (apexes.isDefined()) {
-            int[] values = apexes.getValue();
-            for (int i = 0; i < values.length; i += 2) {
-                result.add(new Pair<Integer, Integer>(values[i], values[i + 1]));
-            }
-        }
-        return result;
+	throw new RuntimeException("not supported");
     }
 
     /**
