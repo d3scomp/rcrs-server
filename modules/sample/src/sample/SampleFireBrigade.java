@@ -32,6 +32,8 @@ public class SampleFireBrigade extends AbstractSampleAgent<FireBrigade> {
     private int maxDistance;
     private int maxPower;
 
+    private List<EntityID> last_path;
+
     @Override
     public String toString() {
         return "Sample fire brigade";

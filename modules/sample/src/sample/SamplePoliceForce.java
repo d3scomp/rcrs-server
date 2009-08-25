@@ -48,9 +48,12 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
         // Plan a path to a blocked road
         List<EntityID> path = search.breadthFirstSearch(location(), getBlockedRoads());
         if (path != null) {
-            sendMove(time, path);
-            return;
+            AKMove move = new AKMove(getID(), time, path);
+            LOG.debug(me() + " moving to road: " + move);
+            send(move);
+	    return;
         }
+        LOG.debug(me() + " couldn't plan a path to a blocked road.");
         sendMove(time, randomWalk());
     }
 
