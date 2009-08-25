@@ -4,6 +4,8 @@ import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Shape;
 import java.awt.Polygon;
+import java.awt.geom.GeneralPath;
+import java.util.List;
 
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.standard.entities.Building;
@@ -44,9 +46,17 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         int count = apexes.length / 2;
         int[] xs = new int[count];
         int[] ys = new int[count];
+	List<EntityID> next_id = b.getNextArea();
+	GeneralPath path = new GeneralPath();
+	path.moveTo(t.scaleX(apexes[0]), t.scaleY(apexes[1]));
         for (int i = 0; i < count; ++i) {
             xs[i] = t.xToScreen(apexes[i * 2]);
             ys[i] = t.yToScreen(apexes[(i * 2) + 1]);
+	    if(i==0)continue;
+	    if(next_id.get(i-1).getValue()==-1)
+		path.lineTo(t.scaleX(apexes[i*2]), t.scaleY(apexes[i*2+1]));
+	    else
+		path.moveTo(t.scaleX(apexes[i*2]), t.scaleY(apexes[i*2+1]));
         }
         Polygon shape = new Polygon(xs, ys, count);
         drawBrokenness(b, shape, g);
@@ -107,5 +117,8 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         // CHECKSTYLE:ON:MagicNumber
         g.setColor(new Color(colour, colour, colour));
         g.fill(shape);
+        g.setColor(Color.BLACK);
+        g.draw(path);
+        return shape;
     }
 }

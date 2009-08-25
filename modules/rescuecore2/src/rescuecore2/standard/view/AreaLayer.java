@@ -42,8 +42,8 @@ public class AreaLayer extends StandardEntityViewLayer<Area> {
         Polygon shape = new Polygon(xs, ys, count);
         g.setColor(Color.GRAY);
         g.fill(shape);
-        g.setColor(Color.BLACK);
-        g.draw(shape);
+        //g.setColor(Color.BLACK);
+        //g.draw(shape);
         // Draw a line to each entrance
         //int x = t.scaleX(a.getX());
         //int y = t.scaleY(a.getY());
