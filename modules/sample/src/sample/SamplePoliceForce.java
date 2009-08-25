@@ -17,6 +17,9 @@ import rescuecore2.standard.entities.PoliceForce;
    A sample police force agent.
  */
 public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
+
+    private List<EntityID> last_path;
+
     @Override
     public String toString() {
         return "Sample police force";
@@ -43,10 +46,19 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
         // Plan a path to a blocked road
         List<EntityID> path = search.breadthFirstSearch(location(), getBlockedRoads());
         if (path != null) {
-            sendMove(time, path);
-            return;
+            AKMove move = new AKMove(getID(), time, path);
+            System.out.println(me() + " moving to road: " + move);
+            send(move);
+	    return;
         }
-        sendMove(time, randomWalk());
+        System.out.println(me() + " couldn't plan a path to a blocked road.");
+
+	if(last_path!=null && last_path.size()>1 && last_path.indexOf(location.getID())!=-1)
+	    for(path=last_path; !path.get(0).equals(location.getID()); ) path.remove(0);
+	else
+	    path = randomWalk();
+	send(new AKMove(entityID, path, time));
+	last_path = path;
     }
 
     @Override

@@ -20,6 +20,7 @@ import rescuecore2.standard.entities.Refuge;
  */
 public class SampleAmbulanceTeam extends AbstractSampleAgent<AmbulanceTeam> {
     private Collection<StandardEntity> unexploredBuildings;
+    private List<EntityID> last_path;
 
     @Override
     public String toString() {
@@ -88,8 +89,12 @@ public class SampleAmbulanceTeam extends AbstractSampleAgent<AmbulanceTeam> {
             sendMove(time, path);
             return;
         }
-        //        System.out.println(me() + " has nothing to do");
-        sendMove(time, randomWalk());
+	if(last_path!=null && last_path.size()>1 && last_path.indexOf(location().getID())!=-1)
+	    for(path=last_path; !path.get(0).equals(location().getID()); ) path.remove(0);
+	else
+	    path = randomWalk();
+	send(new AKMove(entityID, path, time));
+	last_path = path;
     }
 
     @Override
