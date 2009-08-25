@@ -21,6 +21,7 @@ import rescuecore2.standard.entities.PoliceOffice;
 import rescuecore2.standard.entities.Civilian;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.Node;
+import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardPropertyURN;
 
@@ -75,6 +76,11 @@ public class StandardAgentRegistrar implements AgentRegistrar {
             filterNodeProperties(n);
             initialEntities.add(n);
         }
+	if (e instanceof Area) {
+	    Area a = (Area)e.copy();
+	    filterAreaProperties(a);
+	    initialEntities.add(a);
+	}
         if (e instanceof Building) {
             Building b = (Building)e.copy();
             filterBuildingProperties(b);
@@ -147,4 +153,30 @@ public class StandardAgentRegistrar implements AgentRegistrar {
             }
         }
     }
+
+    private void filterAreaProperties(Area a) {
+        for (Property next : a.getProperties()) {
+            // Building properties: 
+            // Everything else should be undefined
+            switch ((StandardPropertyType)next.getType()) {
+            case X:
+            case Y:
+            case NEIGHBORS:
+            case AREA_TYPE:
+            case AREA_APEXES:
+	    case NEXT_AREA:
+                break;
+            default:
+                next.undefine();
+            }
+        }
+    }
+
+    @Override
+    protected Collection<Entity> getInitialEntitiesForAgent(Agent agent) {
+        Collection<Entity> result = new HashSet<Entity>(initialEntities);
+        result.add(agent.getControlledEntity());
+        return result;
+    }
+
 }

@@ -16,6 +16,7 @@ import rescuecore2.messages.control.GKConnectOK;
 import rescuecore2.messages.control.GKConnectError;
 import rescuecore2.messages.control.KGConnect;
 import rescuecore2.messages.control.KGAcknowledge;
+import kernel.WorldModelCreator;
 
 /**
    A WorldModelCreator that talks to a remote GIS.
