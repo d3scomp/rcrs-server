@@ -22,6 +22,7 @@ import rescuecore2.standard.entities.Civilian;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.Node;
+import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardPropertyURN;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -93,6 +94,11 @@ public class StandardAgentRegistrar implements AgentRegistrar {
             filterNodeProperties(n);
             initialEntities.add(n);
         }
+	if (e instanceof Area) {
+	    Area a = (Area)e.copy();
+	    filterAreaProperties(a);
+	    initialEntities.add(a);
+	}
         if (e instanceof Building) {
             Building b = (Building)e.copy();
             filterBuildingProperties(b);
@@ -181,6 +187,25 @@ public class StandardAgentRegistrar implements AgentRegistrar {
             switch (urn) {
             case POSITION:
             case POSITION_EXTRA:
+                break;
+            default:
+                next.undefine();
+            }
+        }
+    }
+
+    private void filterAreaProperties(Area a) {
+        for (Property next : a.getProperties()) {
+            // Building properties: 
+            // Everything else should be undefined
+            StandardPropertyURN urn = StandardPropertyURN.valueOf(next.getURN());
+            switch (urn) {
+            case X:
+            case Y:
+            case NEIGHBORS:
+            case AREA_TYPE:
+            case AREA_APEXES:
+	    case NEXT_AREA:
                 break;
             default:
                 next.undefine();
