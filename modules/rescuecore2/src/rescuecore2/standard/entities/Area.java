@@ -32,6 +32,7 @@ public class Area extends StandardEntity {
     public Area(EntityID id) {
 	this(id, StandardEntityType.AREA);
     }
+    
     public Area(EntityID id, StandardEntityType type) {
         super(id, type);
 	center_x = new IntProperty(StandardPropertyType.X);
@@ -44,11 +45,11 @@ public class Area extends StandardEntity {
 	//repair_cost = new IntProperty(StandardPropertyType.REPAIR_COST);
         addProperties(center_x, center_y, neighbors, area_type, shape, next_area);
     }
-
+    
     public Pair<Integer, Integer> getLocation(WorldModel<? extends StandardEntity> world) {
 	return new Pair<Integer, Integer>(center_x.getValue(), center_y.getValue());
     }
-
+    
     @Override
     protected Entity copyImpl() {
         return new Area(getID());

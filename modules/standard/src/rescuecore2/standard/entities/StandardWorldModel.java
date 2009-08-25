@@ -120,8 +120,8 @@ public class StandardWorldModel extends DefaultWorldModel<StandardEntity> {
             if (next instanceof Building) {
                 // Include apexes in the bounds
                 Building b = (Building)next;
-                if (b.isApexesDefined()) {
-                    int[] apexes = b.getApexes();
+                //if (b.isApexesDefined()) {
+                    int[] apexes = b.getShape();
                     for (int i = 0; i < apexes.length; i += 2) {
                         minX = Math.min(minX, apexes[i]);
                         maxX = Math.max(maxX, apexes[i]);
@@ -130,7 +130,7 @@ public class StandardWorldModel extends DefaultWorldModel<StandardEntity> {
                         minY = Math.min(minY, apexes[i]);
                         maxY = Math.max(maxY, apexes[i]);
                     }
-                }
+		    //}
             }
         }
         // Now divide the world into a grid
