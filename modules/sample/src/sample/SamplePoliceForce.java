@@ -12,6 +12,10 @@ import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.PoliceForce;
+import rescuecore2.standard.entities.Area;
+import rescuecore2.standard.messages.AKMove;
+import rescuecore2.standard.messages.AKClear;
+import rescuecore2.misc.Pair;
 
 /**
    A sample police force agent.
@@ -43,8 +47,23 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
             sendClear(time, location.getID());
             return;
         }
-        // Plan a path to a blocked road
-        List<EntityID> path = search.breadthFirstSearch(location(), getBlockedRoads());
+	Pair<Integer, Integer> l = location.getLocation(world);
+
+	//System.err.println(((Area)location).getNearlestBlockade(l.first(), l.second(), world));
+	if(location instanceof Area && ((Area)location).getNearlestBlockade(l.first(), l.second(), world)!=null) {
+	//if(location instanceof Area && ((Area)location).getBlockadeList().size()>0) {
+	    EntityID blockade_id = ((Area)location).getNearlestBlockade(l.first(), l.second(), world);
+            AKClear clear = new AKClear(entityID, blockade_id, time);
+            //System.out.println(me() + " clear road: " + clear);
+            System.err.println(me() + ":" + location + " clear road: " + clear);
+            send(clear);
+	    return ;
+	}
+
+        List<EntityID> path = null;
+        // Plan a path to a blocked area
+
+        path = search.breadthFirstSearch(location(), getBlockedAreas());
         if (path != null) {
             AKMove move = new AKMove(getID(), time, path);
             System.out.println(me() + " moving to road: " + move);
@@ -53,10 +72,13 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
         }
         System.out.println(me() + " couldn't plan a path to a blocked road.");
 
+
 	if(last_path!=null && last_path.size()>1 && last_path.indexOf(location.getID())!=-1)
 	    for(path=last_path; !path.get(0).equals(location.getID()); ) path.remove(0);
-	else
+	else {
 	    path = randomWalk();
+	}
+
 	send(new AKMove(entityID, path, time));
 	last_path = path;
     }
@@ -66,14 +88,14 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
         return EnumSet.of(StandardEntityURN.POLICE_FORCE);
     }
 
-    private List<Road> getBlockedRoads() {
-        Collection<StandardEntity> e = model.getEntitiesOfType(StandardEntityURN.ROAD);
-        List<Road> result = new ArrayList<Road>();
+    private List<Area> getBlockedAreas() {
+        Collection<StandardEntity> e = world.getEntitiesOfType(StandardEntityType.ROAD);
+        List<Area> result = new ArrayList<Area>();
         for (StandardEntity next : e) {
-            if (next instanceof Road) {
-                Road r = (Road)next;
-                if (r.isBlockDefined() && r.getBlock() > 0) {
-                    result.add(r);
+            if (next instanceof Area) {
+                Area a = (Area)next;
+                if (a.getBlockadeList().size() > 0) {
+                    result.add(a);
                 }
             }
         }
