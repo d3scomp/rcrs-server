@@ -1,6 +1,6 @@
 package rescuecore2.standard.entities;
 
-import java.util.List;
+import java.util.*;
 import rescuecore2.worldmodel.Entity;
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.worldmodel.properties.IntProperty;
@@ -18,11 +18,11 @@ public class Area extends StandardEntity {
 
     private IntProperty center_x;
     private IntProperty center_y;
-    private EntityRefListProperty neighbors;
+    //private EntityRefListProperty neighbors;
     private IntProperty area_type;
     private IntArrayProperty shape;
     private EntityRefListProperty next_area;
-    //private IntProperty block;
+    private EntityRefListProperty blockade_list;
     //private IntProperty repair_cost;
 
     /**
@@ -37,13 +37,14 @@ public class Area extends StandardEntity {
         super(id, type);
 	center_x = new IntProperty(StandardPropertyType.X);
 	center_y = new IntProperty(StandardPropertyType.Y);
-	neighbors = new EntityRefListProperty(StandardPropertyType.NEIGHBORS);
+	//neighbors = new EntityRefListProperty(StandardPropertyType.NEIGHBORS);
         area_type = new IntProperty(StandardPropertyType.AREA_TYPE);
 	shape = new IntArrayProperty(StandardPropertyType.AREA_APEXES);
 	next_area = new EntityRefListProperty(StandardPropertyType.NEXT_AREA);
+	blockade_list = new EntityRefListProperty(StandardPropertyType.BLOCKADE_LIST);
         //block = new IntProperty(StandardPropertyType.BLOCK);
 	//repair_cost = new IntProperty(StandardPropertyType.REPAIR_COST);
-        addProperties(center_x, center_y, neighbors, area_type, shape, next_area);
+        addProperties(center_x, center_y, area_type, shape, next_area, blockade_list);
     }
     
     public Pair<Integer, Integer> getLocation(WorldModel<? extends StandardEntity> world) {
@@ -123,12 +124,12 @@ public class Area extends StandardEntity {
         this.center_y.setValue(newKind);
     }
 
-
     public List<EntityID> getNeighbors() {
-        return neighbors.getValue();
-    }
-    public void setNeighbors(List<EntityID> newKind) {
-        this.neighbors.setValue(newKind);
+	ArrayList<EntityID> list = new ArrayList<EntityID>();
+	for(EntityID id : getNextArea())
+	    if(id!=null && id.getValue()!=-1)
+		list.add(id);
+        return list;
     }
 
     /*
@@ -140,6 +141,58 @@ public class Area extends StandardEntity {
     }
     */
 
+    public boolean isBlockadeListDefined() {
+        return blockade_list.isDefined();
+    }
+    public void undefineBlockadeList() {
+        blockade_list.undefine();
+    }
+    public List<EntityID> getBlockadeList() {
+	return blockade_list.getValue();
+    }
+    public void setBlockadeList(List<EntityID> new_list) {
+	blockade_list.setValue(new_list);
+    }
+    public EntityID getNearlestBlockade(int x, int y, WorldModel<? extends StandardEntity> world) {
+	ArrayList<EntityID> blockade_list = new ArrayList<EntityID>();
+	blockade_list.addAll(getBlockadeList());
+	for(EntityID neighbor_id : getNeighbors()) {
+	    Entity entity = world.getEntity(neighbor_id);
+	    assert (entity instanceof Area) : "neighbor is not Area!";
+	    Area area = (Area)entity;
+	    for(EntityID blockade_id : area.getBlockadeList())
+		blockade_list.add(blockade_id);
+	}
+	double min = 0;
+	EntityID min_id = null;
+	for(EntityID blockade_id : blockade_list) {
+	    Entity entity = world.getEntity(blockade_id);
+	    //assert (entity instanceof Area) : "entity is not Area!";
+	    Pair<Integer, Integer> location = null;
+	    if(entity instanceof Building)
+		location = ((Building)entity).getLocation(world);
+	    else if(entity instanceof Area)
+		location = ((Area)entity).getLocation(world);
+	    else if(entity instanceof Blockade)
+		location = ((Blockade)entity).getLocation(world);
+	    
+	    assert (location!=null) : "blockade location is null ["+blockade_id+"]";
+	    if(location==null || location.first()==null){
+		System.err.println("!"+entity+":"+location);
+
+	    }
+
+	    double dx = (location.first()-x);
+	    double dy = (location.second()-y);
+	    double distance = Math.sqrt(dx*dx + dy*dy);
+	    if(min_id==null || min > distance) {
+		min = distance;
+		min_id = entity.getID();
+	    }
+	}
+
+	return min_id;
+    }
 
     public int[] getShape() {
         return shape.getValue();

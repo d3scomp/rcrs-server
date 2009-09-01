@@ -32,6 +32,8 @@ public final class StandardEntityFactory extends AbstractEntityFactory<StandardE
             return new Area(id);
         case BUILDING:
             return new Building(id);
+	case BLOCKADE:
+	    return new Blockade(id);
         case REFUGE:
             return new Refuge(id);
         case FIRE_STATION:
