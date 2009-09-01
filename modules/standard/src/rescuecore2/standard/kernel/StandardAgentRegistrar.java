@@ -27,6 +27,7 @@ import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardPropertyURN;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.standard.entities.StandardWorldModel;
+import rescuecore2.standard.entities.Blockade;
 
 import rescuecore2.standard.StandardConstants;
 
@@ -99,6 +100,10 @@ public class StandardAgentRegistrar implements AgentRegistrar {
 	    filterAreaProperties(a);
 	    initialEntities.add(a);
 	}
+	if (e instanceof Blockade) {
+	    Blockade b = (Blockade)e;
+	    initialEntities.add(b);
+	}
         if (e instanceof Building) {
             Building b = (Building)e.copy();
             filterBuildingProperties(b);
@@ -165,6 +170,10 @@ public class StandardAgentRegistrar implements AgentRegistrar {
             switch (urn) {
             case X:
             case Y:
+            case AREA_TYPE:
+            case AREA_APEXES:
+	    case NEXT_AREA:
+	    case BLOCKADE_LIST:
             case FLOORS:
             case BUILDING_CODE:
             case BUILDING_ATTRIBUTES:
@@ -202,10 +211,10 @@ public class StandardAgentRegistrar implements AgentRegistrar {
             switch (urn) {
             case X:
             case Y:
-            case NEIGHBORS:
             case AREA_TYPE:
             case AREA_APEXES:
 	    case NEXT_AREA:
+	    case BLOCKADE_LIST:
                 break;
             default:
                 next.undefine();
