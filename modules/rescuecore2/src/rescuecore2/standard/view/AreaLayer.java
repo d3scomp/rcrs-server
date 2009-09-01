@@ -13,6 +13,7 @@ import rescuecore2.standard.entities.AmbulanceCentre;
 import rescuecore2.standard.entities.PoliceOffice;
 import rescuecore2.standard.entities.Node;
 import rescuecore2.standard.entities.StandardWorldModel;
+import rescuecore2.standard.entities.Blockade;
 
 /**
    A view layer that renders buildings.
@@ -42,6 +43,24 @@ public class AreaLayer extends StandardEntityViewLayer<Area> {
         Polygon shape = new Polygon(xs, ys, count);
         g.setColor(Color.GRAY);
         g.fill(shape);
+	g.setColor(Color.BLACK);
+	if(a.isBlockadeListDefined()) {
+	    for(EntityID id : a.getBlockadeList()) {
+		Blockade blockade = (Blockade)model.getEntity(id);
+		apexes = blockade.getShape();
+		count = apexes.length /2;
+		xs = new int[count];
+		ys = new int[count];
+		for (int i = 0; i < count; ++i) {
+		    xs[i] = t.scaleX(apexes[i * 2]);
+		    ys[i] = t.scaleY(apexes[(i * 2) + 1]);
+		}
+		shape = new Polygon(xs, ys, count);
+		g.fill(shape);
+	    }
+	    
+	}
+
         //g.setColor(Color.BLACK);
         //g.draw(shape);
         // Draw a line to each entrance
