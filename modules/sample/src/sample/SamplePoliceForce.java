@@ -47,15 +47,18 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
             sendClear(time, location.getID());
             return;
         }
-	Pair<Integer, Integer> l = location.getLocation(world);
+	Pair<Integer, Integer> l = me().getLocation(world);
 
 	//System.err.println(((Area)location).getNearlestBlockade(l.first(), l.second(), world));
 	if(location instanceof Area && ((Area)location).getNearlestBlockade(l.first(), l.second(), world)!=null) {
 	//if(location instanceof Area && ((Area)location).getBlockadeList().size()>0) {
 	    EntityID blockade_id = ((Area)location).getNearlestBlockade(l.first(), l.second(), world);
-            AKClear clear = new AKClear(entityID, blockade_id, time);
+            AKClear clear = new AKClear(getID(), time, blockade_id);
             //System.out.println(me() + " clear road: " + clear);
-            System.err.println(me() + ":" + location + " clear road: " + clear);
+            //System.err.println(me() + ":" + location + " clear road: " + clear);
+	    List<EntityID> bl = ((Area)location).getNearBlockadeList(world);
+	    System.err.println(bl+", clear: "+blockade_id);
+
             send(clear);
 	    return ;
 	}
@@ -79,7 +82,7 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
 	    path = randomWalk();
 	}
 
-	send(new AKMove(entityID, path, time));
+	send(new AKMove(getID(), time, path));
 	last_path = path;
     }
 

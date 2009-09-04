@@ -93,7 +93,7 @@ public class SampleAmbulanceTeam extends AbstractSampleAgent<AmbulanceTeam> {
 	    for(path=last_path; !path.get(0).equals(location().getID()); ) path.remove(0);
 	else
 	    path = randomWalk();
-	send(new AKMove(entityID, path, time));
+	send(new AKMove(getID(), time, path));
 	last_path = path;
     }
 
