@@ -113,8 +113,8 @@ public class BlockadeSimulator {
 
 			for(Command command : commands.getCommands())
 			    if(command instanceof AKClear) {
-				EntityID id = ((AKClear)command).getTarget();
-				Blockade blockade = (Blockade)id_entity_map_.get(id);
+				EntityID blockade_id = ((AKClear)command).getTarget();
+				Blockade blockade = (Blockade)id_entity_map_.get(blockade_id);
 				int cx = blockade.getCenterX();
 				int cy = blockade.getCenterY();
 				double d = 0.03;
@@ -126,7 +126,7 @@ public class BlockadeSimulator {
 				    double y = xy_list[i*2+1];
 				    double dx = x-cx;
 				    double dy = y-cy;
-				    double dd = 500;
+				    double dd = 5000;
 				    double distance = Math.sqrt(dx*dx + dy*dy);
 				    if(distance>dd*2) {
 					xy_list[i*2] = (int)(x - dx*(dd)/distance);
@@ -139,8 +139,8 @@ public class BlockadeSimulator {
 				    List<EntityID> idlist = area.getBlockadeList();
 				    ArrayList<EntityID> newidlist = new ArrayList<EntityID>();
 				    for(EntityID idi : idlist)
-					if(idi.getValue()!=id.getValue())
-					    newidlist.add(id);
+					if(idi.getValue()!=blockade_id.getValue())
+					    newidlist.add(idi);
 				    area.setBlockadeList(newidlist);
 				    update_list_.add(area);
 				} else {
