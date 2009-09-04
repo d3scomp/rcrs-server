@@ -2,6 +2,7 @@ package rescuecore2.standard.kernel;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collection;
 
 import kernel.AgentRegistrar;
 import kernel.ComponentManager;
@@ -28,6 +29,7 @@ import rescuecore2.standard.entities.StandardPropertyURN;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.standard.entities.StandardWorldModel;
 import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.Civilian;
 
 import rescuecore2.standard.StandardConstants;
 
@@ -98,8 +100,8 @@ public class StandardAgentRegistrar implements AgentRegistrar {
 	if (e instanceof Area) {
 	    Area a = (Area)e.copy();
 	    filterAreaProperties(a);
-	    initialEntities.add(a);
-	}
+	    initialEntities.add(a);	
+}
 	if (e instanceof Blockade) {
 	    Blockade b = (Blockade)e;
 	    initialEntities.add(b);
