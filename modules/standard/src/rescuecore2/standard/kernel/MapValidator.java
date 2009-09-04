@@ -7,6 +7,7 @@ import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.Node;
 import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Area;
 
 import java.util.Collection;
 import java.util.List;
@@ -49,17 +50,17 @@ public final class MapValidator {
     }
 
     private static void validateBuilding(Building b, StandardWorldModel world) throws MapValidationException {
-        List<EntityID> entrances = b.getEntrances();
+        List<EntityID> entrances = b.getNeighbors();
         for (EntityID next : entrances) {
             // Check that the entrance is a node
             StandardEntity e = world.getEntity(next);
-            if (!(e instanceof Node)) {
+            if (!(e instanceof Area)) {
                 throw new MapValidationException(b + " has non-node entity '" + e + "' as an entrance.");
             }
             // Check that the node knows about the building
-            Node n = (Node)e;
-            List<EntityID> edges = n.getEdges();
-            if (!edges.contains(b.getID())) {
+            Area n = (Area)e;
+            List<EntityID> areas = n.getNeighbors();
+            if (!areas.contains(b.getID())) {
                 throw new MapValidationException(b + " has " + e + " as an entrance but the node does not have the building as an edge.");
             }
         }
@@ -98,6 +99,7 @@ public final class MapValidator {
 
     private static void validateNode(Node n, StandardWorldModel world) throws MapValidationException {
         // Check that all edges know about the node
+	/*
         EntityID nodeID = n.getID();
         for (EntityID next : n.getEdges()) {
             StandardEntity e = world.getEntity(next);
@@ -130,6 +132,7 @@ public final class MapValidator {
             throw new MapValidationException(n + " has " + count + " edges but signalTiming has " + n.getSignalTiming().length + " entries. It should have " + (count * 3) + ".");
         }
         // CHECKSTYLE:ON:MagicNumber
+	*/
     }
 
     private static void validateConnectivity(Collection<StandardEntity> entities, StandardWorldModel world) throws MapValidationException {
@@ -147,11 +150,19 @@ public final class MapValidator {
                 open.add(((Road)next).getHead(world));
                 open.add(((Road)next).getTail(world));
             }
+
             if (next instanceof Building) {
-                for (EntityID entrance : ((Building)next).getEntrances()) {
+                for (EntityID entrance : ((Building)next).getNeighbors()) {
                     open.add(world.getEntity(entrance));
                 }
             }
+
+            if (next instanceof Area) {
+                for (EntityID entrance : ((Area)next).getNeighbors()) {
+                    open.add(world.getEntity(entrance));
+                }
+            }
+
             if (next instanceof Node) {
                 for (EntityID edge : ((Node)next).getEdges()) {
                     open.add(world.getEntity(edge));

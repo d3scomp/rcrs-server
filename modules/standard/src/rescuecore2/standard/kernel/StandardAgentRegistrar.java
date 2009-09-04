@@ -2,8 +2,14 @@ package rescuecore2.standard.kernel;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collection;
 
+<<<<<<< HEAD:modules/standard/src/rescuecore2/standard/kernel/StandardAgentRegistrar.java
 import kernel.AgentRegistrar;
+=======
+import kernel.Agent;
+import kernel.AgentProcessor;
+>>>>>>> bug fix of kernel:modules/kernel/src/kernel/standard/StandardAgentProcessor.java
 import kernel.ComponentManager;
 
 import rescuecore2.config.Config;
@@ -25,6 +31,7 @@ import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardPropertyURN;
 import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.Civilian;
 
 /**
    Class that registers standard agents.
@@ -80,8 +87,8 @@ public class StandardAgentRegistrar implements AgentRegistrar {
 	if (e instanceof Area) {
 	    Area a = (Area)e.copy();
 	    filterAreaProperties(a);
-	    initialEntities.add(a);
-	}
+	    initialEntities.add(a);	
+}
 	if (e instanceof Blockade) {
 	    Blockade b = (Blockade)e;
 	    initialEntities.add(b);
@@ -181,6 +188,7 @@ public class StandardAgentRegistrar implements AgentRegistrar {
         }
     }
 
+    /*
     @Override
     protected Collection<Entity> getInitialEntitiesForAgent(Agent agent) {
         Collection<Entity> result = new HashSet<Entity>(initialEntities);
@@ -188,4 +196,5 @@ public class StandardAgentRegistrar implements AgentRegistrar {
         return result;
     }
 
+    */
 }
