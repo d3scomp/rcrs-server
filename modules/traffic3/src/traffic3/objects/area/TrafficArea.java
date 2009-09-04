@@ -93,7 +93,9 @@ public class TrafficArea extends TrafficObject {
 		    directed_edge_id_list.add(edge_id);
 		    world_manager.appendWithoutCheck(edge);
 		    String tne_id = world_manager.getUniqueID("_");
+
 		}else{  // connector and it's already exists
+
 		    String edge_id = world_manager.getUniqueID("_");
 		    edge = new TrafficAreaEdge(world_manager, edge_id);
 		    edge.setDirectedNodes(last_node.getID(), node.getID());

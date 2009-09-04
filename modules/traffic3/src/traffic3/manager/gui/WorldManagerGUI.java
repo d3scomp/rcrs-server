@@ -101,11 +101,13 @@ public class WorldManagerGUI extends JComponent {
     }
 
     public void createGUI() {
+
 	AbstractAction create_image_action = new AbstractAction("create image action"){
 		public void actionPerformed(ActionEvent e) {
 		    createImageInOtherThread();
 		}
 	    };
+
 	show_network_ = new JCheckBox("show network");
 	show_area_area_ = new JCheckBox("show area");
 	show_area_node_ = new JCheckBox("show area node");
@@ -289,43 +291,130 @@ public class WorldManagerGUI extends JComponent {
 				
 				double width = inputDouble("input blockade width [0-100]%.");
 				for(TrafficObject tobj : target_list) {
-				    if(!(tobj instanceof TrafficArea))
+				    if(!(tobj instanceof TrafficArea)) {
+					log("cannot put blockade to "+tobj);
 					continue;
+				    }
+
 				    TrafficArea tarea = (TrafficArea)tobj;
 				    TrafficBlockade tblockade = new TrafficBlockade(world_manager_, world_manager_.getUniqueID("_"));
 				    TrafficAreaNode[] node_list = tarea.getNodeList();
 				    //tblockade.setCenter(node_list[0].getX(), node_list[0].getY());
+				    
 				    double cx = tarea.getCenterX();
 				    double cy = tarea.getCenterY();
 				    int[] xy_list = new int[node_list.length*2];
 				    int index = 0;
-
 				    for(TrafficAreaNode node : node_list) {
 					//double d = 0.5+0.499999*Math.random();
 					double d = width*(0.8+(Math.random()*0.2))/101.0;
 					//double d = width/100.0;
-					
 					double x = node.getX()*d+cx*(1-d);
 					double y = node.getY()*d+cy*(1-d);
 					xy_list[index++] = (int)x;
 					xy_list[index++] = (int)y;
-	
-			    }
+				    }
 				    tblockade.setCenter(cx, cy);
-								    
-
 				    tblockade.setLineList(xy_list);
 				    world_manager_.appendWithoutCheck(tblockade);
 				    tarea.addBlockade(tblockade);
 				}
 				createImageInOtherThread();
-
 			    }catch(Exception exc) {
 				alert(exc, "error");
 			    }
 			}
 		    });
+		
+		
+		
+		
+		popup.add(new AbstractAction("put blockade2"){
+			public void actionPerformed(ActionEvent e) {
+			    try{
+				TrafficObject[] target_list = target_list_.values().toArray(new TrafficObject[0]);
+				
+				//double width = inputDouble("input blockade width [0-100]%.");
+				for(TrafficObject tobj : target_list) {
+				    if(!(tobj instanceof TrafficArea)) {
+					log("cannot put blockade to "+tobj);
+					continue;
+				    }
 
+				    TrafficArea tarea = (TrafficArea)tobj;
+				    TrafficAreaNode[] node_list = tarea.getNodeList();
+				    int length = node_list.length;
+				    int[] xs = new int[length];
+				    int[] ys = new int[length];
+				    for(int i=0; i<length; i++) {
+					xs[i] = (int)node_list[i].getX();
+					ys[i] = (int)node_list[i].getY();
+				    }
+				    Polygon polygon = new Polygon(xs, ys, length);
+				    //alert(polygon, "error");
+				    Area area = new Area(polygon);
+				    Rectangle rect = area.getBounds();
+				    
+				    Area sub_area = null;
+				    int wcount = (int)(rect.getWidth()/5000+1);
+				    int hcount = (int)(rect.getHeight()/5000+1);
+				    double x = rect.getX();
+				    double y = rect.getY();
+				    double w = rect.getWidth()/wcount;
+				    double h = rect.getHeight()/hcount;
+				    for(int j=0; j<hcount; j++)
+					for(int i=0; i<wcount; i++) {
+					    sub_area = new Area(new Rectangle2D.Double(x+i*w, y+j*h, w, h));
+					    sub_area.intersect(area);
+					    PathIterator path_iterator = sub_area.getPathIterator(new AffineTransform(1, 0, 0, 1, 0, 0));
+					    ArrayList<Point2D> point_list = new ArrayList<Point2D>();
+					    double[] xyd_list = new double[6];
+					    for(; !path_iterator.isDone(); path_iterator.next()) {
+						int type = path_iterator.currentSegment(xyd_list);
+						point_list.add(new Point2D.Double(xyd_list[0], xyd_list[1]));
+					    }
+
+					    if(point_list.size() == 0) continue;
+					    
+					    TrafficBlockade tblockade = new TrafficBlockade(world_manager_, world_manager_.getUniqueID("_"));
+					    
+					    tblockade.setCenter(node_list[0].getX(), node_list[0].getY());
+					    int[] xy_list = new int[point_list.size()*2];
+					    int index = 0;
+					    double cx = point_list.get(0).getX();
+					    double cy = point_list.get(1).getY();
+					    double xsum = 0;
+					    double ysum = 0;
+					    for(Point2D p : point_list) {
+						//double d = 0.5+0.499999*Math.random();
+						//double d = width*(0.8+(Math.random()*0.2))/101.0;
+						//double d = width/100.0;
+						double d = 1;
+						double xx = p.getX()+Math.random()*d-d/2;
+						double yy = p.getY()+Math.random()*d-d/2;
+						xsum += xx;
+						ysum += yy;
+						xy_list[index++] = (int)xx;
+						xy_list[index++] = (int)yy;
+					    }
+					    cx = (xsum/point_list.size());
+					    cy = (ysum/point_list.size());
+					    tblockade.setCenter(cx, cy);
+					    tblockade.setLineList(xy_list);
+					    world_manager_.appendWithoutCheck(tblockade);
+					    tarea.addBlockade(tblockade);
+					}
+				}
+				createImageInOtherThread();
+			    }catch(Exception exc) {
+				alert(exc, "error");
+			    }
+			}
+		    });
+		
+		
+		
+		
 		popup.add(new AbstractAction("set area type"){
 			public void actionPerformed(ActionEvent e) {
 			    try{
@@ -1030,13 +1119,6 @@ public class WorldManagerGUI extends JComponent {
 	if(show_id)
 	    g.drawString(agent.getID(), (int)x, (int)y);
     }
-
-
-
-
-
-
-
 
 
 

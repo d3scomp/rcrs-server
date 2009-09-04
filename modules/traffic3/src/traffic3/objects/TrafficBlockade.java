@@ -83,7 +83,6 @@ public class TrafficBlockade extends TrafficObject {
 	    y = xy_list[1];
 	    line_list_.add(new Line2D.Double(x, y, last_x, last_y));
 
-
 	    String edge_id = world_manager.getUniqueID("_");
 	    edge = new TrafficAreaEdge(world_manager, edge_id);
 	    edge.setDirectedNodes(last_node.getID(), first_node.getID());

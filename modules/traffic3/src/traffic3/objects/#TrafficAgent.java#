@@ -263,7 +263,7 @@ public class TrafficAgent extends TrafficObject {
 	    for(TrafficAgent agent : now_area_.getAgentList())
 		agent_list_pickup.add(agent);
 	    for(TrafficArea area : now_area_.getNeighborList())
-		for(TrafficAgent agent : area.getAgentList())
+		for(TrafficAgent agent : area.1getAgentList())
 		    agent_list_pickup.add(agent);
 
 	    TrafficAgent[] agent_list = agent_list_pickup.toArray(new TrafficAgent[0]);
