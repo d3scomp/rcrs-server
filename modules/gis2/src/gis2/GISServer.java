@@ -51,7 +51,9 @@ public class GISServer {
 	System.err.println("started gis server");
 	HashMap<EntityID, Entity> pool = importFromFile(file1, file2);
 	checkObjects(pool);
+	System.out.println("BootGUI");
 	System.err.println("> now waiting for ECSKernel...");
+
 	startWaiting(port, pool);
 	System.err.println("> finished to send all the information.");
     }
