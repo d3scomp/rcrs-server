@@ -69,7 +69,13 @@ public class SampleFireBrigade extends AbstractSampleAgent<FireBrigade> {
                 return;
             }
             else {
-                sendMove(time, randomWalk());
+                System.out.println(me() + " couldn't plan a path to a refuge.");
+		if(last_path!=null && last_path.size()>1 && last_path.indexOf(location().getID())!=-1)
+		    for(path=last_path; !path.get(0).equals(location().getID()); ) path.remove(0);
+		else
+		    path = randomWalk();
+		send(new AKMove(getID(), time, path));
+		last_path = path;
             }
         }
         // Find all buildings that are on fire
@@ -89,7 +95,14 @@ public class SampleFireBrigade extends AbstractSampleAgent<FireBrigade> {
                 return;
             }
         }
-        sendMove(time, randomWalk());
+	List<EntityID> path = null;
+        System.out.println(me() + " couldn't plan a path to a fire.");
+	if(last_path!=null && last_path.size()>1 && last_path.indexOf(location().getID())!=-1)
+	    for(path=last_path; !path.get(0).equals(location().getID()); ) path.remove(0);
+	else
+	    path = randomWalk();
+	send(new AKMove(getID(), time, path));
+	last_path = path;
     }
 
     @Override
