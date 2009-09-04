@@ -114,23 +114,28 @@ public class WorldManager {
 	String id = tobject.getID();
 	if(map_id_trafficobject_.get(id)==null) throw new Exception("id["+id+"] doesnot exists.");
 	map_id_trafficobject_.remove(id);
-	if(tobject instanceof TrafficArea) {
-	    map_id_trafficarea_.remove(id);
-	    System.err.println("warning: this operation is not safe.");
-	} else if(tobject instanceof TrafficAreaNode) {
-	    map_id_trafficareanode_.remove(id);
-	    System.err.println("warning: this operation is not safe.");
-	}else if(tobject instanceof TrafficAreaEdge){
-	    map_id_trafficareaedge_.remove(id);
-	    System.err.println("warning: this operation is not safe.");
-	}else if(tobject instanceof TrafficAgent)
+	if(tobject instanceof TrafficAgent) {
 	    synchronized(map_id_trafficagent_) {
 		map_id_trafficagent_.remove(id);
 		System.err.println("warning: this operation is not safe.");
 	    }
-	else if(tobject instanceof TrafficBlockade) {
-	    map_id_trafficblockade_.remove(id);
+	    fireAgentUpdated(this, new TrafficObject[]{tobject});
+	}else{
+	    if(tobject instanceof TrafficArea) {
+		map_id_trafficarea_.remove(id);
+		System.err.println("warning: this operation is not safe.");
+	    } else if(tobject instanceof TrafficAreaNode) {
+		map_id_trafficareanode_.remove(id);
+		System.err.println("warning: this operation is not safe.");
+	    }else if(tobject instanceof TrafficAreaEdge){
+		map_id_trafficareaedge_.remove(id);
+		System.err.println("warning: this operation is not safe.");
+	    }else if(tobject instanceof TrafficBlockade) {
+		map_id_trafficblockade_.remove(id);
+	    }
+	    fireMapUpdated(this, new TrafficObject[]{tobject});
 	}
+
 	log("append: "+tobject);
     }
 
