@@ -49,13 +49,14 @@ public class TrafficAgent extends TrafficObject {
 
 
     private void init() {
-	v_limit_ = mm2map(0.1+Math.random()*0.4); // [mm/ms]
+	//v_limit_ = mm2map(0.1+Math.random()*0.4); // [mm/ms]
 	// radius_ = mm2map(300+400*Math.random());
 	// radius_ = mm2map(2000);
 	// radius_ = mm2map(500);
 	// radius_ = 200;
-	radius_ = 200;
-	v_limit_ = radius_*0.001*(Math.random()*0.5+0.5);
+	radius_ = 0.2; //[m]
+	v_limit_ = 10.0/9.0; //[m/s]
+	//v_limit_ = radius_*0.001*(Math.random()*0.5+0.5);
 	//v_limit_ = 0.5 + 0.1*(Math.random()-0.5);
 	//alert("vlimit: "+v_limit_);
     }
@@ -154,12 +155,14 @@ public class TrafficAgent extends TrafficObject {
     public TrafficAreaNode getNextDestination() {
 	return now_destination_;
     }
+    /*
     public static double map2mm(double map) {
 	return 40000000000.0*map/360.0;
     }
     public static double mm2map(double mm) {
 	return 360.0*mm/40000000000.0;
     }
+    */
 
     public void plan() {
 	plan_area();
@@ -235,13 +238,13 @@ public class TrafficAgent extends TrafficObject {
 	    }
 
 
-	    destx = 0.0001*(dx-vx_);
-	    desty = 0.0001*(dy-vy_);
-	    destz = 0.0001*(dz-vz_);
+	    destx = 0.1*(dx-vx_);
+	    desty = 0.1*(dy-vy_);
+	    destz = 0.1*(dz-vz_);
 	} else {
-	    destx = 0.0001*(-vx_);
-	    desty = 0.0001*(-vy_);
-	    destz = 0.0001*(-vz_);
+	    destx = 0.1*(-vx_);
+	    desty = 0.1*(-vy_);
+	    destz = 0.1*(-vz_);
 	}
 	if(Double.isNaN(destx) || Double.isNaN(desty) || Double.isNaN(destz)) {
 	    destx=desty=destz=0;
@@ -256,7 +259,7 @@ public class TrafficAgent extends TrafficObject {
 	    //double B = 1000.0;
 	    //double k = 0.0000005;
 	    double A = 0.000007;
-	    double B = 1000.0;
+	    double B = 1.0;
 	    double k = 0.000001;
 
 	    ArrayList<TrafficAgent> agent_list_pickup = new ArrayList<TrafficAgent>();
@@ -330,7 +333,7 @@ public class TrafficAgent extends TrafficObject {
 	    //double B = 100.0;
 	    //double k = 0.00000001;
 	    double A = 0.001;
-	    double B = 100.0;
+	    double B = 0.1;
 	    double k = 0.00001;
 	    double r = getRadius();
 	    TrafficArea area = now_area_;
@@ -356,37 +359,9 @@ public class TrafficAgent extends TrafficObject {
 			sumwy += -k*(r-wdist)*wdyn;
 		    }
 		}
-	    } else {
-		/*
-		TrafficArea[] area_list = getManager().getAreaList();
-		for(int i=0; i<area_list.length; i++) {
-		    area = area_list[i];
-		    Line2D[] line_list = area.getUnconnectedEdgeList();
-		    for(int j=0; j<line_list.length ; j++) {
-			Point2D p1 = line_list[j].getP1();
-			Point2D p2 = line_list[j].getP2();
-			double p1_dist = p1.distance(x_, y_);
-			double p2_dist = p2.distance(x_, y_);
-			double p12_dist = p1_dist+p2_dist;
-			p1_dist /= p12_dist;
-			p2_dist /= p12_dist;
-			double wdx = (p1.getX()*p2_dist+p2.getX()*p1_dist)-x_;
-			double wdy = (p1.getY()*p2_dist+p2.getY()*p1_dist)-y_;
-			double wdist = Math.sqrt(wdx*wdx + wdy*wdy);
-			double wdxn = wdx/Math.abs(wdist);
-			double wdyn = wdy/Math.abs(wdist);
-			sumwx += -A*Math.exp((r-wdist)/B)*wdxn;
-			sumwy += -A*Math.exp((r-wdist)/B)*wdyn;
-			if(wdist < getRadius()) {
-			    sumwx += -k*(r-wdist)*wdxn;
-			    sumwy += -k*(r-wdist)*wdyn;
-			}
-		    }
-		}
-		*/
 	    }
 	}
-	if(sumwx==Double.NaN || sumwy==Double.NaN || sumwz==Double.NaN)
+	if(Double.isNaN(sumwx) || Double.NaN(sumwy) || Double.NaN(sumwz))
 	    sumwx=sumwy=sumwz=0;
 
 	fx_ = destx + sumopx + sumwx;
@@ -478,144 +453,10 @@ public class TrafficAgent extends TrafficObject {
 	now_destination_ = tan;
     }
 
-    /*
-     * 1. search start network node
-     * 2. search goal network node
-     * 3. search path from start node to goal noad
-     */
-    /*
-    private void planDestination() throws Exception {
-	
-	if(final_destination_ == null) return ;
-
-	TrafficArea start = getManager().findArea(getX(), getY());
-	TrafficArea goal = getManager().findArea(final_destination_.getX(), final_destination_.getY());
-
-	// this should be changed!
-	if(start==null || goal==null) {
-	    now_destination_ = final_destination_;
-	    return ;
-	}
-
-	if(start.getID().equals(goal.getID())) {
-	    now_destination_ = final_destination_;
-	    if(goal.isSimulateAsOpenSpace())
-		is_network_mode_ = false;
-	    else {
-		now_network_destination_ = new TrafficNetworkPoint(getManager(), goal.getCorrespondingNetworkNode());
-	    }
-	    return ;
-	}
-	//alert(start + " : " + goal, "error");
-	//alert(start.getCorrespondingNetworkNode() + " : " + goal.getCorrespondingNetworkNode(), "error");
-
-	TrafficNetworkNode start_node = start.getCorrespondingNetworkNode();
-	if(is_network_mode_ && now_network_point_!=null) {
-	    start_node = now_network_point_.getNearlestNode();
-	    //System.out.print("over write: "+start_node);
-	}
-	TrafficNetworkNode goal_node = goal.getCorrespondingNetworkNode();
-
-	assert start_node!=null : "start node cannot be found.";
-	assert goal_node!=null : "goal node cannot be found.";
-	
-	//alert(start_node +" : "+ goal_node, "error");
-
-
-	HashMap<TrafficNetworkNode, Double> trace_area_map = new HashMap<TrafficNetworkNode, Double>();
-	HashMap<TrafficNetworkNode, TrafficNetworkNode> trace_transfer = new HashMap<TrafficNetworkNode, TrafficNetworkNode>();
-	ArrayList<TrafficNetworkNode> buf = new ArrayList<TrafficNetworkNode>();
-	trace_area_map.put(start_node, 0.0);
-	buf.add(start_node);
-	for(int i=0; trace_transfer.get(goal_node) == null; i++) {
-	    TrafficNetworkNode[] tmp = buf.toArray(new TrafficNetworkNode[0]);
-	    buf.clear();
-	    for(TrafficNetworkNode target : tmp) {
-		alert(tmp);
-		double distance = trace_area_map.get(target);
-		ArrayList<TrafficNetworkNode> neighbors = new ArrayList<TrafficNetworkNode>();
-		for(TrafficNetworkNode t : target.getNeighborNodes())
-		    neighbors.add(t);
-
-		// network shortcut
-		TrafficNetworkNode[] nbuf = neighbors.toArray(new TrafficNetworkNode[0]);
-		for(TrafficNetworkNode n : nbuf)
-		    if(n.correspondingAreaExists() && n.isSimulateAsOpenSpace()) {
-			for(TrafficNetworkNode t : n.getNeighborNodes())
-			    neighbors.add(t);
-		    }
-
-		for(TrafficNetworkNode n : neighbors) {
-		    double new_distance = distance + target.getDistance(n);
-		    
-		    if(target.getID().equals(start_node.getID()))
-			new_distance = n.getDistance(getX(), getY(), getZ());
-
-		    if(n.equals(goal_node))
-			if(final_destination_!=null)
-			    new_distance = distance + final_destination_.getDistance(target);
-			else
-			    new_distance = distance;
-		    if(trace_area_map.get(n)==null || new_distance<trace_area_map.get(n)) {
-			trace_area_map.put(n, new_distance);
-			trace_transfer.put(n, target);
-			buf.add(n);
-		    }
-		}
-	    }
-	    if(i>1000) throw new Exception("cannot trace to goal.(step>1000)");
-	}
-	buf.clear();
-	TrafficNetworkNode last = goal_node;
-	buf.add(last);
-	while(last!=start_node) {
-	    last = trace_transfer.get(last);
-	    buf.add(last);
-	}
-	StringBuffer sblog = new StringBuffer("[");
-	for(int i=0; i<buf.size(); i++) {
-	    sblog.append(buf.get(i).getID()+",");
-	}
-	sblog.append("]\n");
-	//log(sblog.toString());
-	//TrafficNetworkNode tnn = buf.get(buf.size()-3);
-	TrafficNetworkNode tnn = buf.get(buf.size()-2);
-	TrafficAreaNode tan = getManager().createAreaNode(tnn.getX(), tnn.getY(), tnn.getZ());
-	now_network_destination_ = new TrafficNetworkPoint(getManager(), tnn);
-	now_destination_ = tan;
-
-
-	if(is_network_mode_) {
-	    if(tnn.isSimulateAsOpenSpace()) {
-		// now_area_ = (TrafficArea)tnn.getCorrespondingObject();
-		is_network_mode_ = false;
-	    }else{
-		TrafficNetworkNode[] tnnn = tnn.getNeighborNodes();
-		TrafficNetworkNode ptnn = buf.get(buf.size()-1);
-		TrafficNetworkNode[] ptnnn = ptnn.getNeighborNodes();
-		if(ptnnn[0]==tnnn[0]||ptnnn[0]==tnnn[1]) {
-		    is_network_mode_ = !ptnnn[0].isSimulateAsOpenSpace();
-		}else if(ptnnn[1]==tnnn[0]||ptnnn[1]==tnnn[1]) {
-		    is_network_mode_ = !ptnnn[1].isSimulateAsOpenSpace();
-		}
-	    }
-	}else{
-	    is_network_mode_ = false;
-	}
-	if(is_network_mode_) {
-	    step_distance = 0;
-	    double distance = tnn.getDistance(start_node);
-	    step_distance_max = distance;
-	}else{
-	}
-	//System.out.println(now_destination_);
-    }
-    */
-
     private double step_distance = 0;
     private double step_distance_max = 1000;
+
     public void step(double dt) {
-	if(debug_mode_>0) dt = 10000; // debug mode
 	if(is_network_mode_) {
 	    step_distance += v_limit_*dt;
 	    if(debug_mode_>0 || step_distance>step_distance_max) { // debug mode
@@ -631,8 +472,8 @@ public class TrafficAgent extends TrafficObject {
 	    vy_ += dt*fy_;
 	    vz_ += dt*fz_;
 	    double v = Math.sqrt(vx_*vx_+vy_*vy_+vz_*vz_);
-	    if(v>1.0) {
-		v /= 1.0;
+	    if(v>v_limit_) {
+		v /= v_limit_;
 		vx_ /= v;
 		vy_ /= v;
 		vz_ /= v;
