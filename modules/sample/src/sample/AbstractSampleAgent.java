@@ -78,9 +78,11 @@ public abstract class AbstractSampleAgent<E extends StandardEntity> extends Stan
                 if (seen.contains(next)) {
                     continue;
                 }
+		/*
                 if (next instanceof Building && i < RANDOM_WALK_LENGTH - 1) {
                     continue;
                 }
+		*/
                 current = next;
                 found = true;
                 break;

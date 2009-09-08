@@ -739,7 +739,7 @@ public class WorldManagerGUI extends JComponent {
 	edit_menu.add(new JMenuItem(getSelectByIDAction()));
 	edit_menu.add(new JMenuItem(getSelectAgentGroupAction()));
 
-	JMenu devel_menu = new JMenu("Devel");
+	JMenu devel_menu = new JMenu("Debug");
 	devel_menu.setMnemonic(KeyEvent.VK_D);
 
 	devel_menu.add(simulate_);
@@ -840,7 +840,6 @@ public class WorldManagerGUI extends JComponent {
 	    g.setStroke(area_connector_edge_stroke_);
 
 	}
-
 
 	// fill area
 	if(!dragging_ && show_area_area_.isSelected()) {
@@ -1476,12 +1475,14 @@ public class WorldManagerGUI extends JComponent {
 			    };
 			TrafficObject[] all = world_manager_.getAll();//.toArray(new TrafficObject[0]);
 			TrafficAgent[] agent_list = world_manager_.getAgentList();
+			TrafficArea[] area_list = world_manager_.getAreaList();
 			StringBuffer sb = new StringBuffer();
 			sb.append("<html>");
 			sb.append("<div style='font-size:120%;'>Information</div>");
 			sb.append("<table>");
-			sb.append("<tr><td>the number of all objects</td><td>").append(all.length).append("</td></tr>");
-			sb.append("<tr><td></td><td>").append(agent_list.length).append("</td></tr>");
+			sb.append("<tr><td>Objects</td><td>").append(all.length).append("</td></tr>");
+			sb.append("<tr><td>Agents</td><td>").append(agent_list.length).append("</td></tr>");
+			sb.append("<tr><td>Areas</td><td>").append(area_list.length).append("</td></tr>");
 			sb.append("<table>");
 			sb.append("</html>");
 			ta.setText(sb.toString());
@@ -1498,6 +1499,7 @@ public class WorldManagerGUI extends JComponent {
 				    log_frame.dispose();
 				}
 			    }));
+
 			panel.add(sp, BorderLayout.CENTER);
 			panel.add(control_pane, BorderLayout.SOUTH);
 			log_frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -1607,6 +1609,7 @@ public class WorldManagerGUI extends JComponent {
 	//action.putValue("AcceleratorKey", KeyStroke.getKeyStroke(KeyEvent.VK_A, java.awt.event.InputEvent.CTRL_DOWN_MASK));
 	return action;
     }
+
     public Action getSelectAllAction(){
 	AbstractAction action = new AbstractAction("Select all Area"){
 		public void actionPerformed(ActionEvent e) {
