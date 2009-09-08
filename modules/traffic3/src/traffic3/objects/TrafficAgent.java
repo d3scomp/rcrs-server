@@ -55,8 +55,11 @@ public class TrafficAgent extends TrafficObject {
 	// radius_ = mm2map(500);
 	// radius_ = 200;
 <<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
+<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 	radius_ = 0.2; //[m]
 	v_limit_ = 10.0/9.0; //[m/s]
+=======
+>>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 =======
 >>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 	//v_limit_ = radius_*0.001*(Math.random()*0.5+0.5);
@@ -341,8 +344,13 @@ public class TrafficAgent extends TrafficObject {
 	    //double B = 100.0;
 	    //double k = 0.00000001;
 <<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
+<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 	    double A = 0.001;
 	    double B = 0.1;
+=======
+	    double A = 0.0001; //0.001
+	    double B = 200.0; //100
+>>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 =======
 	    double A = 0.0001; //0.001
 	    double B = 200.0; //100
@@ -375,7 +383,12 @@ public class TrafficAgent extends TrafficObject {
 	    }
 	}
 <<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
+<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 	if(Double.isNaN(sumwx) || Double.NaN(sumwy) || Double.NaN(sumwz))
+=======
+
+	if(Double.isNaN(sumwx) || Double.isNaN(sumwy) || Double.isNaN(sumwz))
+>>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 =======
 
 	if(Double.isNaN(sumwx) || Double.isNaN(sumwy) || Double.isNaN(sumwz))
