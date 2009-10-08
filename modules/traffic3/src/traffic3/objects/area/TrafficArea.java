@@ -127,15 +127,30 @@ public class TrafficArea extends TrafficObject {
 
     public void addBlockade(TrafficBlockade blockade) {
 	blockade_list_.add(blockade);
+
+	getNeighborWallList_CACHE = null;
+	for(TrafficArea na : getNeighborList())
+	    na.clearNeighborWallListCache();
     }
+
     public void removeBlockade(TrafficBlockade blockade) {
 	blockade_list_.remove(blockade);
+
+	getNeighborWallList_CACHE = null;
+	for(TrafficArea na : getNeighborList())
+	    na.clearNeighborWallListCache();
     }
+
     public void setBlockadeList(TrafficBlockade[] blockade_list) {
 	blockade_list_.clear();
 	for(TrafficBlockade blockade : blockade_list)
 	    blockade_list_.add(blockade);
+
+	getNeighborWallList_CACHE = null;
+	for(TrafficArea na : getNeighborList())
+	    na.clearNeighborWallListCache();
     }
+
     public TrafficBlockade[] getBlockadeList() {
 	return blockade_list_.toArray(new TrafficBlockade[0]);
     }
@@ -290,6 +305,7 @@ public class TrafficArea extends TrafficObject {
     public TrafficAreaEdge[] getUnConnectorEdgeList() {
 	return unconnector_list_.toArray(new TrafficAreaEdge[0]);
     }
+
     public Line2D[] getUnconnectedEdgeList() {
 	
 	/*
@@ -316,15 +332,24 @@ public class TrafficArea extends TrafficObject {
 	return line_list.toArray(new Line2D[0]);
     }
 
-    public Line2D[] getNeighborWallList() {
-	ArrayList<Line2D> list = new ArrayList<Line2D>();
-	for(Line2D line : getUnconnectedEdgeList())
-	    list.add(line);
-	for(TrafficArea na : getNeighborList())
-	    for(Line2D line : na.getUnconnectedEdgeList())
-	    list.add(line);
-	return list.toArray(new Line2D[0]);
+    volatile private Line2D[] getNeighborWallList_CACHE = null;
+    
+    public void clearNeighborWallListCache() {
+	getNeighborWallList_CACHE = null;
     }
+
+    public Line2D[] getNeighborWallList() {
+	if(getNeighborWallList_CACHE==null) {	
+	    ArrayList<Line2D> list = new ArrayList<Line2D>();
+	    for(Line2D line : getUnconnectedEdgeList())
+		list.add(line);
+	    for(TrafficArea na : getNeighborList())
+		for(Line2D line : na.getUnconnectedEdgeList())
+		    list.add(line);
+	    getNeighborWallList_CACHE = list.toArray(new Line2D[0]); 
+	}
+	return getNeighborWallList_CACHE;
+   }
 
     public TrafficArea[] getNeighborList() {
 	HashMap<String, TrafficArea> neighbor_area_list = new HashMap<String, TrafficArea>();
@@ -338,6 +363,7 @@ public class TrafficArea extends TrafficObject {
     public GeneralPath getShape() {
 	return shape_;
     }
+
     public boolean contains(double x, double y, double z) {
 	return shape_.contains(x, y);
     }
@@ -349,6 +375,7 @@ public class TrafficArea extends TrafficObject {
     public void addTrafficAreaListener(TrafficAreaListener listener) {
 	area_listener_list_.add(listener);
     }
+
     public void removeTrafficAreaListener(TrafficAreaListener listener) {
 	area_listener_list_.remove(listener);
     }

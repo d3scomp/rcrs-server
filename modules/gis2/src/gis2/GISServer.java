@@ -45,15 +45,14 @@ public class GISServer {
 
     public static void startProcess(File file1, File file2, int port) throws Exception {
 	
-	print("config file: " + file1.getAbsolutePath());
-	print("config file: " + file2.getAbsolutePath());
+	print("gis2.gml: " + file1.getAbsolutePath());
+	print("agent.xml: " + file2.getAbsolutePath());
 	print("waiting port: " + port);
-	System.err.println("started gis server");
+	System.err.println("start gis server");
 	HashMap<EntityID, Entity> pool = importFromFile(file1, file2);
 	checkObjects(pool);
 	System.out.println("BootGUI");
 	System.err.println("> now waiting for ECSKernel...");
-
 	startWaiting(port, pool);
 	System.err.println("> finished to send all the information.");
     }
@@ -65,7 +64,9 @@ public class GISServer {
 	final HashMap<EntityID, Entity> pool = new HashMap<EntityID, Entity>();
 	WorldManager world_manager = new WorldManager();
 	int unique_number = 1;
+	System.err.println("opening: "+file1);
 	world_manager.open(file1);
+	System.err.println("opening: "+file2);
 	world_manager.open(file2);
 
 	final WorldManagerGUI wmg = new WorldManagerGUI(world_manager);
@@ -117,9 +118,9 @@ public class GISServer {
 	for(TrafficArea traffic_area : area_list) {
 	    String gmlid = traffic_area.getID();
 	    EntityID rcrsid = getID(gmlid, gmlid_rcrsid_map);
-
 	    Area rcrs_area = null;
-	    if(traffic_area.getType().toLowerCase().equals("building"))
+	    String area_type = (traffic_area.getType()==null ? "area" : traffic_area.getType().toLowerCase());
+	    if(area_type.equals("building"))
 		rcrs_area = new Building(rcrsid);
 	    else
 		rcrs_area = new Area(rcrsid);

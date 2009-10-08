@@ -39,6 +39,7 @@ public class WorldManager {
 
     public WorldManager() {
 	Parser[] parser_list = new Parser[]{
+	    new RCRSGML0_0_0(),
 	    new RCRSGML1_0_0(),
 	    new RCRSAgent1_0_0(),
 	};
@@ -73,11 +74,11 @@ public class WorldManager {
 	//return type+(unique_++);
     }
 
-    public void appendWithoutCheck(TrafficObject[] tobject_list) throws Exception {
+    public void appendWithoutCheck(TrafficObject... tobject_list) throws Exception {
 	for(TrafficObject tobject : tobject_list)
 	    appendWithoutCheck(tobject);
+	fireAdded(this, tobject_list);
     }
-
 
     /**
      * Append TrafficObject without checking parameters.
@@ -85,21 +86,28 @@ public class WorldManager {
      * So you must call check() after inserting all the TrafficObjects.
      * @param tobject object that will be appended
      */
-    public synchronized void appendWithoutCheck(TrafficObject tobject) throws Exception {
+    public void appendWithoutCheck(TrafficObject tobject) throws Exception {
+	appendWithoutCheck_(tobject);
+	fireAdded(this, new TrafficObject[]{tobject});
+    }
+
+    private synchronized void appendWithoutCheck_(TrafficObject tobject) throws Exception {
 	String id = tobject.getID();
-	if(map_id_trafficobject_.get(id)!=null) throw new Exception("id["+id+"] already exists.");
+	if(map_id_trafficobject_.get(id)!=null)
+	    throw new Exception("id["+id+"] already exists.");
+
 	map_id_trafficobject_.put(id, tobject);
-	if(tobject instanceof TrafficArea)
+	if(tobject instanceof TrafficArea) {
 	    map_id_trafficarea_.put(id, (TrafficArea)tobject);
-	else if(tobject instanceof TrafficAreaNode)
+	} else if(tobject instanceof TrafficAreaNode) {
 	    map_id_trafficareanode_.put(id, (TrafficAreaNode)tobject);
-	else if(tobject instanceof TrafficAreaEdge)
+	} else if(tobject instanceof TrafficAreaEdge) {
 	    map_id_trafficareaedge_.put(id, (TrafficAreaEdge)tobject);
-	else if(tobject instanceof TrafficAgent)
+	} else if(tobject instanceof TrafficAgent) {
 	    synchronized(map_id_trafficagent_) {
 		map_id_trafficagent_.put(id, (TrafficAgent)tobject);
 	    }
-	else if(tobject instanceof TrafficBlockade) {
+	} else if(tobject instanceof TrafficBlockade) {
 	    map_id_trafficblockade_.put(id, (TrafficBlockade)tobject);
 	    tobject.addChangeListener(new ChangeListener(){
 		    public void stateChanged(ChangeEvent e) {
@@ -107,7 +115,7 @@ public class WorldManager {
 		    }
 		});
 	}
-	log("append: "+tobject);
+	//log("append: "+tobject);
     }
 
     public synchronized void remove(TrafficObject tobject) throws Exception {
@@ -116,6 +124,10 @@ public class WorldManager {
 	map_id_trafficobject_.remove(id);
 	if(tobject instanceof TrafficAgent) {
 	    synchronized(map_id_trafficagent_) {
+		TrafficAgent agent = (TrafficAgent)tobject;
+		TrafficArea area = agent.getArea();
+		if(area!=null)
+		    area.removeAgent(agent);
 		map_id_trafficagent_.remove(id);
 		System.err.println("warning: this operation is not safe.");
 	    }
@@ -165,17 +177,30 @@ public class WorldManager {
      * And this TrafficObjects create buf of neighbors instance at this time.
      */
     public void check() throws Exception {
+	ArrayList<Exception> exception_list = new ArrayList<Exception>();
 	Exception exc = null;
 	try{
 	    synchronized(map_id_trafficobject_) {
 		TrafficObject[] values = map_id_trafficobject_.values().toArray(new TrafficObject[0]);
-		for(int i=0; i<values.length; i++)
-		    values[i].checkObject();
+		for(int i=0; i<values.length; i++) {
+		    try{
+			values[i].checkObject();
+		    }catch(Exception exception){
+			exception_list.add(exception);
+		    }
+		}
 	    }
 	}catch(Exception e) {
 	    exc = e;
 	}
 	fireChanged(this, null);
+	if(exception_list.size()>0) {
+	    StringBuffer sb = new StringBuffer();
+	    for(Exception e : exception_list)
+		sb.append(e.getMessage()).append("\n");
+	    alert(sb, "error");
+	    throw new Exception(sb.toString());
+	}
 	if(exc != null) throw exc;
     }
 

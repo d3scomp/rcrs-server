@@ -14,75 +14,205 @@ import traffic3.manager.*;
 import static traffic3.log.Logger.log;
 import static traffic3.log.Logger.alert;
 
+/**
+ * 
+ */
 public class TrafficAgent extends TrafficObject {
-    
-    private int debug_mode_ = 0;
+   
+    /**
+     * Location.
+     */
     private double x_, y_, z_;
+
+    /**
+     * Velocity.
+     */
     private double vx_, vy_, vz_;
+
+    /**
+     * fource.
+     */
     private double fx_, fy_, fz_;
+
+    /**
+     * Radius.
+     */
     private double radius_;
+
+    /**
+     * Type.
+     */
     private String type_;
+
+    /**
+     * Color
+     */
     private Color color_;
 
-    // private TrafficNetworkPoint now_network_destination_;
-    private TrafficAreaNode now_destination_;
+    /**
+     * The destination that this agent wants to go.
+     */
     private TrafficAreaNode final_destination_;
+
+    /**
+     * 
+     */
+    private TrafficAreaNode now_destination_;
+
+    /**
+     * 
+     */
     private TrafficAreaEdge now_destination_edge_;
+
+    /**
+     * 
+     */
     private double v_limit_;
     // private double m_ = 10;
     // private TrafficNetworkPoint now_network_point_;
+
+    /**
+     * Now area that this agent is in.
+     * This field can be null, and it means this agent is not in any existed area.
+     */
     private TrafficArea now_area_;
+
+    /**
+     * Whether this agent is now network mode or area mode.
+     */
     private boolean is_network_mode_;
 
+    /**
+     * Constractor
+     * Id, radius, v_limit will automatically be set.
+     * radius: 200
+     * v_limit: 0.7+0.1*(Math.random()-0.5);
+     * @param world_manager
+     */
     public TrafficAgent(WorldManager world_manager) {
 	super(world_manager);
 	init();
     }
-    public TrafficAgent(WorldManager world_manager, String id) {
-	super(world_manager, id);
-	init();
+
+    /**
+     * Constractor
+     * 
+     * @param world_manager
+     * @param radius radius
+     * @param v_limit velicity limit
+     */
+    public TrafficAgent(WorldManager world_manager, double radius, double v_limit) {
+	super(world_manager);
+	init(radius, v_limit);
     }
 
+    /**
+     * Constractor
+     * @param id
+     * @param world_manager
+     * @param radius radius
+     * @param v_limit velicity limit
+     */
+    public TrafficAgent(WorldManager world_manager, String id, double radius, double v_limit) {
+	super(world_manager, id);
+	init(radius, v_limit);
+    }
+
+    /**
+     * Whether this agent is simulated as network model or area model
+     */
     public boolean isNetworkMode() {
 	return is_network_mode_;
     }
 
-
+    /**
+     * initialize by default parameter
+     */
     private void init() {
+	radius_ = 200; //[mm]
+	v_limit_ = 0.7 + 0.1*(Math.random()-0.5);
+	setColor(Color.green);
+    }
+
+    /**
+     * initialize by specified parameter
+     * @param radius
+     * @param v_limit
+     */
+    private void init(double radius, double v_limit) {
 	//v_limit_ = mm2map(0.1+Math.random()*0.4); // [mm/ms]
 	// radius_ = mm2map(300+400*Math.random());
 	// radius_ = mm2map(2000);
 	// radius_ = mm2map(500);
 	// radius_ = 200;
-<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-	radius_ = 0.2; //[m]
-	v_limit_ = 10.0/9.0; //[m/s]
-=======
->>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-=======
->>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
 	//v_limit_ = radius_*0.001*(Math.random()*0.5+0.5);
-	//v_limit_ = 0.5 + 0.1*(Math.random()-0.5);
 	//alert("vlimit: "+v_limit_);
-	radius_ = 0.2; //[m]
-	v_limit_ = 10.0/9.0; //[m/s]
+	//v_limit_ = 10.0/9.0; //[mm/ms]
+	
+	//radius_ = 200; //[mm]
+	//v_limit_ = 0.7 + 0.1*(Math.random()-0.5);
+
+	radius_ = radius;
+	v_limit_ = v_limit;
+	setColor(Color.green);
     }
 
-    public void setColor(Color color) {
-	color_ = color;
+
+    /**
+     * Get limit of velocity.
+     * @return limit of velocity.
+     */
+    public double getVLimit() {
+	return v_limit_;
     }
+
+    /**
+     * Set limit of velocity.
+     * @param v_limit limit of velocity.
+     */
+    public void setVLimit(double v_limit) {
+	v_limit_ = v_limit;
+    }
+    
+    /**
+     * Get color
+     * @return color
+     */
     public Color getColor() {
 	return color_;
     }
-    
+
+    /**
+     * Set color
+     */
+    public void setColor(Color color) {
+	color_ = color;
+    }
+
+    /**
+     * Log 
+     */
     private double total_distance_ = 0;
+
+    /**
+     * The Last area that agent is in, but except null.
+     */
+    private TrafficArea last_area_ = null;
+
+    /**
+     * 
+     */
     public void clearLogDistance() {
 	total_distance_ = 0;
     }
+
+    /**
+     * 
+     */
     public double getLogDistance() {
 	return total_distance_;
     }
+
     /*
     public void setLocation(TrafficNetworkPoint now_network_point) {
 	is_network_mode_ = true;
@@ -107,31 +237,65 @@ public class TrafficAgent extends TrafficObject {
     */
 
     public TrafficArea getArea() {
-	return now_area_;
+	if(now_area_!=null) {
+	    last_area_ = now_area_;
+	    return now_area_;
+	}
+	return last_area_;
     }
     
+    private ArrayList<Point2D> position_history = new ArrayList<Point2D>();
+    public boolean save_position_history_ = true;
+    public Point2D[] getPositionHistory() {
+	return position_history.toArray(new Point2D[0]);
+    }
+    public void clearPositionHistory() {
+	position_history.clear();
+    }
+
+    private int setLocation_count=0;
     public void setLocation(double x, double y, double z) {
+	setLocation_count++;
 	double dx = x-x_;
 	double dy = y-y_;
 	double dz = y-y_;
+
+	if(setLocation_count%60==0 && save_position_history_) {
+	    position_history.add(new Point2D.Double(x, y));
+	}
+
 	total_distance_ += Math.sqrt(dx*dx+dy*dy+dz*dz);
+
 	x_ = x;
 	y_ = y;
 	z_ = z;
 	if(now_area_==null || !now_area_.contains(x, y, z)) {
-	    TrafficArea area = getManager().findArea(x, y);
+	    TrafficArea area = null;
+	    if(now_area_!=null)
+		for(TrafficArea a : now_area_.getNeighborList())
+		    if(a.contains(x, y, z))
+			area = a;
+	    if(area==null)
+		area = getManager().findArea(x, y);
+
 	    if(area!=null) {
 		now_destination_ = null;
 		if(now_area_!=null)
 		    now_area_.removeAgent(this);
 		now_area_ = area;
-		area.addAgent(this);
+		now_area_.addAgent(this);
+		/*
 		if(now_area_ == null)
 		    is_network_mode_ = false;
 		else
 		    is_network_mode_ = !now_area_.isSimulateAsOpenSpace();
+		*/
 	    } else {
-		log("area is null!"+this);
+		if(now_area_!=null) {
+		    now_area_.removeAgent(this);
+		}
+		now_area_ = null;
+		log("cannot find area of agents: "+this);
 	    }
 	}
 	//now_network_point_ = null;
@@ -148,63 +312,77 @@ public class TrafficAgent extends TrafficObject {
     public void setRadius(double radius) {
 	radius_ = radius;
     }
+
     public double getRadius() {
 	return radius_;
     }
+
     public void setDestination(TrafficAreaNode destination) {
 	final_destination_ = destination;
 	now_destination_ = null;
 	//TrafficArea goal = getManager().findArea(destination.getX(), destination.getY());
 	plan();
     }
+
     public TrafficAreaNode getFinalDestination() {
 	return final_destination_;
     }
-    public TrafficAreaNode getNextDestination() {
+
+    public TrafficAreaNode getNowDestination() {
 	return now_destination_;
     }
-    /*
-    public static double map2mm(double map) {
-        return 40000000000.0*map/360.0;
-    }
-    public static double mm2map(double mm) {
-	return 360.0*mm/40000000000.0;
-    }
-    */
 
     public void plan() {
-	plan_area();
-    }
-    /*
-    public void plan_network() {
-
+	
 	if(now_destination_ == null)
 	    try{
 		planDestination();
 	    }catch(Exception e){ alert(e, "error"); }
+
+	if(is_network_mode_)
+	    plan_network();
+	else
+	    plan_area();
+    }
+
+    public void plan_network() {
+
 	fx_ = 0;
 	fy_ = 0;
 	fz_ = 0;
+	throw new RuntimeException("not supported network mode");
     }
-    */
+
+    private final double[] dest = new double[3];
+    private final double[] sumop = new double[3];
+    private final double[] sumw = new double[3];
+
     public void plan_area() {
+	calcDestinationForce(dest);
+	calcAgentsForce(sumop);
+	calcWallsForce(sumw);
 
-	if(now_destination_ == null)
-	    try{
-		planDestination();
-	    }catch(Exception e){ alert(e, "error"); }
-	//	if(destination_ == null) return ;
+	fx_ = dest[0] + sumop[0] + sumw[0];
+	fy_ = dest[1] + sumop[1] + sumw[1];
+	fz_ = dest[2] + sumop[2];
 
-	if(is_network_mode_) return ;
-	
+	if(Double.isNaN(fx_) || Double.isNaN(fy_) || Double.isNaN(fz_)) {
+	    System.err.println("plan_area(): force is NaN!");
+	    fx_=fy_=fz_=0;
+	}
+    }
+
+
+    private double[] calcDestinationForce(double[] dest) {
+
 	double destx = 0;
 	double desty = 0;
 	double destz = 0;
 	if(now_destination_!=null) {
 	    double dx = now_destination_.getX()-x_;
 	    double dy = now_destination_.getY()-y_;
-	    double dz = now_destination_.getZ()-z_;
-	    double dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+	    //double dz = now_destination_.getZ()-z_;
+	    double dist = Math.sqrt(dx*dx+dy*dy);
 
 	    if(now_destination_!=final_destination_ && now_destination_edge_!=null && dist<now_destination_edge_.length()/2) {
 		double edist = now_destination_edge_.distance(x_, y_);
@@ -212,197 +390,286 @@ public class TrafficAgent extends TrafficObject {
 		TrafficAreaNode n2 = now_destination_edge_.getDirectedNodes()[1];
 		double ndx = (n1.getX()-n2.getX());
 		double ndy = (n1.getY()-n2.getY());
-		double ndz = (n1.getZ()-n2.getZ());
-		double ndist = Math.sqrt(ndx*ndx+ndy*ndy+ndz*ndz);
+		//double ndz = (n1.getZ()-n2.getZ());
+		double ndist = Math.sqrt(ndx*ndx+ndy*ndy);
 		ndx /= ndist;
 		ndy /= ndist;
-		ndz /= ndist;
+		//ndz /= ndist;
 		
 		double cdx = x_ - n2.getX();
 		double cdy = y_ - n2.getY();
-		double cdz = z_ - n2.getZ();
-		double dd = cdx*ndx + cdy*ndy + cdz*ndz;
+		//double cdz = z_ - n2.getZ();
+		double dd = cdx*ndx + cdy*ndy;
 		
 		dx = dd*ndx-cdx;
 		dy = dd*ndy-cdy;
-		dz = dd*ndz-cdz;
 
-		dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
-
+		assert !(dx==0 && dy==0);
+		//dz = dd*ndz-cdz;
+		dist = Math.sqrt(dx*dx+dy*dy);
 	    }
-	    dx /= dist;
-	    dy /= dist;
-	    dz /= dist;
-
+	    if(dist == 0) {
+		dx = 0;
+		dy = 0;
+	    } else {
+		dx /= dist;
+		dy /= dist;
+		//dz /= dist;
+	    }
 
 	    if(now_destination_ == final_destination_) {
 		dx = Math.min(v_limit_, 0.001*dist)*dx;
 		dy = Math.min(v_limit_, 0.001*dist)*dy;
-		dz = Math.min(v_limit_, 0.001*dist)*dz;
+		//dz = Math.min(v_limit_, 0.001*dist)*dz;
 	    } else {
-		dx = v_limit_*dx;
-		dy = v_limit_*dy;
-		dz = v_limit_*dz;
+		dx = (1.0)*dx;
+		dy = (1.0)*dy;
+		//dz = (1.0)*dz;
 	    }
 
 	    //destx = 0.0001*(dx-vx_);
 	    //desty = 0.0001*(dy-vy_);
 	    //destz = 0.0001*(dz-vz_);
-
-	    destx = 0.1*(dx-vx_);
-	    desty = 0.1*(dy-vy_);
-	    destz = 0.1*(dz-vz_);
+	    
+	    destx = 0.0002*(dx-vx_);
+	    desty = 0.0002*(dy-vy_);
+	    //destz = 0.0004*(dz-vz_);
+	    assert (!Double.isNaN(vx_) && !Double.isNaN(vy_));
+	    assert (!Double.isNaN(destx) && !Double.isNaN(desty));
 	} else {
-	    destx = 0.1*(-vx_);
-	    desty = 0.1*(-vy_);
-	    destz = 0.1*(-vz_);
+	    destx = 0.0001*(-vx_);
+	    desty = 0.0001*(-vy_);
+	    //destz = 0.0001*(-vz_);
+	    assert (!Double.isNaN(destx) && !Double.isNaN(desty));
 	}
-	if(Double.isNaN(destx) || Double.isNaN(desty) || Double.isNaN(destz))
-	    destx=desty=destz=0;
 
-	// for agents
+	/*
+	if(Double.isNaN(destx) || Double.isNaN(desty)) {
+	    try{throw new Exception("NaN");}catch(Exception e){e.printStackTrace();}
+	    destx=desty=0;
+	}
+	*/
+	dest[0] = destx;
+	dest[1] = desty;
+	dest[2] = 0;
+	return dest;
+    }
+
+
+
+
+
+
+
+    private final double AGENT_A = 0.0001;
+    private final double AGENT_B = 1000.0;
+    private final double AGENT_K = 0.000001;
+    private final double RANDOM_X = Math.random();
+    private final double RANDOM_Y = Math.random();
+    
+    private double[] calcAgentsForce(double[] sumop) {
+
 	double sumopx = 0;
 	double sumopy = 0;
 	double sumopz = 0;
-	{
-	    //double A = 0.000004;
-	    //double B = 1000.0;
-	    //double k = 0.0000005;
-	    double A = 0.000007;
-	    double B = 1.0;
-	    double k = 0.000001;
 
-	    ArrayList<TrafficAgent> agent_list_pickup = new ArrayList<TrafficAgent>();
-	    for(TrafficAgent agent : now_area_.getAgentList())
+	if(now_area_==null) {
+	    Arrays.fill(sumop, 0);
+	    return sumop;
+	}
+
+	/*
+	ArrayList<TrafficAgent> agent_list_pickup = new ArrayList<TrafficAgent>();
+	for(TrafficAgent agent : now_area_.getAgentList())
+	    agent_list_pickup.add(agent);
+	
+	//<?> this block should be fixed!
+	for(TrafficArea area : now_area_.getNeighborList())
+	    for(TrafficAgent agent : area.getAgentList())
 		agent_list_pickup.add(agent);
-	    for(TrafficArea area : now_area_.getNeighborList())
-		for(TrafficAgent agent : area.getAgentList())
-		    agent_list_pickup.add(agent);
+	*/
+		
+	//	TrafficAgent[] agent_list = agent_list_pickup.toArray(new TrafficAgent[0]);
+	//for(int i=0; i<agent_list.length; i++) {
 
-	    TrafficAgent[] agent_list = agent_list_pickup.toArray(new TrafficAgent[0]);
+	TrafficArea[] area_list = now_area_.getNeighborList();
+	for(int j=-1; j<area_list.length; j++) {
+	    TrafficAgent[] agent_list = null;
+	    if(j==-1) {
+		agent_list = now_area_.getAgentList();
+	    } else {
+		agent_list = area_list[j].getAgentList();
+	    }
+	    double opdx, opdy;
 	    for(int i=0; i<agent_list.length; i++) {
-		if(agent_list[i]==this) continue;
-		if(agent_list[i].isNetworkMode()) continue;
 		TrafficAgent op = agent_list[i];
+		if(op==this) continue;
+		opdx = op.getX()-x_;
+		if(opdx<-3000 || 3000<opdx) continue;
+		opdy = op.getY()-y_;
+		if(opdy<-3000 || 3000<opdy) continue;
+		//double opdz = op.getZ() - z_;
 		double r = radius_ + op.getRadius();
-		double opdx = op.getX() - x_;
-		double opdy = op.getY() - y_;
-		double opdz = op.getZ() - z_;
-		if(Double.isInfinite(opdx)||Double.isInfinite(opdy)) {
-		    log("infinity:"+x_+","+op.getX());
-		    sumopx += r*0.00001*(Math.random()-0.5);
-		    sumopy += r*0.00001*(Math.random()-0.5);
+		
+		double opdist2 = opdx*opdx + opdy*opdy;
+		if(opdist2 == 0) {
+		    sumopx += 0.001*(RANDOM_X-0.5);
+		    sumopy += 0.001*(RANDOM_Y-0.5);
 		    continue;
 		}
-		double opdist = Math.sqrt(opdx*opdx+opdy*opdy+opdz*opdz);
-		if(opdist==0||Double.isInfinite(opdist)) {
-		    sumopx += r*0.00001*(Math.random()-0.5);
-		    sumopy += r*0.00001*(Math.random()-0.5);
-		    continue;
-		}
+		double opdist = Math.sqrt(opdist2);
+		
 		double opdxn = opdx/opdist;
 		double opdyn = opdy/opdist;
-		double opdzn = opdz/opdist;
-		double opp = r-opdist;
-		double dopx = -A*Math.exp(opp/B)*opdxn;
-		double dopy = -A*Math.exp(opp/B)*opdyn;
-		if(!Double.isInfinite(dopx) && !Double.isInfinite(dopy)) {
-		    sumopx += dopx;
-		    sumopy += dopy;
+		//double opdzn = opdz/opdist;
+		double opp = r - opdist;
+		
+		double tmp = -AGENT_A*Math.exp(opp/AGENT_B);
+		if(Double.isInfinite(tmp)) {
+		    System.out.println("calculateAgentsForce(): A result of exp is infinite: exp("+(opp/AGENT_B)+")");
+		} else {
+		    sumopx += tmp*opdxn;
+		    sumopy += tmp*opdyn;
 		}
 		if(opp>0) {
-		    sumopx += -k*(opp)*opdxn;
-		    sumopy += -k*(opp)*opdyn;
-		    sumopz += -k*(opp)*opdzn;
+		    sumopx += -AGENT_K*(opp)*opdxn;
+		    sumopy += -AGENT_K*(opp)*opdyn;
+		    //sumopz += -WALL_K*(opp)*opdzn;
 		}
-		if(Double.isInfinite(sumopx))
-		    log(k+","+opp+","+opdxn+":"+-k*(opp)*opdxn);
 	    }
 	}
+	
+	double d2 = sumopx*sumopx+sumopy*sumopy;
+	//double d = Math.sqrt(sumopx*sumopx+sumopy*sumopy+sumopz*sumopz);
+	double lim = 0.0001;
+	double lim2 = 0.00000001;
+	if(d2>lim2) {
+	    //System.out.println("limit force: "+d2);
+	    double lpd = 0.001/Math.sqrt(d2);
+	    sumopx *= lpd;
+	    sumopy *= lpd;
+	    //sumopz *= lim/d;
+	}
 
-	if(Double.isNaN(sumopx) || Double.isNaN(sumopy) || Double.isNaN(sumopz)) {
-	    sumopx=sumopy=sumopz=0;
-	}
-	double d = Math.sqrt(sumopx*sumopx+sumopy*sumopy+sumopz*sumopz);
-	double lim = 0.001;
-	if(d>lim) {
-	    System.out.println(d);
-	    sumopx *= lim/d;
-	    sumopy *= lim/d;
-	    sumopz *= lim/d;
-	}
+	assert (!Double.isNaN(sumopx) && !Double.isNaN(sumopy));
+
+	sumop[0]=sumopx;
+	sumop[1]=sumopy;
+	sumop[2]=0;
+	return sumop;
+    }
+
+    
+    private final double WALL_A = 0.005; //0.001
+    private final double WALL_B = 100.0; //100
+    private final double WALL_K = 0.00001;
+    private final double WALL_WIDTH = 0;
+
+    private double[] calcWallsForce(double[] sumw) {
 
 	//for wall
 	double sumwx = 0;
 	double sumwy = 0;
 	double sumwz = 0;
 	if(now_area_!=null){
-	    //double A = 0.00005;
-	    //double B = 100.0;
-	    //double k = 0.00001;
-	    //double A = 0.00001;
-	    //double B = 100.0;
-	    //double k = 0.00000001;
-<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-	    double A = 0.001;
-	    double B = 0.1;
-=======
-	    double A = 0.0001; //0.001
-	    double B = 200.0; //100
->>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-=======
-	    double A = 0.0001; //0.001
-	    double B = 200.0; //100
->>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-	    double k = 0.00001;
-	    double r = getRadius();
-	    TrafficArea area = now_area_;
-	    if(area!=null){
-		Line2D[] line_list = area.getNeighborWallList();
-		for(int j=0; j<line_list.length ; j++) {
-		    Point2D p1 = line_list[j].getP1();
-		    Point2D p2 = line_list[j].getP2();
-		    double p1_dist = p1.distance(x_, y_);
-		    double p2_dist = p2.distance(x_, y_);
-		    double p12_dist = p1_dist+p2_dist;
-		    p1_dist /= p12_dist;
-		    p2_dist /= p12_dist;
-		    double wdx = (p1.getX()*p2_dist+p2.getX()*p1_dist)-x_;
-		    double wdy = (p1.getY()*p2_dist+p2.getY()*p1_dist)-y_;
-		    double wdist = Math.sqrt(wdx*wdx + wdy*wdy);
-		    double wdxn = wdx/Math.abs(wdist);
-		    double wdyn = wdy/Math.abs(wdist);
-		    sumwx += -A*Math.exp((r-wdist)/B)*wdxn;
-		    sumwy += -A*Math.exp((r-wdist)/B)*wdyn;
-		    if(wdist < getRadius()) {
-			sumwx += -k*(r-wdist)*wdxn;
-			sumwy += -k*(r-wdist)*wdyn;
+	    Line2D[] line_list = now_area_.getNeighborWallList();
+	    double r = getRadius()+WALL_WIDTH;
+	    double dx, dy, dist;
+	    
+	    for(int j=0; j<line_list.length ; j++) {
+
+		Point2D p1 = line_list[j].getP1();
+		Point2D p2 = line_list[j].getP2();
+		double p1p2_x = p2.getX() - p1.getX();
+		double p1p2_y = p2.getY() - p1.getY();
+		double p1p_x =  x_        - p1.getX();
+		double p1p_y =  y_        - p1.getY();
+		double p1p2_dist = Math.sqrt(p1p2_x*p1p2_x + p1p2_y*p1p2_y);
+		if(p1p2_dist == 0) continue;
+		double d = (p1p2_x*p1p_x + p1p2_y*p1p_y) / p1p2_dist;
+		if(d<0) {
+		    dist = p1.distance(x_, y_)-r;
+		    dx = (x_ - p1.getX())/dist/2;
+		    dy = (y_ - p1.getY())/dist/2;
+		} else if(p1p2_dist<d) {
+		    dist = p2.distance(x_, y_)-r;
+		    dx = (x_ - p2.getX())/dist/2;
+		    dy = (y_ - p2.getY())/dist/2;
+		} else {
+		    double p1p2_nx = p1p2_x/p1p2_dist;
+		    double p1p2_ny = p1p2_y/p1p2_dist;
+		    dx = -d*p1p2_nx + p1p_x;
+		    dy = -d*p1p2_ny + p1p_y;
+		    dist = Math.sqrt(dx*dx+dy*dy)-r;
+		    dx /= dist;
+		    dy /= dist;
+		    if(Double.isNaN(dist)) {
+			System.out.println("c: NaN: Math.sqrt("+(dx*dx+dy*dy)+"): "+dx+","+dy+": "+p1p2_dist);
 		    }
 		}
+
+		if(dist>3000) continue;
+		
+		if(dist<0) {
+		    //System.out.println("mark@");
+		    sumwx += WALL_K*(dist)*dx;
+		    sumwy += WALL_K*(dist)*dy;
+		} else {
+		    
+		    double tmp = WALL_A*Math.exp(-(dist)/WALL_B);
+		    if(Double.isInfinite(tmp)) {
+			System.out.println("calculateWallForce(): A result of exp is infinite: exp("+(-(dist)/WALL_B)+")");
+		    } else if(Double.isNaN(tmp)) {
+			System.out.println("calculateWallForce(): A result of exp is NaN: exp("+(-(dist)/WALL_B)+")");
+		    } else {
+			sumwx += tmp*dx;
+			sumwy += tmp*dy;
+		    }
+		}
+
+
+		    
+		
+		/*
+		Point2D p1 = line_list[j].getP1();
+		Point2D p2 = line_list[j].getP2();
+		double p1_dist = p1.distance(x_, y_);
+		double p2_dist = p2.distance(x_, y_);
+		double p12_dist = p1_dist+p2_dist;
+		p1_dist /= p12_dist;
+		p2_dist /= p12_dist;
+		double wdx = (p1.getX()*p2_dist+p2.getX()*p1_dist)-x_;
+		double wdy = (p1.getY()*p2_dist+p2.getY()*p1_dist)-y_;
+		double wdist = Math.sqrt(wdx*wdx + wdy*wdy);
+		double wdxn = wdx/wdist;
+		double wdyn = wdy/wdist;
+		if(wdist < r) {
+		    sumwx += -WALL_K*(r-wdist)*wdxn;
+		    sumwy += -WALL_K*(r-wdist)*wdyn;
+		} else {
+		    double tmp = -WALL_A*Math.exp((r-wdist)/WALL_B);
+		    sumwx += tmp*wdxn;
+		    sumwy += tmp*wdyn;
+		}
+		*/
 	    }
 	}
-<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-<<<<<<< Updated upstream:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-	if(Double.isNaN(sumwx) || Double.NaN(sumwy) || Double.NaN(sumwz))
-=======
+	if(!Double.isNaN(sumwx) && !Double.isNaN(sumwy)) {
 
-	if(Double.isNaN(sumwx) || Double.isNaN(sumwy) || Double.isNaN(sumwz))
->>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-=======
+	} else {
+	    sumwx = 0;
+	    sumwy = 0;
+	}
+	assert (!Double.isNaN(sumwx) && !Double.isNaN(sumwy));
 
-	if(Double.isNaN(sumwx) || Double.isNaN(sumwy) || Double.isNaN(sumwz))
->>>>>>> Stashed changes:modules/traffic3/src/traffic3/objects/TrafficAgent.java
-	    sumwx=sumwy=sumwz=0;
-
-	fx_ = destx + sumopx + sumwx;
-	fy_ = desty + sumopy + sumwy;
-	fz_ = destz + sumopz;
-
-	if(Double.isNaN(fx_) || Double.isNaN(fy_) || Double.isNaN(fz_))
-	    fx_=fy_=fz_=0;
-	// log(fx_);
+	sumw[0] = sumwx;
+	sumw[1] = sumwy;
+	sumw[2] = sumwz;
+	return sumw;
     }
+
+
+
 
 
     private void planDestination() throws Exception {
@@ -492,10 +759,7 @@ public class TrafficAgent extends TrafficObject {
     public void step(double dt) {
 	if(is_network_mode_) {
 	    step_distance += v_limit_*dt;
-	    if(debug_mode_>0 || step_distance>step_distance_max) { // debug mode
-		// alert("network step: "+now_network_destination_);
-		throw new RuntimeException("not supported yet");
-	    } // debug mode
+
 	    vx_ = vy_ = vz_ = fx_ = fy_ = fz_ = 0;
 	} else {
 	    double x = x_ + dt*vx_;
@@ -506,6 +770,7 @@ public class TrafficAgent extends TrafficObject {
 	    vz_ += dt*fz_;
 	    double v = Math.sqrt(vx_*vx_+vy_*vy_+vz_*vz_);
 	    if(v>v_limit_) {
+		//System.out.println("v limit");
 		v /= v_limit_;
 		vx_ /= v;
 		vy_ /= v;
