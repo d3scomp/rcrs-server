@@ -4,6 +4,7 @@ import rescuecore2.worldmodel.EntityID;
 import rescuecore2.worldmodel.WorldModel;
 import rescuecore2.worldmodel.Property;
 import rescuecore2.worldmodel.properties.IntProperty;
+import rescuecore2.worldmodel.properties.IntArrayProperty;
 import rescuecore2.worldmodel.properties.EntityRefProperty;
 import rescuecore2.worldmodel.properties.EntityRefListProperty;
 import rescuecore2.misc.Pair;
@@ -18,7 +19,7 @@ public abstract class Human extends StandardEntity {
     private IntProperty x;
     private IntProperty y;
     private EntityRefProperty position;
-    private EntityRefListProperty positionHistory;
+    private IntArrayProperty positionHistory;
     private IntProperty travelDistance;
     private IntProperty direction;
     private IntProperty stamina;
@@ -161,7 +162,7 @@ public abstract class Human extends StandardEntity {
        Get the position history property.
        @return The position history property.
      */
-    public EntityRefListProperty getPositionHistoryProperty() {
+    public IntArrayProperty getPositionHistoryProperty() {
         return positionHistory;
     }
 
@@ -169,7 +170,7 @@ public abstract class Human extends StandardEntity {
        Get the position history.
        @return The position history.
      */
-    public List<EntityID> getPositionHistory() {
+    public int[] getPositionHistory() {
         return positionHistory.getValue();
     }
 
@@ -177,7 +178,7 @@ public abstract class Human extends StandardEntity {
        Set the position history.
        @param history The new position history.
     */
-    public void setPositionHistory(List<EntityID> history) {
+    public void setPositionHistory(int[] history) {
         this.positionHistory.setValue(history);
     }
 

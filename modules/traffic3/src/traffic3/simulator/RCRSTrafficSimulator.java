@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
+import java.awt.geom.Point2D;
 
 import traffic3.manager.*;
 import traffic3.objects.area.*;
@@ -87,8 +88,10 @@ public class RCRSTrafficSimulator {
 			try{
 			    c.sendMessage(new SKAcknowledge(request_id_, simulator_id_));
 			} catch(Exception e) {
+			    log(e);
 			    e.printStackTrace();
 			}
+			alert("\n[initialized]\n");
 		    } else if(state_==1 && msg instanceof Commands) {
 			Commands com = (Commands)msg;
 			log(com);
@@ -121,6 +124,7 @@ public class RCRSTrafficSimulator {
 				    TrafficAreaNode node = world_manager_.createAreaNode(blockade.getCenterX(), blockade.getCenterY(), 0);
 				    agent.setDestination(node);
 				}catch(Exception exc) {
+				    log(exc);
 				    exc.printStackTrace();
 				}
 			    } else if(command instanceof AKLoad) {
@@ -138,7 +142,16 @@ public class RCRSTrafficSimulator {
 			for(Human human : agent_list_) {
 			    TrafficAgent agent = human_trafficagent_map_.get(human.getID());
 			    EntityID id = transID(agent.getArea().getID());
+			    Point2D[] p_list = agent.getPositionHistory();
+			    int[] rcrs_p_list = new int[p_list.length*2];
+			    for(int i=0; i<p_list.length; i++) {
+				Point2D p = p_list[i];
+				rcrs_p_list[i*2] = (int)p.getX();
+				rcrs_p_list[i*2+1] = (int)p.getY();
+			    }
+			    agent.clearPositionHistory();
 			    human.setPosition(id, (int)agent.getX(), (int)agent.getY());
+			    human.setPositionHistory(rcrs_p_list);
 			    update_list_.add(human);
 			}
 
@@ -146,6 +159,7 @@ public class RCRSTrafficSimulator {
 			    c.sendMessage(new SKUpdate(simulator_id_, rcrs_time_, update_list_));
 			    update_list_.clear();
 			}catch(Exception e) {
+			    log(e);
 			    e.printStackTrace();
 			}
 		    } else if(state_==2 && msg instanceof Update) {
@@ -177,6 +191,7 @@ public class RCRSTrafficSimulator {
 					    try{
 						world_manager_.remove(blockade);
 					    }catch(Exception exc){
+						log(exc);
 						exc.printStackTrace();
 					    }
 					}
@@ -240,6 +255,7 @@ public class RCRSTrafficSimulator {
 		    agent.setType("Civilian");
 		    agent.setRadius(200);
 		    agent.setColor(Color.green);
+		    agent.setVLimit(0.2+(Math.random()*0.02));
 		} else if(human instanceof FireBrigade) {
 		    agent.setType("FireBrigade");
 		    agent.setRadius(500);
@@ -292,6 +308,7 @@ public class RCRSTrafficSimulator {
 	last_time_ = step_start_;
 	//int length = (int)(1000*60/dt_);
 	int length = (int)(1000*60/dt_)*10;
+
 	for(int i=0; i<length; i++)
 	    step(); 
 	step_end_ = System.currentTimeMillis();
@@ -303,7 +320,7 @@ public class RCRSTrafficSimulator {
 	sb.append("<table>");
 	sb.append("<tr><td>step</td><td>"+(step_end_-step_start_)+"[ms]("+length+"[step])</td></tr>");
 	sb.append("<tr><td>calculate force</td><td>"+(plan_sum_)+"[ms]</td></tr>");
-	sb.append("<tr><td>move</td><td>"+(step_sum_)+"[ms]</td></tr>");
+	sb.append("<tr><td>move agents</td><td>"+(step_sum_)+"[ms]</td></tr>");
 	sb.append("<tr><td>draw</td><td>"+(draw_sum_)+"[ms]</td></tr>");
 	sb.append("</table>");
 	sb.append("</html>");
