@@ -1,0 +1,181 @@
+package maps.gml.formats;
+
+import maps.gml.GMLMap;
+import maps.gml.GMLCoordinates;
+import maps.gml.GMLBuilding;
+import maps.gml.GMLRoad;
+import maps.gml.GMLSpace;
+import maps.gml.MapFormat;
+
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.dom4j.Text;
+import org.dom4j.Namespace;
+import org.dom4j.QName;
+import org.dom4j.XPath;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.StringTokenizer;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
+import rescuecore2.misc.gui.ShapeDebugFrame;
+import java.awt.Color;
+import maps.gml.debug.GMLShapeInfo;
+
+// TODO: Handle inner boundaries
+
+public final class OrdnanceSurveyFormat implements MapFormat {
+    private static final Logger LOG = LogManager.getLogger(OrdnanceSurveyFormat.class);
+
+    private static final String FEATURE_CODE_BUILDING = "10021";
+    private static final String FEATURE_CODE_ROAD = "10172";
+    private static final String FEATURE_CODE_FOOTPATH = "10183";
+
+    private static final String FEATURE_CODE_OPEN_SPACE = "10053";
+    private static final String FEATURE_CODE_GENERAL_SPACE = "10056";
+
+    private static final String OSGB_NAMESPACE_URI = "http://www.ordnancesurvey.co.uk/xml/namespaces/osgb";
+
+    private static final Namespace OSGB_NAMESPACE = DocumentHelper.createNamespace("osgb", OSGB_NAMESPACE_URI);
+
+    private static final QName FEATURE_COLLECTION_QNAME = DocumentHelper.createQName("FeatureCollection", OSGB_NAMESPACE);
+    private static final QName TOPOGRAPHIC_AREA_QNAME = DocumentHelper.createQName("TopographicArea", OSGB_NAMESPACE);
+
+    private static final XPath BUILDING_XPATH = DocumentHelper.createXPath("//osgb:topographicMember/osgb:TopographicArea[osgb:featureCode[text()='" + FEATURE_CODE_BUILDING + "']]");
+    private static final XPath ROAD_XPATH = DocumentHelper.createXPath("//osgb:topographicMember/osgb:TopographicArea[osgb:featureCode[text()='" + FEATURE_CODE_ROAD + "' or text()='" + FEATURE_CODE_FOOTPATH + "']]");
+    private static final XPath SPACE_XPATH = DocumentHelper.createXPath("//osgb:topographicMember/osgb:TopographicArea[osgb:featureCode[text()='" + FEATURE_CODE_OPEN_SPACE + "' or text()='" + FEATURE_CODE_GENERAL_SPACE + "']]");
+    private static final XPath SHAPE_XPATH = DocumentHelper.createXPath("osgb:polygon/gml:Polygon/gml:outerBoundaryIs/gml:LinearRing/gml:coordinates");
+
+    // Map from uri prefix to uri for XPath expressions
+    private static final Map<String, String> URIS = new HashMap<String, String>();
+
+    private static final Color NEW_BUILDING_COLOUR = new Color(255, 0, 0, 128);
+    private static final Color NEW_ROAD_COLOUR = new Color(255, 0, 0, 128);
+    private static final Color BUILDING_COLOUR = new Color(0, 128, 0, 128);
+    private static final Color ROAD_COLOUR = new Color(128, 128, 128, 128);
+
+    private ShapeDebugFrame debug;
+    private List<GMLShapeInfo> background;
+
+    static {
+        URIS.put("gml", Common.GML_NAMESPACE_URI);
+        URIS.put("xlink", Common.XLINK_NAMESPACE_URI);
+        URIS.put("osgb", OSGB_NAMESPACE_URI);
+
+        BUILDING_XPATH.setNamespaceURIs(URIS);
+        ROAD_XPATH.setNamespaceURIs(URIS);
+        SPACE_XPATH.setNamespaceURIs(URIS);
+        SHAPE_XPATH.setNamespaceURIs(URIS);
+    }
+
+    public OrdnanceSurveyFormat() {
+        debug = new ShapeDebugFrame();
+        background = new ArrayList<GMLShapeInfo>();
+        debug.setBackground(background);
+    }
+
+    @Override
+    public String toString() {
+        return "Ordnance survey";
+    }
+
+    @Override
+    public boolean looksValid(Document doc) {
+        Element root = doc.getRootElement();
+        return root.getQName().equals(FEATURE_COLLECTION_QNAME);
+    }
+
+    @Override
+    public GMLMap read(Document doc) {
+        GMLMap result = new GMLMap();
+        readBuildings(doc, result);
+        readRoads(doc, result);
+        readSpaces(doc, result);
+        return result;
+    }
+
+    @Override
+    public Document write(GMLMap map) {
+        // Not implemented
+        throw new RuntimeException("OrdnanceSurveyFormat.write not implemented");
+    }
+
+    private void readBuildings(Document doc, GMLMap result) {
+        for (Object next : BUILDING_XPATH.selectNodes(doc)) {
+            LOG.debug("Found building element: " + next);
+            Element e = (Element)next;
+            String fid = e.attributeValue("fid");
+            long id = Long.parseLong(fid.substring(4)); // Strip off the 'osgb' prefix
+            // Find the boundary shape
+            List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
+            String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();
+            StringTokenizer tokens = new StringTokenizer(coordinatesString, " ");
+            while (tokens.hasMoreTokens()) {
+                String token = tokens.nextToken();
+                int index = token.indexOf(",");
+                String first = token.substring(0, index).trim();
+                String second = token.substring(index + 1).trim();
+                outline.add(new GMLCoordinates(Double.parseDouble(first), Double.parseDouble(second)));
+            }
+            GMLBuilding b = new GMLBuilding(id, outline);
+            result.addBuilding(b);
+            debug.show("New building", new GMLShapeInfo(b, "New building", Color.BLACK, NEW_BUILDING_COLOUR));
+            background.add(new GMLShapeInfo(b, "Buildings", Color.BLACK, BUILDING_COLOUR));
+        }
+    }
+
+    private void readRoads(Document doc, GMLMap result) {
+        debug.activate();
+        for (Object next : ROAD_XPATH.selectNodes(doc)) {
+            LOG.debug("Found road element: " + next);
+            Element e = (Element)next;
+            String fid = e.attributeValue("fid");
+            long id = Long.parseLong(fid.substring(4)); // Strip off the 'osgb' prefix
+            // Find the boundary shape
+            List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
+            String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();
+            StringTokenizer tokens = new StringTokenizer(coordinatesString, " ");
+            while (tokens.hasMoreTokens()) {
+                String token = tokens.nextToken();
+                int index = token.indexOf(",");
+                String first = token.substring(0, index).trim();
+                String second = token.substring(index + 1).trim();
+                outline.add(new GMLCoordinates(Double.parseDouble(first), Double.parseDouble(second)));
+            }
+            GMLRoad road = new GMLRoad(id, outline);
+            result.addRoad(road);
+            debug.show("New road", new GMLShapeInfo(road, "New road", Color.BLACK, NEW_ROAD_COLOUR));
+            background.add(new GMLShapeInfo(road, "Roads", Color.BLACK, ROAD_COLOUR));
+        }
+        debug.deactivate();
+    }
+
+    private void readSpaces(Document doc, GMLMap result) {
+        /*
+        for (Object next : SPACE_XPATH.selectNodes(doc)) {
+            LOG.debug("Found space element: " + next);
+            Element e = (Element)next;
+            String fid = e.attributeValue("fid");
+            long id = Long.parseLong(fid.substring(4)); // Strip off the 'osgb' prefix
+            // Find the boundary shape
+            List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
+            String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();
+            StringTokenizer tokens = new StringTokenizer(coordinatesString, " ");
+            while (tokens.hasMoreTokens()) {
+                String token = tokens.nextToken();
+                int index = token.indexOf(",");
+                String first = token.substring(0, index).trim();
+                String second = token.substring(index + 1).trim();
+                outline.add(new GMLCoordinates(Double.parseDouble(first), Double.parseDouble(second)));
+            }
+            result.addSpace(new GMLSpace(id, outline));
+        }
+        */
+    }
+}
