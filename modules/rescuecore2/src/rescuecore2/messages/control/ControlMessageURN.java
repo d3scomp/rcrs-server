@@ -51,5 +51,11 @@ public enum ControlMessageURN {
     KA_SENSE,
 
     /** Shutdown message. */
-    SHUTDOWN;
+    SHUTDOWN,
+
+    /** New EntityID request. */
+    ENTITY_ID_REQUEST,
+
+    /** New EntityID response. */
+    ENTITY_ID_RESPONSE;
 }
