@@ -46,7 +46,7 @@ public class StandardWorldModelCreator implements WorldModelCreator {
     private static final int STAMINA = 10000;
     private static final int HP = 10000;
 
-    private int nextAgentID;
+    private int nextID;
     private int initialWater;
 
     @Override
@@ -58,7 +58,7 @@ public class StandardWorldModelCreator implements WorldModelCreator {
             int maxID = readRoads(baseDir, world);
             maxID = Math.max(maxID, readNodes(baseDir, world));
             maxID = Math.max(maxID, readBuildings(baseDir, world));
-            nextAgentID = maxID + 1;
+            nextID = maxID + 1;
             readGISIni(baseDir, world);
             MapValidator.validate(world);
             world.index(config.getIntValue(StandardWorldModel.MESH_SIZE_KEY, StandardWorldModel.DEFAULT_MESH_SIZE));
@@ -75,6 +75,13 @@ public class StandardWorldModelCreator implements WorldModelCreator {
     @Override
     public String toString() {
         return "Standard world model creator";
+    }
+
+    @Override
+    public EntityID generateID() {
+        synchronized (this) {
+            return new EntityID(nextID++);
+        }
     }
 
     private int readRoads(File baseDir, StandardWorldModel world) throws IOException {
@@ -217,14 +224,6 @@ public class StandardWorldModelCreator implements WorldModelCreator {
     }
 
     /**
-       Get the next agent ID.
-       @return The next agent ID.
-     */
-    private int nextAgentID() {
-        return nextAgentID++;
-    }
-
-    /**
        Get the initial water quantity for fire brigades.
        @return The initial water quantity.
      */
@@ -292,7 +291,7 @@ public class StandardWorldModelCreator implements WorldModelCreator {
         FIRE_BRIGADE(Pattern.compile("^firebrigade\\s*=\\s*(\\d+)(?:\\s*,\\s*(\\d+))?$")) {
             protected void process(Matcher m, StandardWorldModel model, StandardWorldModelCreator c) throws KernelException {
                 EntityID locationID = new EntityID(Integer.parseInt(m.group(1)));
-                FireBrigade fb = new FireBrigade(new EntityID(c.nextAgentID()));
+                FireBrigade fb = new FireBrigade(c.generateID());
                 fb.setPosition(locationID);
                 fb.setWater(c.initialWater());
                 fb.setStamina(STAMINA);
@@ -306,7 +305,7 @@ public class StandardWorldModelCreator implements WorldModelCreator {
         POLICE_FORCE(Pattern.compile("^policeforce\\s*=\\s*(\\d+)(?:\\s*,\\s*(\\d+))?$")) {
             protected void process(Matcher m, StandardWorldModel model, StandardWorldModelCreator c) throws KernelException {
                 EntityID locationID = new EntityID(Integer.parseInt(m.group(1)));
-                PoliceForce pf = new PoliceForce(new EntityID(c.nextAgentID()));
+                PoliceForce pf = new PoliceForce(c.generateID());
                 pf.setPosition(locationID);
                 pf.setStamina(STAMINA);
                 pf.setHP(HP);
@@ -319,7 +318,7 @@ public class StandardWorldModelCreator implements WorldModelCreator {
         AMBULANCE_TEAM(Pattern.compile("^ambulanceteam\\s*=\\s*(\\d+)(?:\\s*,\\s*(\\d+))?$")) {
             protected void process(Matcher m, StandardWorldModel model, StandardWorldModelCreator c) throws KernelException {
                 EntityID locationID = new EntityID(Integer.parseInt(m.group(1)));
-                AmbulanceTeam at = new AmbulanceTeam(new EntityID(c.nextAgentID()));
+                AmbulanceTeam at = new AmbulanceTeam(c.generateID());
                 at.setPosition(locationID);
                 at.setStamina(STAMINA);
                 at.setHP(HP);
@@ -332,7 +331,7 @@ public class StandardWorldModelCreator implements WorldModelCreator {
         CIVILIAN(Pattern.compile("^civilian\\s*=\\s*(\\d+)(?:\\s*,\\s*(\\d+))?$")) {
             protected void process(Matcher m, StandardWorldModel model, StandardWorldModelCreator c) throws KernelException {
                 EntityID locationID = new EntityID(Integer.parseInt(m.group(1)));
-                Civilian civ = new Civilian(new EntityID(c.nextAgentID()));
+                Civilian civ = new Civilian(c.generateID());
                 civ.setPosition(locationID);
                 civ.setStamina(STAMINA);
                 civ.setHP(HP);
