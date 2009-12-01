@@ -9,6 +9,7 @@ import rescuecore2.connection.ConnectionException;
 import rescuecore2.connection.TCPConnection;
 import rescuecore2.connection.ConnectionListener;
 import rescuecore2.worldmodel.Entity;
+import rescuecore2.worldmodel.EntityID;
 import rescuecore2.worldmodel.WorldModel;
 import rescuecore2.worldmodel.DefaultWorldModel;
 import rescuecore2.messages.Message;
@@ -22,6 +23,7 @@ import rescuecore2.messages.control.KGAcknowledge;
  */
 public class RemoteGISWorldModelCreator implements WorldModelCreator {
     private static final String PORT_KEY = "gis.port";
+    private int nextID;
 
     @Override
     public WorldModel<? extends Entity> buildWorldModel(Config config) throws KernelException {
@@ -58,10 +60,17 @@ public class RemoteGISWorldModelCreator implements WorldModelCreator {
         return "Remote GIS";
     }
 
+    @Override
+    public EntityID generateID() {
+        synchronized (this) {
+            return new EntityID(nextID++);
+        }
+    }
+
     /**
        Listener for the GIS connection.
     */
-    private static class GISConnectionListener implements ConnectionListener {
+    private class GISConnectionListener implements ConnectionListener {
         private CountDownLatch latch;
         private DefaultWorldModel<Entity> model;
 
@@ -81,6 +90,11 @@ public class RemoteGISWorldModelCreator implements WorldModelCreator {
                     System.out.println("GIS connected OK");
                     // Trigger the countdown latch
                     latch.countDown();
+                    nextID = 0;
+                    for (Entity next : model) {
+                        nextID = Math.max(nextID, next.getID().getValue());
+                    }
+                    ++nextID;
                 }
                 catch (ConnectionException e) {
                     e.printStackTrace();
