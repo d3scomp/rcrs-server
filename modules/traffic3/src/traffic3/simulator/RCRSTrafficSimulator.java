@@ -1,367 +1,461 @@
 package traffic3.simulator;
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
+//import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Collection;
+import java.awt.Color;
 import java.awt.geom.Point2D;
 
-import traffic3.manager.*;
-import traffic3.objects.area.*;
-import traffic3.objects.*;
+import traffic3.manager.WorldManager;
+import traffic3.objects.area.TrafficArea;
+import traffic3.objects.area.TrafficAreaNode;
+import traffic3.objects.TrafficAgent;
+import traffic3.objects.TrafficBlockade;
 import static traffic3.log.Logger.log;
 import static traffic3.log.Logger.alert;
 
-import rescuecore2.connection.*;
-import rescuecore2.worldmodel.*;
-import rescuecore2.messages.*;
-import rescuecore2.messages.control.*;
-import rescuecore2.standard.entities.*;
-import rescuecore2.standard.messages.*;
-import org.util.xml.io.*;
+import rescuecore2.connection.TCPConnection;
+import rescuecore2.connection.ConnectionListener;
+import rescuecore2.connection.Connection;
+import rescuecore2.worldmodel.Entity;
+import rescuecore2.worldmodel.EntityID;
+import rescuecore2.worldmodel.EntityRegistry;
+import rescuecore2.messages.Message;
+import rescuecore2.messages.MessageRegistry;
+import rescuecore2.messages.Command;
 
+import rescuecore2.messages.control.Update;
+import rescuecore2.messages.control.Commands;
+import rescuecore2.messages.control.KSConnectOK;
+import rescuecore2.messages.control.SKAcknowledge;
+import rescuecore2.messages.control.SKConnect;
+import rescuecore2.messages.control.SKUpdate;
 
+import rescuecore2.standard.entities.Area;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.PoliceForce;
+import rescuecore2.standard.entities.AmbulanceTeam;
+import rescuecore2.standard.entities.Civilian;
+import rescuecore2.standard.entities.FireBrigade;
+import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.messages.AKMove;
+import rescuecore2.standard.messages.AKClear;
+import rescuecore2.standard.messages.AKLoad;
+import rescuecore2.standard.messages.StandardMessageFactory;
+import rescuecore2.connection.ConnectionException;
+
+import rescuecore2.standard.entities.StandardEntityFactory;
+import org.util.xml.io.XMLConfigManager;
+import traffic3.manager.WorldManagerException;
+
+/**
+ *
+ */
 public class RCRSTrafficSimulator {
 
-    private final int DEFAULT_PORT = 7000;
-    private WorldManager world_manager_;
-    private double dt_;
-    private double time_ = 0;
-    private int port_;
-    private XMLConfigManager config_manager_;
-    private int state_ = 0;
-    private int simulator_id_;
-    private int request_id_;
-    private int rcrs_time_;
-    private ArrayList<Entity> update_list_ = new ArrayList<Entity>();
-    private HashMap<EntityID, TrafficAgent> human_trafficagent_map_ = new HashMap<EntityID, TrafficAgent>();
-    private HashMap<EntityID, TrafficArea> area_trafficarea_map_ = new HashMap<EntityID, TrafficArea>();
-    private HashMap<EntityID, TrafficBlockade> blockade_trafficblockade_map_ = new HashMap<EntityID, TrafficBlockade>();
-    private HashMap<EntityID, Entity> entityid_entity_map_ = new HashMap<EntityID, Entity>();
+    private static final int DEFAULT_PORT = 7000;
+    private WorldManager worldManager;
+    private double stepTime;
+    private double simulationTime = 0;
+    private int port;
+    private XMLConfigManager configManager;
+    private int state = 0;
+    private int simulatorId;
+    private int requestId;
+    private int rcrsTimeStep;
+    private List<Entity> updateList = new ArrayList<Entity>();
+    private Map<EntityID, TrafficAgent> humanTrafficAgentMap = new HashMap<EntityID, TrafficAgent>();
+    private Map<EntityID, TrafficArea> areaTrafficareaMap = new HashMap<EntityID, TrafficArea>();
+    private Map<EntityID, TrafficBlockade> blockadeTrafficblockadeMap = new HashMap<EntityID, TrafficBlockade>();
+    private Map<EntityID, Entity> entityidEntityMap = new HashMap<EntityID, Entity>();
+    private long stepStart;
+    private long stepEnd;
+    private long lastTime;
+    private long planSum;
+    private long stepSum;
+    private long drawSum;
+    private List<Area> areaListBuf;
+    private List<Human> agentListBuf;
+    private List<Blockade> blockadeListBuf;
 
-    public RCRSTrafficSimulator(WorldManager world_manager, XMLConfigManager config_manager,  double dt) {
 
-	MessageRegistry.register(StandardMessageFactory.INSTANCE);
-	EntityRegistry.register(StandardEntityFactory.INSTANCE);
+    /**
+     * Constructor.
+     * @param wm world manager
+     * @param cm config manager
+     * @param dt dt
+     */
+    public RCRSTrafficSimulator(WorldManager wm, XMLConfigManager cm,  double dt) {
+        MessageRegistry.register(StandardMessageFactory.INSTANCE);
+        EntityRegistry.register(StandardEntityFactory.INSTANCE);
 
-	world_manager_ = world_manager;
-	config_manager_ = config_manager;
-	dt_ = dt;
-        port_ = Integer.parseInt(config_manager.getValue("launch/mode_rcrs/port", String.valueOf(DEFAULT_PORT)));
-	log("port: "+port_);
+        worldManager = wm;
+        configManager = cm;
+        stepTime = dt;
+        port = Integer.parseInt(configManager.getValue("launch/mode_rcrs/port", String.valueOf(DEFAULT_PORT)));
+        log("port: " + port);
     }
 
+    /**
+     * start.
+     * @throws Exception exception
+     */
     public void start() throws Exception {
-	request_id_ = 1;
-	simulator_id_ = 1; // kernel id
-	
-	final ArrayList<Area> area_list_ = new ArrayList<Area>();
-	final ArrayList<Human> agent_list_ = new ArrayList<Human>();
-	final ArrayList<Blockade> blockade_list_ = new ArrayList<Blockade>();
-	
-	TCPConnection connection = new TCPConnection(port_);
-	connection.addConnectionListener(new ConnectionListener() {
-		public void messageReceived(Connection c, Message msg) {
-		    if(state_==0 && msg instanceof KSConnectOK) {
-			KSConnectOK co = (KSConnectOK)msg;
-			//alert(co, "error");
-			simulator_id_ = co.getSimulatorID();
-			request_id_ = co.getRequestID();
-			Collection<Entity> entities = co.getEntities();
+        requestId = 1;
+        simulatorId = 1; // kernel id
+        areaListBuf = new ArrayList<Area>();
+        agentListBuf = new ArrayList<Human>();
+        blockadeListBuf = new ArrayList<Blockade>();
 
-			for(Entity ent : entities) {
-			    if(ent instanceof Area)
-				area_list_.add((Area)ent);
-			    else if(ent instanceof Human)
-				agent_list_.add((Human)ent);
-			    else if(ent instanceof Blockade)
-				blockade_list_.add((Blockade)ent);
-			    else
-				log("skipped: "+ent);
-			}
-			receivedEntities(area_list_, agent_list_, blockade_list_);
-
-			state_ = 1;
-			try{
-			    c.sendMessage(new SKAcknowledge(request_id_, simulator_id_));
-			} catch(Exception e) {
-			    log(e);
-			    e.printStackTrace();
-			}
-			alert("\n[initialized]\n");
-		    } else if(state_==1 && msg instanceof Commands) {
-			Commands com = (Commands)msg;
-			log(com);
-			rcrs_time_ = com.getTime();
-			state_ = 2;
-
-			for(Command command : com.getCommands()) {
-			    if(command instanceof AKMove) {
-				AKMove akmove = (AKMove)command;
-				java.util.List<EntityID> list = akmove.getPath();
-				EntityID destination_id = list.get(list.size()-1);
-				////				Entity destination = entityid_entity_map_.get(destination_id);
-				TrafficArea traffic_area = area_trafficarea_map_.get(destination_id);
-				assert traffic_area!=null : "cannot find traffic area: "+destination_id;
-				Human human = (Human)entityid_entity_map_.get(akmove.getAgentID());
-				TrafficAgent agent = human_trafficagent_map_.get(human.getID());
-				double cx = traffic_area.getCenterX();
-				double cy = traffic_area.getCenterY();
-				double cz = 0;
-				try{
-				    agent.setDestination(world_manager_.createAreaNode(cx, cy, cz));
-				}catch(Exception exc) {
-				    alert(exc, "error");
-				}
-			    } else if(command instanceof AKClear) {
-				AKClear akclear = (AKClear)command;
-				TrafficAgent agent = human_trafficagent_map_.get(akclear.getAgentID());
-				TrafficBlockade blockade = blockade_trafficblockade_map_.get(akclear.getTarget());
-				try{
-				    TrafficAreaNode node = world_manager_.createAreaNode(blockade.getCenterX(), blockade.getCenterY(), 0);
-				    agent.setDestination(node);
-				}catch(Exception exc) {
-				    log(exc);
-				    exc.printStackTrace();
-				}
-			    } else if(command instanceof AKLoad) {
-				AKLoad akload = (AKLoad)command;
-				Human human = (Human)entityid_entity_map_.get(akload.getTarget());
-				TrafficAgent agent = human_trafficagent_map_.get(human.getID());
-				alert(agent);
-			    }
-			}
-
-			update_list_.clear();
-			if(rcrs_time_>2)
-			    rcrsStep();
-
-			for(Human human : agent_list_) {
-			    TrafficAgent agent = human_trafficagent_map_.get(human.getID());
-			    EntityID id = transID(agent.getArea().getID());
-			    Point2D[] p_list = agent.getPositionHistory();
-			    int[] rcrs_p_list = new int[p_list.length*2];
-			    for(int i=0; i<p_list.length; i++) {
-				Point2D p = p_list[i];
-				rcrs_p_list[i*2] = (int)p.getX();
-				rcrs_p_list[i*2+1] = (int)p.getY();
-			    }
-			    agent.clearPositionHistory();
-			    human.setPosition(id, (int)agent.getX(), (int)agent.getY());
-			    human.setPositionHistory(rcrs_p_list);
-			    update_list_.add(human);
-			}
-
-			try{
-			    c.sendMessage(new SKUpdate(simulator_id_, rcrs_time_, update_list_));
-			    update_list_.clear();
-			}catch(Exception e) {
-			    log(e);
-			    e.printStackTrace();
-			}
-		    } else if(state_==2 && msg instanceof Update) {
-			Update up = (Update)msg;
-			Collection<Entity> entities = up.getUpdatedEntities();
-			for(Entity ent : entities) {
-			    if(ent instanceof Blockade) {
-				TrafficBlockade tb = blockade_trafficblockade_map_.get(ent.getID());
-				tb.setLineList(((Blockade)ent).getShape());
-				
-			    } else if(ent instanceof Area) {
-				Area area = (Area)ent;
-				//Area parea = (Area)entityid_entity_map_.get(area.getID());
-				TrafficArea tarea = area_trafficarea_map_.get(area.getID());
-				assert tarea!=null : "Error!";
-				java.util.List<EntityID> id_list = area.getBlockadeList();
-				TrafficBlockade[] tblockade_list = tarea.getBlockadeList();
-				if(id_list.size()==0 && tblockade_list.length==0) {
-				}else{
-				    ArrayList<TrafficBlockade> blist = new ArrayList<TrafficBlockade>();
-				    for(EntityID beid : id_list) {
-					TrafficBlockade tblockade = blockade_trafficblockade_map_.get(beid);
-					
-					blist.add(tblockade);
-				    }
-
-				    for(TrafficBlockade blockade : tblockade_list) {
-					if(!blist.contains(blockade)) {
-					    try{
-						world_manager_.remove(blockade);
-					    }catch(Exception exc){
-						log(exc);
-						exc.printStackTrace();
-					    }
-					}
-				    }
-
-				    tarea.setBlockadeList(blist.toArray(new TrafficBlockade[0]));
-				}
-			    }
-			    //alert(ent, "error");
-			}
-			//alert(up, "error");
-			state_ = 1;
-		    } else {
-			alert("unknown command: "+msg, "error");
-		    }
-		}
-	    });
-	connection.startup();
-	connection.sendMessage(new SKConnect(request_id_, simulator_id_));
+        TCPConnection connection = new TCPConnection(port);
+        connection.addConnectionListener(new ConnectionManager());
+        connection.startup();
+        connection.sendMessage(new SKConnect(requestId, simulatorId));
     }
-    
+
     private EntityID transID(String id) {
-	return new EntityID(Integer.parseInt(id.substring(5, id.length()-1)));
+        final int start = 5;
+        return new EntityID(Integer.parseInt(id.substring(start, id.length() - 1)));
     }
 
-    private void receivedEntities(ArrayList<Area> area_list, ArrayList<Human> agent_list, ArrayList<Blockade> blockade_list) {
-	try{
-	    for(Area area : area_list) {
-		entityid_entity_map_.put(area.getID(), area);
-		java.util.List<EntityID> next_area_id_list = area.getNextArea();
-		String[] next_area_id_text_list = new String[next_area_id_list.size()];
-		for(int i=0; i<next_area_id_list.size(); i++)
-		    next_area_id_text_list[i] = "rcrs("+next_area_id_list.get(i).getValue()+")";
-		double cx = area.getCenterX();
-		double cy = area.getCenterY();
-		TrafficArea traffic_area = new TrafficArea(world_manager_, "rcrs("+area.getID()+")", cx, cy, area.getShape(), next_area_id_text_list);
-		if(area instanceof Building) {
-		    traffic_area.setType("building");
-		} else {
-		    traffic_area.setType("open space");
-		}
-		world_manager_.appendWithoutCheck(traffic_area);
-		area_trafficarea_map_.put(area.getID(), traffic_area);
-	    }
+    private void receivedEntities() {
+        try {
+            for (Area area : areaListBuf) {
+                entityidEntityMap.put(area.getID(), area);
+                java.util.List<EntityID> nextAreaIdList = area.getNextArea();
+                String[] nextAreaIdTextList = new String[nextAreaIdList.size()];
+                for (int i = 0; i < nextAreaIdList.size(); i++) {
+                    nextAreaIdTextList[i] = "rcrs(" + nextAreaIdList.get(i).getValue() + ")";
+                }
+                double cx = area.getCenterX();
+                double cy = area.getCenterY();
+                TrafficArea trafficArea = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getShape(), nextAreaIdTextList);
+                if (area instanceof Building) {
+                    trafficArea.setType("building");
+                }
+                else {
+                    trafficArea.setType("open space");
+                }
+                worldManager.appendWithoutCheck(trafficArea);
+                areaTrafficareaMap.put(area.getID(), trafficArea);
+            }
 
-	    world_manager_.check();
+            worldManager.check();
+            final int rescueAgentRadius = 500;
+            final int civilianAgentRadius = 200;
+            final double a = 0.2;
+            final double b = 0.002;
+            final double civilianVLimit = a + Math.random() * b;
 
+            for (Human human : agentListBuf) {
+                entityidEntityMap.put(human.getID(), human);
+                TrafficAgent agent = new TrafficAgent(worldManager);
+                if (human instanceof PoliceForce) {
+                    agent.setType("PoliceForce");
+                    agent.setRadius(rescueAgentRadius);
+                    agent.setColor(Color.blue);
+                }
+                else if (human instanceof AmbulanceTeam) {
+                    agent.setType("AmbulanceTeam");
+                    agent.setRadius(rescueAgentRadius);
+                    agent.setColor(Color.white);
+                }
+                else if (human instanceof Civilian) {
+                    agent.setType("Civilian");
+                    agent.setRadius(civilianAgentRadius);
+                    agent.setColor(Color.green);
+                    agent.setVLimit(civilianVLimit);
+                }
+                else if (human instanceof FireBrigade) {
+                    agent.setType("FireBrigade");
+                    agent.setRadius(rescueAgentRadius);
+                    agent.setColor(Color.red);
+                }
+                else {
+                    agent.setType("Unknown");
+                    agent.setColor(Color.black);
+                }
 
-	    for(Human human : agent_list) {
-		entityid_entity_map_.put(human.getID(), human);
-		TrafficAgent agent = new TrafficAgent(world_manager_);
-		if(human instanceof PoliceForce) {
-		    agent.setType("PoliceForce");
-		    agent.setRadius(500);
-		    agent.setColor(Color.blue);
-		} else if(human instanceof AmbulanceTeam) {
-		    agent.setType("AmbulanceTeam");
-		    agent.setRadius(500);
-		    agent.setColor(Color.white);
-		} else if(human instanceof Civilian) {
-		    agent.setType("Civilian");
-		    agent.setRadius(200);
-		    agent.setColor(Color.green);
-		    agent.setVLimit(0.2+(Math.random()*0.02));
-		} else if(human instanceof FireBrigade) {
-		    agent.setType("FireBrigade");
-		    agent.setRadius(500);
-		    agent.setColor(Color.red);
-		} else {
-		    agent.setType("Unknown");
-		    agent.setColor(Color.black);
-		}
-
-		rescuecore2.misc.Pair<java.lang.Integer,java.lang.Integer> loc = human.getLocation(null); 
-		agent.setLocation(loc.first(), loc.second(), 0);
-		human_trafficagent_map_.put(human.getID(), agent);
-		world_manager_.appendWithoutCheck(agent);
-	    }
-
-
-	    for(Blockade blockade : blockade_list) {
-		
-		double cx = blockade.getCenterX();
-		double cy = blockade.getCenterY();
-		//Area a = (Area)entityid_entity_map_.get(blockade.getArea());
-		TrafficArea area = area_trafficarea_map_.get(blockade.getArea());
-		int[] xy = blockade.getShape();
-		String id = "rcrs("+blockade.getID().getValue()+")";
-		TrafficBlockade tblockade = new TrafficBlockade(world_manager_, id, cx, cy, blockade.getShape());
-		
-		area.addBlockade(tblockade);
-		blockade_trafficblockade_map_.put(blockade.getID(), tblockade);
-		world_manager_.appendWithoutCheck(tblockade);
-	    }
+                rescuecore2.misc.Pair<java.lang.Integer, java.lang.Integer> loc = human.getLocation(null);
+                agent.setLocation(loc.first(), loc.second(), 0);
+                humanTrafficAgentMap.put(human.getID(), agent);
+                worldManager.appendWithoutCheck(agent);
+            }
 
 
-	    world_manager_.notifyInputted(this);
-	}catch(Exception e) {
-	    alert(e, "error");
-	}
+            for (Blockade blockade : blockadeListBuf) {
+                double cx = blockade.getCenterX();
+                double cy = blockade.getCenterY();
+                //Area a = (Area)entityidEntityMap.get(blockade.getArea());
+                TrafficArea area = areaTrafficareaMap.get(blockade.getArea());
+                int[] xy = blockade.getShape();
+                String id = "rcrs(" + blockade.getID().getValue() + ")";
+                TrafficBlockade tblockade = new TrafficBlockade(worldManager, id, cx, cy, blockade.getShape());
+                area.addBlockade(tblockade);
+                blockadeTrafficblockadeMap.put(blockade.getID(), tblockade);
+                worldManager.appendWithoutCheck(tblockade);
+            }
 
+
+            worldManager.notifyInputted(this);
+        }
+        catch (WorldManagerException e) {
+            alert(e, "error");
+        }
     }
 
 
-    private long step_start_;
-    private long step_end_;
-    private long last_time_;
-    private long plan_sum_;
-    private long step_sum_;
-    private long draw_sum_;
+    private void receiveKSConnectOK(Connection c, KSConnectOK co) {
+        //alert(co, "error");
+        simulatorId = co.getSimulatorID();
+        requestId = co.getRequestID();
+        Collection<Entity> entities = co.getEntities();
+        for (Entity ent : entities) {
+            if (ent instanceof Area) {
+                areaListBuf.add((Area)ent);
+            }
+            else if (ent instanceof Human) {
+                agentListBuf.add((Human)ent);
+            }
+            else if (ent instanceof Blockade) {
+                blockadeListBuf.add((Blockade)ent);
+            }
+            else {
+                log("skipped: " + ent);
+            }
+        }
+        receivedEntities();
+        try {
+            c.sendMessage(new SKAcknowledge(requestId, simulatorId));
+        }
+        catch (ConnectionException e) {
+            log(e);
+            e.printStackTrace();
+        }
+        alert("\n[initialized]\n");
+    }
 
+    private void receiveCommands(Connection c, Commands com) {
+        log(com);
+        rcrsTimeStep = com.getTime();
+        for (Command command : com.getCommands()) {
+            if (command instanceof AKMove) {
+                AKMove akmove = (AKMove)command;
+                java.util.List<EntityID> list = akmove.getPath();
+                EntityID destinationId = list.get(list.size() - 1);
+                //Entity destination = entityidEntityMap.get(destinationId);
+                TrafficArea trafficArea = areaTrafficareaMap.get(destinationId);
+                assert trafficArea != null : "cannot find traffic area: " + destinationId;
+                Human human = (Human)entityidEntityMap.get(akmove.getAgentID());
+                TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
+                double cx = trafficArea.getCenterX();
+                double cy = trafficArea.getCenterY();
+                double cz = 0;
+                try {
+                    agent.setDestination(worldManager.createAreaNode(cx, cy, cz));
+                }
+                catch (WorldManagerException exc) {
+                    alert(exc, "error");
+                }
+            }
+            else if (command instanceof AKClear) {
+                AKClear akclear = (AKClear)command;
+                TrafficAgent agent = humanTrafficAgentMap.get(akclear.getAgentID());
+                TrafficBlockade blockade = blockadeTrafficblockadeMap.get(akclear.getTarget());
+                try {
+                    TrafficAreaNode node = worldManager.createAreaNode(blockade.getCenterX(), blockade.getCenterY(), 0);
+                    agent.setDestination(node);
+                }
+                catch (WorldManagerException exc) {
+                    log(exc);
+                    exc.printStackTrace();
+                }
+            }
+            else if (command instanceof AKLoad) {
+                AKLoad akload = (AKLoad)command;
+                Human human = (Human)entityidEntityMap.get(akload.getTarget());
+                TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
+                alert(agent);
+            }
+        }
+
+        updateList.clear();
+        if (rcrsTimeStep > 2) {
+            rcrsStep();
+        }
+
+        for (Human human : agentListBuf) {
+            TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
+            EntityID id = transID(agent.getArea().getID());
+            Point2D[] pList = agent.getPositionHistory();
+            int[] rcrsPList = new int[pList.length * 2];
+            for (int i = 0; i < pList.length; i++) {
+                Point2D p = pList[i];
+                rcrsPList[i * 2] = (int)p.getX();
+                rcrsPList[i * 2 + 1] = (int)p.getY();
+            }
+            agent.clearPositionHistory();
+            human.setPosition(id, (int)agent.getX(), (int)agent.getY());
+            human.setPositionHistory(rcrsPList);
+            updateList.add(human);
+        }
+        try {
+            c.sendMessage(new SKUpdate(simulatorId, rcrsTimeStep, updateList));
+            updateList.clear();
+        }
+        catch (ConnectionException e) {
+            log(e);
+            e.printStackTrace();
+        }
+    }
+
+
+    private void receiveUpdate(Connection c, Update up) {
+
+        Collection<Entity> entities = up.getUpdatedEntities();
+        for (Entity ent : entities) {
+            if (ent instanceof Blockade) {
+                TrafficBlockade tb = blockadeTrafficblockadeMap.get(ent.getID());
+                tb.setLineList(((Blockade)ent).getShape());
+            }
+            else if (ent instanceof Area) {
+                Area area = (Area)ent;
+                //Area parea = (Area)entityidEntityMap.get(area.getID());
+                TrafficArea tarea = areaTrafficareaMap.get(area.getID());
+                assert tarea != null : "Error!";
+                java.util.List<EntityID> idList = area.getBlockadeList();
+                TrafficBlockade[] tBlockadeList = tarea.getBlockadeList();
+                if (idList.size() != 0 || tBlockadeList.length != 0) {
+                    List<TrafficBlockade> blist = new ArrayList<TrafficBlockade>();
+                    for (EntityID beid : idList) {
+                        TrafficBlockade tblockade = blockadeTrafficblockadeMap.get(beid);
+                        blist.add(tblockade);
+                    }
+
+                    for (TrafficBlockade blockade : tBlockadeList) {
+                        if (!blist.contains(blockade)) {
+                            try {
+                                worldManager.remove(blockade);
+                            }
+                            catch (WorldManagerException exc) {
+                                log(exc);
+                                exc.printStackTrace();
+                            }
+                        }
+                    }
+                    tarea.setBlockadeList(blist.toArray(new TrafficBlockade[0]));
+                }
+            }
+            //alert(ent, "error");
+        }
+        //alert(up, "error");
+    }
+
+    private class ConnectionManager implements ConnectionListener {
+
+        public void messageReceived(Connection c, Message msg) {
+
+            if (state == 0 && msg instanceof KSConnectOK) {
+
+                receiveKSConnectOK(c, (KSConnectOK)msg);
+                state = 1;
+            }
+            else if (state == 1 && msg instanceof Commands) {
+
+                receiveCommands(c, (Commands)msg);
+                state = 2;
+            }
+            else if (state == 2 && msg instanceof Update) {
+
+                receiveUpdate(c, (Update)msg);
+                state = 1;
+            }
+            else {
+                alert("unknown command: " + msg, "error");
+            }
+        }
+    }
+
+    /**
+     * rcrs step.
+     */
     public void rcrsStep() {
-	step_start_ = System.currentTimeMillis();
-	last_time_ = step_start_;
-	//int length = (int)(1000*60/dt_);
-	int length = (int)(1000*60/dt_)*10;
+        stepStart = System.currentTimeMillis();
+        lastTime = stepStart;
+        //int length = (int)(1000*60/stepTime);
+        final int minute = 60;
+        final int test = 10;
+        int length = (int)(1000 * minute / stepTime) * test;
 
-	for(int i=0; i<length; i++)
-	    step(); 
-	step_end_ = System.currentTimeMillis();
-	//System.err.println("step: "+(step_end_-step_start_)+"[ms]");
-	//System.err.println("   plan: "+(plan_sum_)+"[ms]");
-	//System.err.println("   step: "+(step_sum_)+"[ms]");
-	//System.err.println("   draw: "+(draw_sum_)+"[ms]");
-	StringBuffer sb = new StringBuffer("<html>");
-	sb.append("<table>");
-	sb.append("<tr><td>step</td><td>"+(step_end_-step_start_)+"[ms]("+length+"[step])</td></tr>");
-	sb.append("<tr><td>calculate force</td><td>"+(plan_sum_)+"[ms]</td></tr>");
-	sb.append("<tr><td>move agents</td><td>"+(step_sum_)+"[ms]</td></tr>");
-	sb.append("<tr><td>draw</td><td>"+(draw_sum_)+"[ms]</td></tr>");
-	sb.append("</table>");
-	sb.append("</html>");
-	alert(sb.toString());
-	plan_sum_ = step_sum_ = draw_sum_ = 0;
+        for (int i = 0; i < length; i++) {
+            step();
+        }
+        stepEnd = System.currentTimeMillis();
+        System.out.println("step: " + (stepEnd-stepStart) + "[ms]");
+        System.out.println("   plan: " + (planSum) + "[ms]");
+        System.out.println("   step: " + (stepSum) + "[ms]");
+        System.out.println("   draw: " + (drawSum) + "[ms]");
+        StringBuffer sb = new StringBuffer("<html>");
+        sb.append("<table>");
+        sb.append("<tr><td>step</td><td>" + (stepEnd - stepStart) + "[ms](" + length + "[step])</td></tr>");
+        sb.append("<tr><td>calculate force</td><td>" + (planSum) + "[ms]</td></tr>");
+        sb.append("<tr><td>move agents</td><td>" + (stepSum) + "[ms]</td></tr>");
+        sb.append("<tr><td>draw</td><td>" + (drawSum) + "[ms]</td></tr>");
+        sb.append("</table>");
+        sb.append("</html>");
+        log(sb.toString());
+        //System.out.println(sb.toString());
+        planSum = 0;
+        stepSum = 0;
+        drawSum = 0;
     }
 
     private void step() {
-	TrafficAgent[] agent_list = world_manager_.getAgentList();
-	for(int i=0; i<agent_list.length; i++) {
-	    TrafficAgent agent = agent_list[i];
-	    agent.plan();
-	}
+        TrafficAgent[] agentList = worldManager.getAgentList();
+        for (int i = 0; i < agentList.length; i++) {
+            TrafficAgent agent = agentList[i];
+            agent.plan();
+        }
 
-	long now_time = System.currentTimeMillis();
-	plan_sum_ += (now_time-last_time_);
-	last_time_ = now_time;
+        long nowTime = System.currentTimeMillis();
+        planSum += (nowTime - lastTime);
+        lastTime = nowTime;
 
-	for(int i=0; i<agent_list.length; i++) {
-	    TrafficAgent agent = agent_list[i];
-	    agent.step(dt_);
-	}
+        for (int i = 0; i < agentList.length; i++) {
+            TrafficAgent agent = agentList[i];
+            agent.step(stepTime);
+        }
 
-	now_time = System.currentTimeMillis();
-	step_sum_ += (now_time-last_time_);
-	last_time_ = now_time;
+        nowTime = System.currentTimeMillis();
+        stepSum += (nowTime - lastTime);
+        lastTime = nowTime;
 
-	world_manager_.stepFinished(this);
+        worldManager.stepFinished(this);
 
-	now_time = System.currentTimeMillis();
-	draw_sum_ += (now_time-last_time_);
-	last_time_ = now_time;
+        nowTime = System.currentTimeMillis();
+        drawSum += (nowTime - lastTime);
+        lastTime = nowTime;
 
-	time_ += dt_;
+        simulationTime += stepTime;
     }
 
-
-    public void setTime(double time) {
-	time_ = time;
+    /**
+     * set simulation time.
+     * @param simulation time
+     */
+    private void setTime(double time) {
+        simulationTime = time;
     }
+
+    /**
+     * get simulation time.
+     * @return simulation time
+     */
     public double getTime() {
-	return time_;
+        return simulationTime;
     }
 }

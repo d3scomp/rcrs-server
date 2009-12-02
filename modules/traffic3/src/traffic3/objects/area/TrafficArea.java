@@ -1,448 +1,629 @@
 package traffic3.objects.area;
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.geom.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.awt.geom.Line2D;
+import java.awt.geom.GeneralPath;
 
-import traffic3.manager.*;
-import traffic3.objects.*;
-import traffic3.objects.area.event.*;
-import static traffic3.log.Logger.log;
+import traffic3.manager.WorldManager;
+import traffic3.manager.WorldManagerException;
+import traffic3.objects.TrafficObject;
+import traffic3.objects.TrafficAgent;
+import traffic3.objects.TrafficBlockade;
+//import static traffic3.log.Logger.log;
 import static traffic3.log.Logger.alert;
-import org.util.xml.element.*;
+import traffic3.objects.area.event.TrafficAreaListener;
+import traffic3.objects.area.event.TrafficAreaEvent;
+import org.util.xml.element.TagElement;
 
+/**
+ * Traffic area.
+ */
 public class TrafficArea extends TrafficObject {
 
-    private ArrayList<TrafficAreaListener> area_listener_list_ = new ArrayList<TrafficAreaListener>();
-    private ArrayList<TrafficAgent> agent_list_ = new ArrayList<TrafficAgent>();
-    private ArrayList<TrafficBlockade> blockade_list_ = new ArrayList<TrafficBlockade>();
-    private boolean simulate_as_open_space_ = true;
-    private String type_;
+    private List<TrafficAreaListener> areaListenerList = new ArrayList<TrafficAreaListener>();
+    private List<TrafficAgent> agentList = new ArrayList<TrafficAgent>();
+    private List<TrafficBlockade> bockadeList = new ArrayList<TrafficBlockade>();
+    private boolean simulateAsOpenSpace = true;
+    private String type;
 
     // cannot be null
-    private double center_x_;
-    private double center_y_;
+    private double centerX;
+    private double centerY;
     //private String[] neighbor_area_id_list_;
 
     // can be null
-    private String[] connector_id_list_;
-    private String[] unconnector_id_list_;
-    private TrafficAreaNode[] node_list_;
-    private GeneralPath shape_;
+    private String[] connectorIdList;
+    private String[] unconnectorIdList;
+    private TrafficAreaNode[] nodeList;
+    private GeneralPath shape;
 
     // these properties will be set at check
-    private ArrayList<TrafficAreaEdge> connector_list_ = new ArrayList<TrafficAreaEdge>();
-    private ArrayList<TrafficAreaEdge> unconnector_list_ = new ArrayList<TrafficAreaEdge>();
-    private ArrayList<Line2D> unconnect_edge_list_ = new ArrayList<Line2D>();
-    private ArrayList<TrafficArea> neighbor_area_list_ = new ArrayList<TrafficArea>();
+    private List<TrafficAreaEdge> connectorList = new ArrayList<TrafficAreaEdge>();
+    private List<TrafficAreaEdge> unconnectorList = new ArrayList<TrafficAreaEdge>();
+    private List<Line2D> unconnectEdgeList = new ArrayList<Line2D>();
+    //    private List<TrafficArea> neighborAreaList = new ArrayList<TrafficArea>();
 
-    public TrafficArea(WorldManager world_manager, String id) {
-	super(world_manager, id);
+
+    private TrafficAgent[] agentListBuf = null;
+    private volatile Line2D[] getNeighborWallListCACHE = null;
+
+    /**
+     * Constructor.
+     * @param worldManager world manager
+     * @param id id of this object (it must be unique in world manager WorldManager.getUniqueID("type"))
+     */
+    public TrafficArea(WorldManager worldManager, String id) {
+        super(worldManager, id);
     }
 
-    public TrafficArea(WorldManager world_manager, String id, double cx, double cy, int[] xy_list, String[] nexts) {
-	super(world_manager, id);
-	
-	center_x_ = cx;
-	center_y_ = cy;
+    /**
+     * Constructor.
+     *
+     *          /       /
+     *         /       /
+     *        /  a3   /
+     *       /       /
+     * ----[p1]----[p4]----
+     *      |       |
+     *   a1 |   a   |  a2
+     *      |       |
+     * ----[p2]----[p3]----
+     *
+     *
+     * apexis p1, p2, p3, p4
+     * where p1 = (x1, y1)
+     *       p2 = (x2, y2)
+     *       p3 = (x3, y3)
+     *       p4 = (x4, y4)
+     *
+     * xyList {x1, y1, x2, y2, x3, y3, x4, y4}
+     *         ------  ------  ------  ------
+     *           p1      p2      p3      p4
+     *            |------||------||------||------|
+     * nexts  {      a1,    null,    a2,     a3  }
+     *
+     * @param worldManager world manager
+     * @param id id of this object (it must be unique in world manager WorldManager.getUniqueID("type"))
+     * @param cx x of center of this area
+     * @param cy y of center of this area
+     * @param xyList apexces of this area
+     * @param nexts nexts area it must be correspnds xyList
+     */
+    public TrafficArea(WorldManager worldManager, String id, double cx, double cy, int[] xyList, String[] nexts) {
+        super(worldManager, id);
+        centerX = cx;
+        centerY = cy;
+        try {
+            List<TrafficAreaNode> nodeBuf = new ArrayList<TrafficAreaNode>();
+            List<String> directedEdgeIdList = new ArrayList<String>();
+            List<String> notDirectedEdgeIdList = new ArrayList<String>();
+            GeneralPath gp = new GeneralPath();
 
-	try{
-	    ArrayList<TrafficAreaNode> node_buf = new ArrayList<TrafficAreaNode>();
-	    ArrayList<String> directed_edge_id_list = new ArrayList<String>();
-	    ArrayList<String> ndirected_edge_id_list = new ArrayList<String>();
-	    GeneralPath gp = new GeneralPath();
-	    
-	    double last_x = xy_list[0];
-	    double last_y = xy_list[1];
-	    gp.moveTo(last_x, last_y);
-	    TrafficAreaNode first_node = new TrafficAreaNode(world_manager);
-	    first_node.setLocation(last_x, last_y, 0);
-	    world_manager.appendWithoutCheck(first_node);
-	    node_buf.add(first_node);
+            double lastX = xyList[0];
+            double lastY = xyList[1];
+            gp.moveTo(lastX, lastY);
+            TrafficAreaNode firstNode = new TrafficAreaNode(worldManager);
+            firstNode.setLocation(lastX, lastY, 0);
+            worldManager.appendWithoutCheck(firstNode);
+            nodeBuf.add(firstNode);
 
-	    TrafficAreaNode last_node = first_node;
-	    TrafficAreaEdge edge;
-	    for(int i=1; i<nexts.length; i++) {
-		double x = xy_list[i*2];
-		double y = xy_list[i*2+1];
-		gp.lineTo(x, y);
+            TrafficAreaNode lastNode = firstNode;
+            TrafficAreaEdge edge;
+            for (int i = 1; i < nexts.length; i++) {
+                double x = xyList[i * 2];
+                double y = xyList[i * 2 + 1];
+                gp.lineTo(x, y);
 
-		TrafficAreaNode node = world_manager.createAreaNode(x, y, 0);
+                TrafficAreaNode node = worldManager.createAreaNode(x, y, 0);
 
-		String next_id = nexts[i-1];
-		if("rcrs(-1)".equals(next_id)) { // not connector
+                String nextId = nexts[i - 1];
+                if ("rcrs(-1)".equals(nextId)) { // not connector
+                    String edgeId = worldManager.getUniqueID("_");
+                    edge = new TrafficAreaEdge(worldManager, edgeId);
+                    edge.setDirectedNodes(lastNode.getID(), node.getID());
+                    edge.setDirectedAreaIDList(new String[]{id});
+                    notDirectedEdgeIdList.add(edgeId);
+                    worldManager.appendWithoutCheck(edge);
+                }
+                else if (worldManager.getTrafficObject(nextId) == null) { // connector and it's not exists
+                    String edgeId = worldManager.getUniqueID("_");
+                    edge = new TrafficAreaEdge(worldManager, edgeId);
+                    edge.setDirectedNodes(lastNode.getID(), node.getID());
+                    edge.setDirectedAreaIDList(new String[]{id, nextId});
+                    directedEdgeIdList.add(edgeId);
+                    worldManager.appendWithoutCheck(edge);
+                }
+                else {  // connector and it's already exists
+                    String edgeId = worldManager.getUniqueID("_");
+                    edge = new TrafficAreaEdge(worldManager, edgeId);
+                    edge.setDirectedNodes(lastNode.getID(), node.getID());
+                    edge.setDirectedAreaIDList(id, nextId);
+                    directedEdgeIdList.add(edgeId);
+                    worldManager.appendWithoutCheck(edge);
+                }
 
-		    String edge_id = world_manager.getUniqueID("_");
-		    edge = new TrafficAreaEdge(world_manager, edge_id);
-		    edge.setDirectedNodes(last_node.getID(), node.getID());
-		    edge.setDirectedAreaIDList(new String[]{id});
-		    ndirected_edge_id_list.add(edge_id);
-		    world_manager.appendWithoutCheck(edge);
-
-		}else if(world_manager.getTrafficObject(next_id)==null) { // connector and it's not exists
-
-		    String edge_id = world_manager.getUniqueID("_");
-		    edge = new TrafficAreaEdge(world_manager, edge_id);
-		    edge.setDirectedNodes(last_node.getID(), node.getID());
-		    edge.setDirectedAreaIDList(new String[]{id,next_id});
-		    directed_edge_id_list.add(edge_id);
-		    world_manager.appendWithoutCheck(edge);
-		    String tne_id = world_manager.getUniqueID("_");
-
-		}else{  // connector and it's already exists
-
-		    String edge_id = world_manager.getUniqueID("_");
-		    edge = new TrafficAreaEdge(world_manager, edge_id);
-		    edge.setDirectedNodes(last_node.getID(), node.getID());
-		    edge.setDirectedAreaIDList(new String[]{id,next_id});
-		    directed_edge_id_list.add(edge_id);
-		    world_manager.appendWithoutCheck(edge);
-		}
-		
-		node_buf.add(node);
-		last_node = node;
-		last_x = x;
-		last_y = y;
-	    }
-	    String edge_id = world_manager.getUniqueID("_");
-	    edge = new TrafficAreaEdge(world_manager, edge_id);
-	    edge.setDirectedNodes(last_node.getID(), first_node.getID());
-	    edge.setDirectedAreaIDList(new String[]{id});
-	    world_manager.appendWithoutCheck(edge);
-	    ndirected_edge_id_list.add(edge_id);
-	    
-	    node_list_ = node_buf.toArray(new TrafficAreaNode[0]);
-	    connector_id_list_ = directed_edge_id_list.toArray(new String[0]);
-	    unconnector_id_list_ = ndirected_edge_id_list.toArray(new String[0]);
-	    shape_ = gp;
-	} catch(Exception e) {
-	    alert(e, "error");
-	}
+                nodeBuf.add(node);
+                lastNode = node;
+                lastX = x;
+                lastY = y;
+            }
+            String edgeId = worldManager.getUniqueID("_");
+            edge = new TrafficAreaEdge(worldManager, edgeId);
+            edge.setDirectedNodes(lastNode.getID(), firstNode.getID());
+            edge.setDirectedAreaIDList(new String[]{id});
+            worldManager.appendWithoutCheck(edge);
+            notDirectedEdgeIdList.add(edgeId);
+            nodeList = nodeBuf.toArray(new TrafficAreaNode[0]);
+            connectorIdList = directedEdgeIdList.toArray(new String[0]);
+            unconnectorIdList = notDirectedEdgeIdList.toArray(new String[0]);
+            shape = gp;
+        }
+        catch (WorldManagerException e) {
+            alert(e, "error");
+        }
     }
 
+    /**
+     * add blockade.
+     * @param blockade blockade
+     */
     public void addBlockade(TrafficBlockade blockade) {
-	blockade_list_.add(blockade);
+        bockadeList.add(blockade);
 
-	getNeighborWallList_CACHE = null;
-	for(TrafficArea na : getNeighborList())
-	    na.clearNeighborWallListCache();
+        getNeighborWallListCACHE = null;
+        for (TrafficArea na : getNeighborList()) {
+            na.clearNeighborWallListCache();
+        }
     }
 
+    /**
+     * remove blockade.
+     * @param blockade blockade
+     */
     public void removeBlockade(TrafficBlockade blockade) {
-	blockade_list_.remove(blockade);
+        bockadeList.remove(blockade);
 
-	getNeighborWallList_CACHE = null;
-	for(TrafficArea na : getNeighborList())
-	    na.clearNeighborWallListCache();
+        getNeighborWallListCACHE = null;
+        for (TrafficArea na : getNeighborList()) {
+            na.clearNeighborWallListCache();
+        }
     }
 
-    public void setBlockadeList(TrafficBlockade[] blockade_list) {
-	blockade_list_.clear();
-	for(TrafficBlockade blockade : blockade_list)
-	    blockade_list_.add(blockade);
+    /**
+     * set blockade list.
+     * @param blockadeList blockade list
+     */
+    public void setBlockadeList(TrafficBlockade[] blockadeList) {
+        bockadeList.clear();
+        for (TrafficBlockade blockade : blockadeList) {
+            bockadeList.add(blockade);
+        }
 
-	getNeighborWallList_CACHE = null;
-	for(TrafficArea na : getNeighborList())
-	    na.clearNeighborWallListCache();
+        getNeighborWallListCACHE = null;
+        for (TrafficArea na : getNeighborList()) {
+            na.clearNeighborWallListCache();
+        }
     }
 
+    /**
+     * get blockade list.
+     * @return blockade list
+     */
     public TrafficBlockade[] getBlockadeList() {
-	return blockade_list_.toArray(new TrafficBlockade[0]);
+        return bockadeList.toArray(new TrafficBlockade[0]);
     }
 
-    public void checkObject() throws Exception {
-
-	for(int i=0; i<connector_id_list_.length; i++) {
-	    String edge_id = connector_id_list_[i];
-	    TrafficAreaEdge edge = (TrafficAreaEdge)getManager().getTrafficObject(edge_id);
-	    connector_list_.add(edge);
-	}
-
-	for(int i=0; i<unconnector_id_list_.length; i++) {
-	    String edge_id = unconnector_id_list_[i];
-	    TrafficAreaEdge edge = (TrafficAreaEdge)getManager().getTrafficObject(edge_id);
-	    unconnector_list_.add(edge);
-	}
-	/*
-	for(String area_id : neighbor_area_id_list_) {
-	    TrafficArea area = (TrafficArea)getManager().getTrafficObject(area_id);
-	    neighbor_area_list_.add(area);
-	}
-	*/
-	createUnconnectEdgeList();
-	checked_ = true;
+    /**
+     * check object.
+     * @throws Exception has some errors.
+     */
+    public void checkObject() throws WorldManagerException {
+        for (int i = 0; i < connectorIdList.length; i++) {
+            String edgeId = connectorIdList[i];
+            TrafficAreaEdge edge = (TrafficAreaEdge)getManager().getTrafficObject(edgeId);
+            connectorList.add(edge);
+        }
+        for (int i = 0; i < unconnectorIdList.length; i++) {
+            String edgeId = unconnectorIdList[i];
+            TrafficAreaEdge edge = (TrafficAreaEdge)getManager().getTrafficObject(edgeId);
+            unconnectorList.add(edge);
+        }
+        /*
+          for (String area_id : neighbor_area_id_list_) {
+          TrafficArea area = (TrafficArea)getManager().getTrafficObject(area_id);
+          neighborAreaList.add(area);
+          }
+        */
+        createUnconnectEdgeList();
+        checked = true;
     }
 
-    public void setType(String type) {
-	type_ = type;
+    /**
+     * set type of this area.
+     * @param t type
+     */
+    public void setType(String t) {
+        type = t;
     }
+
+    /**
+     * get type of this area.
+     * @return type
+     */
     public String getType() {
-	return type_;
+        return type;
     }
 
+    /**
+     * get center x.
+     * @return center x
+     */
     public double getCenterX() {
-	return center_x_;
+        return centerX;
     }
+
+    /**
+     * get center y.
+     * @return center y
+     */
     public double getCenterY() {
-	return center_y_;
+        return centerY;
     }
+
+    /**
+     * get distance from an area.
+     * return the distance between center points of the areas.
+     * @param area area
+     * @return distance from the area
+     */
     public double getDistance(TrafficArea area) {
-	double dx = getCenterX() - area.getCenterX();
-	double dy = getCenterY() - area.getCenterY();
-	return Math.sqrt(dx*dx + dy*dy);
+        double dx = getCenterX() - area.getCenterX();
+        double dy = getCenterY() - area.getCenterY();
+        return Math.sqrt(dx * dx + dy * dy);
     }
-    
+
+    /**
+     * get connector(border) between this area and next area.
+     * @param area area
+     * @return connector(border) which can be plural because an area can have two entrance.
+     */
     public TrafficAreaEdge[] getConnector(TrafficArea area) {
-	ArrayList<TrafficAreaEdge> list = new ArrayList<TrafficAreaEdge>();
-	for(TrafficAreaEdge edge : getConnectorEdgeList()) {
-	    if(edge.getNextArea(this)==area)
-		list.add(edge);
-	}
-	return list.toArray(new TrafficAreaEdge[0]);
+        List<TrafficAreaEdge> list = new ArrayList<TrafficAreaEdge>();
+        for (TrafficAreaEdge edge : getConnectorEdgeList()) {
+            if (edge.getNextArea(this) == area) {
+                list.add(edge);
+            }
+        }
+        return list.toArray(new TrafficAreaEdge[0]);
     }
-    
-    private TrafficAgent[] agent_list_buf_ = null;
+
+    /**
+     * get agent list.
+     * @return agent list
+     */
     public TrafficAgent[] getAgentList() {
-	if(agent_list_buf_ == null)
-	    agent_list_buf_ = agent_list_.toArray(new TrafficAgent[0]);
-	return agent_list_buf_;
+        if (agentListBuf == null) {
+            agentListBuf = agentList.toArray(new TrafficAgent[0]);
+        }
+        return agentListBuf;
     }
+
+    /**
+     * add agent into this area.
+     * @param agent agent
+     */
     public void addAgent(TrafficAgent agent) {
-	agent_list_.add(agent);
-	agent_list_buf_ = null;
-	for(TrafficAreaListener listener : area_listener_list_)
-	    listener.entered(new TrafficAreaEvent(this, agent));
+        agentList.add(agent);
+        agentListBuf = null;
+        for (TrafficAreaListener listener : areaListenerList) {
+            listener.entered(new TrafficAreaEvent(this, agent));
+        }
     }
+
+    /**
+     * remove agent from this area.
+     * @param agent agent
+     */
     public void removeAgent(TrafficAgent agent) {
-	agent_list_.remove(agent);
-	agent_list_buf_ = null;
-	for(TrafficAreaListener listener : area_listener_list_)
-	    listener.exited(new TrafficAreaEvent(this, agent));
+        agentList.remove(agent);
+        agentListBuf = null;
+        for (TrafficAreaListener listener : areaListenerList) {
+            listener.exited(new TrafficAreaEvent(this, agent));
+        }
     }
 
-    public void setSimulateAsOpenSpace(boolean simulate_as_open_space) {
-	simulate_as_open_space_ = simulate_as_open_space;
+    /**
+     * this method is not working.
+     * @param s space
+     */
+    public void setSimulateAsOpenSpace(boolean s) {
+        throw new RuntimeException("warning: traffic3.object.area.TrafficArea.java: setSimulateAsOpenSpace(boolean)");
+        //simulateAsOpenSpace = s;
     }
+
+    /**
+     * this megthod is not working.
+     * @return simulate as open space
+     */
     public boolean isSimulateAsOpenSpace() {
-	return 	simulate_as_open_space_;
+        throw new RuntimeException("warning: traffic3.object.area.TrafficArea.java: isSimulateAsOpenSpace()");
+        //return simulateAsOpenSpace;
     }
 
-    public void setProperties(TagElement gml_element) throws Exception {
-	// alert("gml:"+gml_element, "error");
-	String coordinates_text = gml_element.getTagChild("gml:polygon").getTagChild("gml:LinearRing").getChildValue("gml:coordinates");
-	
-	String[] coordinates_text_list = coordinates_text.split(" ");
-	GeneralPath gp = new GeneralPath();
-	String[] x_y = coordinates_text_list[0].split(",");
-	double x = Double.parseDouble(x_y[0]);
-	double y = Double.parseDouble(x_y[1]);
-	node_list_ = new TrafficAreaNode[coordinates_text_list.length];
-	gp.moveTo(x, y);
-	TrafficAreaNode pos = new TrafficAreaNode(getManager());
-	pos.setLocation(x, y, 0);
-	getManager().appendWithoutCheck(pos);
-	node_list_[0] = pos;
-	double x_sum = x;
-	double y_sum = y;
-	for(int i=1; i<coordinates_text_list.length; i++) {
-	    x_y = coordinates_text_list[i].split(",");
-	    x = Double.parseDouble(x_y[0]);
-      	    y = Double.parseDouble(x_y[1]);
-	    x_sum += x;
-	    y_sum += y;
-	    gp.lineTo(x, y);
-	    pos = getManager().createAreaNode(x, y, 0);
-	    node_list_[i] = pos;
-	}
-	center_x_ = x_sum/coordinates_text_list.length;
-	center_y_ = y_sum/coordinates_text_list.length;
-	
-	TagElement[] directed_edge_tag_list = gml_element.getTagChildren("gml:directedEdge");
-	ArrayList<String> directed_edge_id_list = new ArrayList<String>();
-	ArrayList<String> ndirected_edge_id_list = new ArrayList<String>();
-	for(int i=0; i<directed_edge_tag_list.length; i++) {
-	    String de = directed_edge_tag_list[i].getAttributeValue("xlink:href").replaceAll("#", "");
-	    String or = directed_edge_tag_list[i].getAttributeValue("orientation");
-	    if("+".equals(or)) {
-		directed_edge_id_list.add(de);
-	    } else
-		ndirected_edge_id_list.add(de);
-	}
-	connector_id_list_ = directed_edge_id_list.toArray(new String[0]);
-	unconnector_id_list_ = ndirected_edge_id_list.toArray(new String[0]);
-	
-	/*
-	TagElement[] directed_area_tag_list = gml_element.getTagChildren("gml:directedFace");
-	ArrayList<String> directed_area_id_list = new ArrayList<String>();
-	for(int i=0; i<directed_area_tag_list.length; i++) {
-	    String de = directed_area_tag_list[i].getAttributeValue("xlink:href").replaceAll("#", "");
-	    String or = directed_area_tag_list[i].getAttributeValue("orientation");
-	    if("+".equals(or))
-		directed_area_id_list.add(de);
-	}
-	neighbor_area_id_list_ = directed_area_id_list.toArray(new String[0]);
-	alert(neighbor_area_id_list_.length ,"error");
-	*/
+    /**
+     * set properties with xml.
+     * @param gmlElement xml
+     * @throws Exception exception
+     */
+    public void setProperties(TagElement gmlElement) throws WorldManagerException {
+        // Alert("gml:"+gmlElement, "error");
+        String coordinatesText = gmlElement.getTagChild("gml:polygon").getTagChild("gml:LinearRing").getChildValue("gml:coordinates");
+        String[] coordinatesTextList = coordinatesText.split(" ");
+        GeneralPath gp = new GeneralPath();
+        String[] xy = coordinatesTextList[0].split(",");
+        double x = Double.parseDouble(xy[0]);
+        double y = Double.parseDouble(xy[1]);
+        nodeList = new TrafficAreaNode[coordinatesTextList.length];
+        gp.moveTo(x, y);
+        TrafficAreaNode pos = new TrafficAreaNode(getManager());
+        pos.setLocation(x, y, 0);
+        getManager().appendWithoutCheck(pos);
+        nodeList[0] = pos;
+        double xSum = x;
+        double ySum = y;
+        for (int i = 1; i < coordinatesTextList.length; i++) {
+            xy = coordinatesTextList[i].split(",");
+            x = Double.parseDouble(xy[0]);
+            y = Double.parseDouble(xy[1]);
+            xSum += x;
+            ySum += y;
+            gp.lineTo(x, y);
+            pos = getManager().createAreaNode(x, y, 0);
+            nodeList[i] = pos;
+        }
+        centerX = xSum / coordinatesTextList.length;
+        centerY = ySum / coordinatesTextList.length;
 
-	shape_ = gp;
+        TagElement[] directedEdgeTagList = gmlElement.getTagChildren("gml:directedEdge");
+        List<String> directedEdgeIdList = new ArrayList<String>();
+        List<String> notDirectedEdgeIdList = new ArrayList<String>();
+        for (int i = 0; i < directedEdgeTagList.length; i++) {
+            String de = directedEdgeTagList[i].getAttributeValue("xlink:href").replaceAll("#", "");
+            String or = directedEdgeTagList[i].getAttributeValue("orientation");
+            if ("+".equals(or)) {
+                directedEdgeIdList.add(de);
+            }
+            else {
+                notDirectedEdgeIdList.add(de);
+            }
+        }
+        connectorIdList = directedEdgeIdList.toArray(new String[0]);
+        unconnectorIdList = notDirectedEdgeIdList.toArray(new String[0]);
+
+        /*
+          TagElement[] directed_area_tag_list = gmlElement.getTagChildren("gml:directedFace");
+          List<String> directed_area_id_list = new ArrayList<String>();
+          for (int i = 0; i < directed_area_tag_list.length; i++) {
+          String de = directed_area_tag_list[i].getAttributeValue("xlink:href").replaceAll("#", "");
+          String or = directed_area_tag_list[i].getAttributeValue("orientation");
+          if ("+".equals(or))
+          directed_area_id_list.add(de);
+          }
+          neighbor_area_id_list_ = directed_area_id_list.toArray(new String[0]);
+          alert(neighbor_area_id_list_.length ,"error");
+        */
+        shape = gp;
     }
 
     private void createUnconnectEdgeList() {
-	for(TrafficAreaEdge edge : unconnector_list_) {
-	    for(Line2D line : edge.getLineList())
-		unconnect_edge_list_.add(line);
-	}
+        for (TrafficAreaEdge edge : unconnectorList) {
+            for (Line2D line : edge.getLineList()) {
+                unconnectEdgeList.add(line);
+            }
+        }
     }
 
+    /**
+     * get connector edge list.
+     * @return connector edge list
+     */
     public TrafficAreaEdge[] getConnectorEdgeList() {
-	return connector_list_.toArray(new TrafficAreaEdge[0]);
+        return connectorList.toArray(new TrafficAreaEdge[0]);
     }
+
+    /**
+     * get unconnector edge list.
+     * @return unconnector edge list
+     */
     public TrafficAreaEdge[] getUnConnectorEdgeList() {
-	return unconnector_list_.toArray(new TrafficAreaEdge[0]);
+        return unconnectorList.toArray(new TrafficAreaEdge[0]);
     }
 
+    /**
+     * get unconnected edge list as Line2D.
+     * @return unconnected edge list
+     */
     public Line2D[] getUnconnectedEdgeList() {
-	
-	/*
-	if(getBlockadeList().length==0) {
-	    return unconnect_edge_list_.toArray(new Line2D[0]);
-	}
-	*/
-
-	ArrayList<Line2D> line_list = new ArrayList<Line2D>();
-	for(int i=0; i<unconnect_edge_list_.size(); i++) {
-	    line_list.add(unconnect_edge_list_.get(i));
-	}
-	
-	/*
-	for(TrafficArea na : getNeighborList())
-	    for(TrafficBlockade blockade : na.getBlockadeList())
-		for(Line2D line : blockade.getLineList())
-		    line_list.add(line);
-	*/
-	for(TrafficBlockade blockade : getBlockadeList())
-	    for(Line2D line : blockade.getLineList())
-		line_list.add(line);
-	
-	return line_list.toArray(new Line2D[0]);
+        /*
+          if (getBlockadeList().length==0) {
+          return unconnectEdgeList.toArray(new Line2D[0]);
+          }
+        */
+        List<Line2D> lineList = new ArrayList<Line2D>();
+        for (int i = 0; i < unconnectEdgeList.size(); i++) {
+            lineList.add(unconnectEdgeList.get(i));
+        }
+        /*
+          for (TrafficArea na : getNeighborList())
+          for (TrafficBlockade blockade : na.getBlockadeList())
+          for (Line2D line : blockade.getLineList())
+          lineList.add(line);
+        */
+        for (TrafficBlockade blockade : getBlockadeList()) {
+            for (Line2D line : blockade.getLineList()) {
+                lineList.add(line);
+            }
+        }
+        return lineList.toArray(new Line2D[0]);
     }
 
-    volatile private Line2D[] getNeighborWallList_CACHE = null;
-    
+    /**
+     * clear neighbor wall list cache.
+     */
     public void clearNeighborWallListCache() {
-	getNeighborWallList_CACHE = null;
+        getNeighborWallListCACHE = null;
     }
 
+    /**
+     * get neighbor wall list.
+     * @return neighbor wall list
+     */
     public Line2D[] getNeighborWallList() {
-	if(getNeighborWallList_CACHE==null) {	
-	    ArrayList<Line2D> list = new ArrayList<Line2D>();
-	    for(Line2D line : getUnconnectedEdgeList())
-		list.add(line);
-	    for(TrafficArea na : getNeighborList())
-		for(Line2D line : na.getUnconnectedEdgeList())
-		    list.add(line);
-	    getNeighborWallList_CACHE = list.toArray(new Line2D[0]); 
-	}
-	return getNeighborWallList_CACHE;
+        if (getNeighborWallListCACHE == null) {
+            List<Line2D> list = new ArrayList<Line2D>();
+            for (Line2D line : getUnconnectedEdgeList()) {
+                list.add(line);
+            }
+            for (TrafficArea na : getNeighborList()) {
+                for (Line2D line : na.getUnconnectedEdgeList()) {
+                    list.add(line);
+                }
+            }
+            getNeighborWallListCACHE = list.toArray(new Line2D[0]);
+        }
+        return getNeighborWallListCACHE;
    }
 
+    /**
+     * get neighbor list.
+     * @return neighbor list
+     */
     public TrafficArea[] getNeighborList() {
-	HashMap<String, TrafficArea> neighbor_area_list = new HashMap<String, TrafficArea>();
-	for(TrafficAreaEdge edge : connector_list_) {
-	    TrafficArea next = edge.getNextArea(this);
-	    neighbor_area_list.put(next.getID(), next);
-	}
-	return neighbor_area_list.values().toArray(new TrafficArea[0]);
+        Map<String, TrafficArea> neighborAreaList = new HashMap<String, TrafficArea>();
+        for (TrafficAreaEdge edge : connectorList) {
+            TrafficArea next = edge.getNextArea(this);
+            neighborAreaList.put(next.getID(), next);
+        }
+        return neighborAreaList.values().toArray(new TrafficArea[0]);
     }
 
+    /**
+     * get shape.
+     * @return shape
+     */
     public GeneralPath getShape() {
-	return shape_;
+        return shape;
     }
 
+    /**
+     * whether this area include  a point (x, y, z).
+     * @param x x
+     * @param y y
+     * @param z z
+     * @return contain
+     */
     public boolean contains(double x, double y, double z) {
-	return shape_.contains(x, y);
+        return shape.contains(x, y);
     }
 
+    /**
+     * get node list.
+     * @return node list(apexes) of this area
+     */
     public TrafficAreaNode[] getNodeList() {
-	return node_list_;
+        return nodeList;
     }
 
+    /**
+     * add traffic area listener.
+     * @param listener listener
+     */
     public void addTrafficAreaListener(TrafficAreaListener listener) {
-	area_listener_list_.add(listener);
+        areaListenerList.add(listener);
     }
 
+    /**
+     * remove traffic area listener.
+     * @param listener listener
+     */
     public void removeTrafficAreaListener(TrafficAreaListener listener) {
-	area_listener_list_.remove(listener);
+        areaListenerList.remove(listener);
     }
 
-
-
-
-
-
-
+    /**
+     * to string.
+     * @return explanation
+     */
     public String toString() {
-	return "TrafficArea[id:"+getID()+";type:"+getType()+";]";
+        return "TrafficArea[id:" + getID() + ";type:" + getType() + ";]";
     }
+
+    /**
+     * to long string.
+     * @return explanation
+     */
     public String toLongString() {
-	StringBuffer sb = new StringBuffer();
-	sb.append("<div><div style='font-size:18;'>TrafficArea(id:"+getID()+")</div>");
-	sb.append("type: "+getType()+"<br/>");
-	if(isChecked())
-	    sb.append("checked object.<br/>");
-	else
-	    sb.append("unchecked object.<br/>");
-	sb.append("center: ("+center_x_+","+center_y_+")<br/>");
+        StringBuffer sb = new StringBuffer();
+        sb.append("<div><div style='font-size:18;'>TrafficArea(id:" + getID() + ")</div>");
+        sb.append("type: " + getType() + "<br/>");
+        if (isChecked()) {
+            sb.append("checked object.<br/>");
+        }
+        else {
+            sb.append("unchecked object.<br/>");
+        }
+        sb.append("center: (" + centerX + "," + centerY + ")<br/>");
 
-	sb.append("<div style='font-size:15;'>Node List</div>");
-	sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
-	for(int i=0; i<node_list_.length; i++)
-	    sb.append(node_list_[i]).append("<br/>");
-	sb.append("</div>");
+        sb.append("<div style='font-size:15;'>Node List</div>");
+        sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
+        for (int i = 0; i < nodeList.length; i++) {
+            sb.append(nodeList[i]).append("<br/>");
+        }
+        sb.append("</div>");
 
-	sb.append("<div style='font-size:15;'>Connected Edge List</div>");
-	sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
-	for(int i=0; i<connector_list_.size(); i++) {
-	    TrafficAreaEdge tae = connector_list_.get(i);
-	    if(tae==null) continue;
-	    sb.append(tae.toLongString()).append("<br/>");
-	}
-	sb.append("</div>");
-	
+        sb.append("<div style='font-size:15;'>Connected Edge List</div>");
+        sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
+        for (int i = 0; i < connectorList.size(); i++) {
+            TrafficAreaEdge tae = connectorList.get(i);
+            if (tae == null) {
+                continue;
+            }
+            sb.append(tae.toLongString()).append("<br/>");
+        }
+        sb.append("</div>");
 
-	sb.append("<div style='font-size:15;'>Unconnected Edge List</div>");
-	sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
-	for(int i=0; i<unconnector_list_.size(); i++)
-	    sb.append(unconnector_list_.get(i).toString()).append("<br/>");
-	sb.append("</div>");
+        sb.append("<div style='font-size:15;'>Unconnected Edge List</div>");
+        sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
+        for (int i = 0; i < unconnectorList.size(); i++) {
+            sb.append(unconnectorList.get(i).toString()).append("<br/>");
+        }
+        sb.append("</div>");
 
-	sb.append("<div style='font-size:15;'>Neighbor area List</div>");
-	sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
-	for(TrafficArea area : getNeighborList())
-	    sb.append(area.toString()).append("<br/>");
-	sb.append("</div>");
+        sb.append("<div style='font-size:15;'>Neighbor area List</div>");
+        sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
+        for (TrafficArea area : getNeighborList()) {
+            sb.append(area.toString()).append("<br/>");
+        }
+        sb.append("</div>");
 
-	sb.append("<div style='font-size:15;'>Agents</div>");
-	sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
-	for(TrafficAgent agent : getAgentList())
-	    sb.append(agent.toString()).append("<br/>");
-	sb.append("</div>");
+        sb.append("<div style='font-size:15;'>Agents</div>");
+        sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
+        for (TrafficAgent agent : getAgentList()) {
+            sb.append(agent.toString()).append("<br/>");
+        }
+        sb.append("</div>");
 
-	sb.append("<div style='font-size:15;'>Blockades</div>");
-	sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
-	for(TrafficBlockade blockade : getBlockadeList())
-	    sb.append(blockade.toString()).append("<br/>");
-	sb.append("</div>");
+        sb.append("<div style='font-size:15;'>Blockades</div>");
+        sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
+        for (TrafficBlockade blockade : getBlockadeList()) {
+            sb.append(blockade.toString()).append("<br/>");
+        }
+        sb.append("</div>");
 
-
-	sb.append("</div>");
-	return sb.toString();
+        sb.append("</div>");
+        return sb.toString();
     }
-    // easy to access
-
 }

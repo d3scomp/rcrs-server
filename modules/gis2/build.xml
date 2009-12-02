@@ -1,3 +1,4 @@
+<<<<<<< HEAD:modules/gis2/build.xml
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project name="Simulator" default="default" basedir=".">
@@ -155,5 +156,308 @@ ${dist.home}</echo>
 		<delete dir="${build.home}"/>
 		<delete dir="${dist.home}"/>
 	</target>
+=======
+<?xml version="1.0"?>
+
+<project name="Project" default="dist" basedir=".">
+
+  <description>Sample Project</description>
+
+  <!-- set global properties for this build -->
+  <property name="SRC_DIR" location="src"/>
+  <property name="BUILD_DIR" location="build"/>
+  <property name="BUILD_CLASS_DIR" location="${BUILD_DIR}/classes"/>
+  <property name="BUILD_REPORT_DIR" location="${BUILD_DIR}/report"/>
+  <property name="DIST_DIR" location="dist"/>
+  <property name="LIB_DIR" value="lib"/>
+  <property name="DATA_DIR" value="data"/>
+  <property name="DOCS_DIR" location="docs"/>
+  <property name="DOCS_API_DIR" location="${DOCS_DIR}/api"/>
+  <property name="TEST_DIR" location="test"/>
+
+  <property name="JAR_NAME" value="Project"/>
+  <property name="VERSION" value="0.0.0"/>
+  <property name="MAIN_CLASS" value="org.Main"/>
+
+
+  <taskdef 
+      resource="checkstyletask.properties"
+      classpath="build-tools/checkstyle/checkstyle-all-5.0-beta2.jar"/>
+
+  <taskdef
+      name="findbugs"
+      classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
+
+  <path id="cobertura.classpath">
+    <fileset dir="build-tools/cobertura-1.9.2">
+      <include name="cobertura.jar" />
+      <include name="lib/**/*.jar" />
+    </fileset>
+  </path>
+  <taskdef
+      classpathref="cobertura.classpath"
+      resource="tasks.properties"/>
+
+
+
+  <target
+      name="all"
+      depends="dist, doc, check-style, find-bugs, junit"
+      description="complete build">
+    
+  </target>
+
+
+
+  <target name="init">
+
+    <echo>create dirs</echo>
+    <tstamp/>
+    <mkdir dir="${LIB_DIR}"/>
+    <mkdir dir="${DATA_DIR}"/>
+
+    <mkdir dir="${BUILD_CLASS_DIR}"/>
+    <mkdir dir="${BUILD_REPORT_DIR}"/>
+    <mkdir dir="${DATA_DIR}"/>
+    <mkdir dir="${DOCS_API_DIR}"/>
+    <mkdir dir="${DIST_DIR}"/>
+    <mkdir dir="${DIST_DIR}/${LIB_DIR}"/>
+    <mkdir dir="${DIST_DIR}/${DATA_DIR}"/>
+
+  </target>
+
+
+
+  
+  <target
+      name="compile"
+      depends="init"
+      description="compile the source">
+
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac
+	srcdir="${SRC_DIR}"
+	destdir="${BUILD_CLASS_DIR}"
+	debug="true"/>
+
+
+  </target>
+
+
+
+  <target
+      name="doc"
+      depends="init"
+      description="create javadoc">
+
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javadoc
+	destdir="${DOCS_API_DIR}"
+	author="true"
+	version="true"
+	use="true"
+	linksource="true"
+	windowtitle="Sample API">
+      <fileset dir="src"/>
+    </javadoc>
+
+  </target>
+
+
+
+  <target
+      name="dist"
+      depends="compile"
+      description="dist">
+
+    <!-- create JAR_CLASSPATH property -->
+    <script language="javascript">
+      <![CDATA[
+	       importClass(javax.swing.JOptionPane);
+	       function alert(message) {
+	       JOptionPane.showMessageDialog(null, message);
+	       };
+	       
+	       importClass(java.io.File);
+	       var lib_dir = project.getProperty("LIB_DIR");
+	       var lib_list = new File(lib_dir).listFiles();
+	       var jar_classpath = ".";
+	       for(var i=0; i<lib_list.length; i++) {
+	       jar_classpath += ":"+lib_list[i];
+	       }
+	       project.setProperty("JAR_CLASSPATH", jar_classpath);
+      ]]>
+    </script>
+    
+    <jar destfile="${DIST_DIR}/${JAR_NAME}.jar">
+      <fileset dir="${BUILD_CLASS_DIR}"/>
+      <manifest>
+	<attribute name="Built-By" value="${}"/>
+	<attribute name="Implementation-Vendor" value=""/>
+	<attribute name="Implementation-Title" value="${JAR_NAME}"/>
+	<attribute name="Implementation-Version" value="${VERSION}"/>
+	<attribute name="MAIN-CLASS" value="${MAIN_CLASS}"/>
+	<attribute name="CLASS-PATH" value="${JAR_CLASSPATH}"/>
+      </manifest>
+    </jar>
+
+    <copydir src="${LIB_DIR}" dest="${DIST_DIR}/${LIB_DIR}"/>
+    <copydir src="${DATA_DIR}" dest="${DIST_DIR}/${DATA_DIR}"/>
+  </target>
+  
+
+<!--
+  <target
+      name="check-style"
+      description="check style">
+
+    <checkstyle
+	config="build-tools/checkstyle/sun_checks.xml"
+	failOnViolation="false">
+      <formatter type="xml" tofile="${BUILD_REPORT_DIR}/checkstyle_report.xml"/>
+      <fileset dir="${SRC_DIR}" includes="**/*.java"/>
+    </checkstyle>
+    <style
+	in="${BUILD_REPORT_DIR}/checkstyle_report.xml"
+	out="${BUILD_REPORT_DIR}/checkstyle_report.html"
+	style="build-tools/checkstyle/checkstyle.xsl"/>
+
+  </target>
+-->
+
+  <target
+      name="check-style"
+      depends="init"
+      description="check style">
+
+     <java classname="com.puppycrawl.tools.checkstyle.Main">
+       <classpath>
+	 <pathelement location="build-tools/checkstyle/checkstyle.jar"/>
+	 <pathelement location="build-tools/checkstyle/xercesImpl.jar"/>
+       </classpath>
+       <arg value="-c"/>
+       <arg value="build-tools/checkstyle/rcrs_checks.xml"/>
+       <arg value="-f"/>
+       <arg value="plain"/>
+       <arg value="-o"/>
+       <arg value="${BUILD_REPORT_DIR}/checkstyle_report.txt"/>
+       <arg value="-r"/>
+       <arg value="${SRC_DIR}"/>
+     </java>
+
+     <java classname="com.puppycrawl.tools.checkstyle.Main">
+       <classpath>
+	 <pathelement location="build-tools/checkstyle/checkstyle.jar"/>
+	 <pathelement location="build-tools/checkstyle/xercesImpl.jar"/>
+       </classpath>
+       <arg value="-c"/>
+       <arg value="build-tools/checkstyle/rcrs_checks.xml"/>
+       <arg value="-f"/>
+       <arg value="xml"/>
+       <arg value="-o"/>
+       <arg value="${BUILD_REPORT_DIR}/checkstyle_report.xml"/>
+       <arg value="-r"/>
+       <arg value="${SRC_DIR}"/>
+     </java>
+
+    <style
+	in="${BUILD_REPORT_DIR}/checkstyle_report.xml"
+	out="${BUILD_REPORT_DIR}/checkstyle_report.html"
+	style="build-tools/checkstyle/checkstyle.xsl"/>
+  </target>
+
+
+
+  <target
+      name="find-bugs"
+      depends="dist"
+      description="find bugs">
+    <findbugs
+	home="build-tools/findbugs-1.3.8"
+	output="html"
+	outputFile="${BUILD_REPORT_DIR}/findbugs.html">
+      <class location="${DIST_DIR}/${JAR_NAME}.jar"/>
+    </findbugs>
+  </target>
+
+
+
+  <target
+      name="junit"
+      depends="dist"
+      description="junit test">
+
+    <javac
+	classpath="${DIST_DIR}/${JAR_NAME}.jar"
+	srcdir="${TEST_DIR}"
+	destdir="${TEST_DIR}"/>
+
+    <cobertura-instrument todir="${BUILD_REPORT_DIR}">
+      <fileset dir="${BUILD_CLASS_DIR}">
+	<include name="**/*.class" />
+      </fileset>
+    </cobertura-instrument>
+
+    <junit
+	printsummary="yes"
+	haltonfailure="no">
+      <classpath refid="cobertura.classpath" />
+      <classpath location="${BUILD_REPORT_DIR}" />
+      <classpath>
+	<pathelement location="${TEST_DIR}"/>
+	<pathelement path="${DIST_DIR}/${JAR_NAME}.jar"/>
+      </classpath>
+
+      <formatter type="xml"/>
+<!--
+      <test name="TestCase" haltonfailure="no" outfile="result">
+	<formatter type="xml"/>
+      </test>
+      -->
+      <batchtest fork="yes" todir="${BUILD_REPORT_DIR}">
+	<fileset dir="${TEST_DIR}">
+	  <include name="**/*Test*.java"/>
+	</fileset>
+      </batchtest>
+
+    </junit>
+    <junitreport todir="${BUILD_REPORT_DIR}">
+      <fileset dir="${BUILD_REPORT_DIR}">
+	<include name="TEST-*.xml"/>
+      </fileset>
+      <report format="noframes" todir="${BUILD_REPORT_DIR}"/>
+    </junitreport>
+    
+    <cobertura-report format="html" destdir="${BUILD_REPORT_DIR}/cobertura">
+      <fileset dir="${SRC_DIR}">
+	<include name="**/*.java" />
+      </fileset>
+    </cobertura-report>
+
+  </target>
+
+
+
+  <target
+      name="cobertura"
+      description="">
+    
+  </target>
+
+    
+  
+  <target
+      name="clean"
+      description="clean up" >
+
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${BUILD_DIR}"/>
+    <delete dir="${DIST_DIR}"/>
+    <delete dir="${DOCS_API_DIR}"/>
+
+  </target>
+
+
+>>>>>>> fix for check style.:modules/traffic3/build.xml
 
 </project>

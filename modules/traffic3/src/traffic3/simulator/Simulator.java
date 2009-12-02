@@ -1,56 +1,74 @@
 package traffic3.simulator;
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
+import traffic3.manager.WorldManager;
+import traffic3.objects.TrafficAgent;
 
-import traffic3.manager.*;
-import traffic3.objects.area.*;
-import traffic3.objects.*;
-import static traffic3.log.Logger.log;
-import static traffic3.log.Logger.alert;
-
+/**
+ *
+ */
 public class Simulator {
 
-    private WorldManager world_manager_;
-    private double dt_;
-    private double time_ = 0;
+    private WorldManager worldManger;
+    private double stepTimeWidth;
+    private double stepTime = 0;
+    private boolean simulateAsRealTime = false;
 
-    public Simulator(WorldManager world_manager, double dt) {
-	world_manager_ = world_manager;
-	dt_ = dt;
+    /**
+     * Constructor.
+     * @param wm world manager
+     * @param stw step time width
+     */
+    public Simulator(WorldManager wm, double stw) {
+        worldManger = wm;
+        stepTimeWidth = stw;
     }
 
+    /**
+     * step.
+     */
     public void step() {
-	TrafficAgent[] agent_list = world_manager_.getAgentList();
-	long start = System.currentTimeMillis();
-	for(int i=0; i<agent_list.length; i++) {
-	    TrafficAgent agent = agent_list[i];
-	    /*
-	    TrafficAreaNode dest = agent.getDestination();
-	    if(dest!=null) {
-		// agent.setLocation(dest.getX(), dest.getY(), dest.getZ());
-	    }
-	    */
-	    agent.plan();
-	}
-	for(int i=0; i<agent_list.length; i++) {
-	    TrafficAgent agent = agent_list[i];
-	    agent.step(dt_);
-	}
-	long end = System.currentTimeMillis();
-	int diff = (int)(dt_/100 - (end-start));
-	if(diff>0) try{Thread.sleep(diff);}catch(Exception exc){}
-	time_ += dt_;
+        TrafficAgent[] agentList = worldManger.getAgentList();
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < agentList.length; i++) {
+            TrafficAgent agent = agentList[i];
+            /*
+              TrafficAreaNode dest = agent.getDestination();
+              if(dest!=null) {
+              // agent.setLocation(dest.getX(), dest.getY(), dest.getZ());
+              }
+            */
+            agent.plan();
+        }
+        for (int i = 0; i < agentList.length; i++) {
+            TrafficAgent agent = agentList[i];
+            agent.step(stepTimeWidth);
+        }
+        long end = System.currentTimeMillis();
+        int diff = (int)(stepTimeWidth - (end - start));
+        if (simulateAsRealTime && diff > 0) {
+            try {
+                Thread.sleep(diff);
+            }
+            catch (InterruptedException exc) {
+                exc.printStackTrace();
+            }
+        }
+        stepTime += stepTimeWidth;
     }
-    public void setTime(double time) {
-	time_ = time;
+
+    /**
+     * set step time.
+     * @param st step time
+     */
+    public void setTime(double st) {
+        stepTime = st;
     }
+
+    /**
+     * get step time.
+     * @return step time
+     */
     public double getTime() {
-	return time_;
+        return stepTime;
     }
 }

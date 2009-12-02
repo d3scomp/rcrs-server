@@ -1,83 +1,104 @@
 package traffic3.manager;
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.geom.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+import java.awt.geom.Rectangle2D;
+import traffic3.objects.TrafficAgent;
+import traffic3.objects.TrafficBlockade;
+import traffic3.objects.TrafficObject;
+import traffic3.objects.area.TrafficArea;
+import traffic3.objects.area.TrafficAreaNode;
+import traffic3.objects.area.TrafficAreaEdge;
+import traffic3.simulator.SimulatorException;
+import traffic3.io.ParserNotFoundException;
 
-import traffic3.objects.*;
-import traffic3.objects.area.*;
 import static traffic3.log.Logger.log;
 import static traffic3.log.Logger.alert;
-import org.util.xml.parse.*;
-import org.util.xml.parse.policy.*;
-import org.util.xml.element.*;
-import traffic3.io.*;
+
+import org.util.xml.parse.XMLParseException;
+import traffic3.io.AutoVersionSelectParser;
+import traffic3.io.Parser;
+import traffic3.io.RCRSGML1;
+import traffic3.io.RCRSGML0;
+import traffic3.io.RCRSAgent1;
 
 /**
- * 
+ *
  */
 public class WorldManager {
 
-    private WorldManager this_ = this;
-    private HashMap<String,TrafficObject> map_id_trafficobject_ = new HashMap<String, TrafficObject>();
-    private HashMap<String,TrafficArea> map_id_trafficarea_ = new HashMap<String, TrafficArea>();
-    private HashMap<String,TrafficAreaNode> map_id_trafficareanode_ = new HashMap<String, TrafficAreaNode>();
-    private HashMap<String,TrafficAreaEdge> map_id_trafficareaedge_ = new HashMap<String, TrafficAreaEdge>();
-    private HashMap<String,TrafficAgent> map_id_trafficagent_ = new HashMap<String, TrafficAgent>();
-    private HashMap<String,TrafficBlockade> map_id_trafficblockade_ = new HashMap<String, TrafficBlockade>();
-    private AutoVersionSelectParser auto_parser_;
-    private Parser[] available_parser_;
-    private int unique_ = 1;
-    private Object lock_ = new Object();
-    
-    private ArrayList<WorldManagerListener> change_listener_list_ = new ArrayList<WorldManagerListener>();
+    private Map<String, TrafficObject> mapIDTrafficObject = new HashMap<String, TrafficObject>();
+    private Map<String, TrafficArea> mapIDTrafficArea = new HashMap<String, TrafficArea>();
+    private Map<String, TrafficAreaNode> mapIDTrafficAreaNode = new HashMap<String, TrafficAreaNode>();
+    private Map<String, TrafficAreaEdge> mapIDTrafficAreaEdge = new HashMap<String, TrafficAreaEdge>();
+    private Map<String, TrafficAgent> mapIDTrafficAgent = new HashMap<String, TrafficAgent>();
+    private Map<String, TrafficBlockade> mapIDTrafficBlockade = new HashMap<String, TrafficBlockade>();
+    private AutoVersionSelectParser autoParser;
+    private Parser[] availableParser;
+    private int unique = 1;
 
+    private List<WorldManagerListener> changeListenerList = new ArrayList<WorldManagerListener>();
+
+    /**
+     * Constructor.
+     */
     public WorldManager() {
-	Parser[] parser_list = new Parser[]{
-	    new RCRSGML0_0_0(),
-	    new RCRSGML1_0_0(),
-	    new RCRSAgent1_0_0(),
-	};
-	auto_parser_ = new AutoVersionSelectParser(parser_list, true);
-	available_parser_ = parser_list;
-	clear();
+        Parser[] parserList = new Parser[]{new RCRSGML0(),
+                                            new RCRSGML1(),
+                                            new RCRSAgent1()};
+        autoParser = new AutoVersionSelectParser(parserList, true);
+        availableParser = parserList;
+        clear();
     }
 
     /**
      * Remove all the objects in this world.
      */
     public void clear() {
-	map_id_trafficobject_.clear();
-	map_id_trafficarea_.clear();
-	map_id_trafficareanode_.clear();
-	map_id_trafficareaedge_.clear();
-	map_id_trafficagent_.clear();
-	fireRemoved(this, null);
+        mapIDTrafficObject.clear();
+        mapIDTrafficArea.clear();
+        mapIDTrafficAreaNode.clear();
+        mapIDTrafficAreaEdge.clear();
+        mapIDTrafficAgent.clear();
+        fireRemoved(this, null);
     }
 
     /**
      * Get unique id which starts with type.
-     * @param type 
+     * @param type type
      * @return type[number]
      */
     public String getUniqueID(String type) {
-	for(int i=0; ; i++) {
-	    String id = type+i;
-	    if(map_id_trafficobject_.get(id)==null)
-		return id;
-	}
-	//return type+(unique_++);
+        /*
+        for (int i = 0;; i++) {
+            String id = type + i;
+            if (mapIDTrafficObject.get(id) == null) {
+                return id;
+            }
+        }
+        */
+        return type + (unique++);
     }
 
-    public void appendWithoutCheck(TrafficObject... tobject_list) throws Exception {
-	for(TrafficObject tobject : tobject_list)
-	    appendWithoutCheck(tobject);
-	fireAdded(this, tobject_list);
+    /**
+     * append object without check.
+     * @param tobjectList tobject list
+     * @throws WorldManagerException ex.id is not unique
+     */
+    public void appendWithoutCheck(TrafficObject... tobjectList) throws WorldManagerException {
+        for (TrafficObject tobject : tobjectList) {
+            appendWithoutCheck(tobject);
+        }
+        fireAdded(this, tobjectList);
     }
 
     /**
@@ -85,90 +106,113 @@ public class WorldManager {
      * Check validity of TrafficObjects's parameter is depend on other TrafficObjects.
      * So you must call check() after inserting all the TrafficObjects.
      * @param tobject object that will be appended
+     * @throws WorldManagerException ex.id is not unique
      */
-    public void appendWithoutCheck(TrafficObject tobject) throws Exception {
-	appendWithoutCheck_(tobject);
-	fireAdded(this, new TrafficObject[]{tobject});
+    public void appendWithoutCheck(TrafficObject tobject) throws WorldManagerException {
+        appendWithoutCheckSync(tobject);
+        fireAdded(this, new TrafficObject[]{tobject});
     }
 
-    private synchronized void appendWithoutCheck_(TrafficObject tobject) throws Exception {
-	String id = tobject.getID();
-	if(map_id_trafficobject_.get(id)!=null)
-	    throw new Exception("id["+id+"] already exists.");
+    private synchronized void appendWithoutCheckSync(TrafficObject tobject) throws WorldManagerException {
+        String id = tobject.getID();
+        if (mapIDTrafficObject.get(id) != null) {
+            throw new WorldManagerException("id[" + id + "] already exists.");
+        }
 
-	map_id_trafficobject_.put(id, tobject);
-	if(tobject instanceof TrafficArea) {
-	    map_id_trafficarea_.put(id, (TrafficArea)tobject);
-	} else if(tobject instanceof TrafficAreaNode) {
-	    map_id_trafficareanode_.put(id, (TrafficAreaNode)tobject);
-	} else if(tobject instanceof TrafficAreaEdge) {
-	    map_id_trafficareaedge_.put(id, (TrafficAreaEdge)tobject);
-	} else if(tobject instanceof TrafficAgent) {
-	    synchronized(map_id_trafficagent_) {
-		map_id_trafficagent_.put(id, (TrafficAgent)tobject);
-	    }
-	} else if(tobject instanceof TrafficBlockade) {
-	    map_id_trafficblockade_.put(id, (TrafficBlockade)tobject);
-	    tobject.addChangeListener(new ChangeListener(){
-		    public void stateChanged(ChangeEvent e) {
-			fireMapUpdated(e, null);
-		    }
-		});
-	}
-	//log("append: "+tobject);
+        mapIDTrafficObject.put(id, tobject);
+        if (tobject instanceof TrafficArea) {
+            mapIDTrafficArea.put(id, (TrafficArea)tobject);
+        }
+        else if (tobject instanceof TrafficAreaNode) {
+            mapIDTrafficAreaNode.put(id, (TrafficAreaNode)tobject);
+        }
+        else if (tobject instanceof TrafficAreaEdge) {
+            mapIDTrafficAreaEdge.put(id, (TrafficAreaEdge)tobject);
+        }
+        else if (tobject instanceof TrafficAgent) {
+            synchronized (mapIDTrafficAgent) {
+                mapIDTrafficAgent.put(id, (TrafficAgent)tobject);
+            }
+        }
+        else if (tobject instanceof TrafficBlockade) {
+            mapIDTrafficBlockade.put(id, (TrafficBlockade)tobject);
+            tobject.addChangeListener(new ChangeListener() {
+                    public void stateChanged(ChangeEvent e) {
+                        fireMapUpdated(e, null);
+                    }
+                });
+        }
+        //log("append: "+tobject);
     }
 
-    public synchronized void remove(TrafficObject tobject) throws Exception {
-	String id = tobject.getID();
-	if(map_id_trafficobject_.get(id)==null) throw new Exception("id["+id+"] doesnot exists.");
-	map_id_trafficobject_.remove(id);
-	if(tobject instanceof TrafficAgent) {
-	    synchronized(map_id_trafficagent_) {
-		TrafficAgent agent = (TrafficAgent)tobject;
-		TrafficArea area = agent.getArea();
-		if(area!=null)
-		    area.removeAgent(agent);
-		map_id_trafficagent_.remove(id);
-		System.err.println("warning: this operation is not safe.");
-	    }
-	    fireAgentUpdated(this, new TrafficObject[]{tobject});
-	}else{
-	    if(tobject instanceof TrafficArea) {
-		map_id_trafficarea_.remove(id);
-		System.err.println("warning: this operation is not safe.");
-	    } else if(tobject instanceof TrafficAreaNode) {
-		map_id_trafficareanode_.remove(id);
-		System.err.println("warning: this operation is not safe.");
-	    }else if(tobject instanceof TrafficAreaEdge){
-		map_id_trafficareaedge_.remove(id);
-		System.err.println("warning: this operation is not safe.");
-	    }else if(tobject instanceof TrafficBlockade) {
-		map_id_trafficblockade_.remove(id);
-	    }
-	    fireMapUpdated(this, new TrafficObject[]{tobject});
-	}
-
-	log("append: "+tobject);
+    /**
+     * remove object.
+     * @param tobject object
+     */
+    public synchronized void remove(TrafficObject tobject) throws WorldManagerException {
+        String id = tobject.getID();
+        if (mapIDTrafficObject.get(id) == null) {
+            throw new WorldManagerException("id[" + id + "] doesnot exists.");
+        }
+        mapIDTrafficObject.remove(id);
+        if (tobject instanceof TrafficAgent) {
+            synchronized (mapIDTrafficAgent) {
+                TrafficAgent agent = (TrafficAgent)tobject;
+                TrafficArea area = agent.getArea();
+                if (area != null) {
+                    area.removeAgent(agent);
+                }
+                mapIDTrafficAgent.remove(id);
+                System.err.println("warning: this operation is not safe.");
+            }
+            fireAgentUpdated(this, new TrafficObject[]{tobject});
+        }
+        else {
+            if (tobject instanceof TrafficArea) {
+                mapIDTrafficArea.remove(id);
+                System.err.println("warning: this operation is not safe.");
+            }
+            else if (tobject instanceof TrafficAreaNode) {
+                mapIDTrafficAreaNode.remove(id);
+                System.err.println("warning: this operation is not safe.");
+            }
+            else if (tobject instanceof TrafficAreaEdge) {
+                mapIDTrafficAreaEdge.remove(id);
+                System.err.println("warning: this operation is not safe.");
+            }
+            else if (tobject instanceof TrafficBlockade) {
+                mapIDTrafficBlockade.remove(id);
+            }
+            fireMapUpdated(this, new TrafficObject[]{tobject});
+        }
+        log("append: " + tobject);
     }
 
+    /**
+     * notify step finished.
+     * this mthod is for repaint
+     * @param simulator simulator
+     */
     public void stepFinished(Object simulator) {
-	fireAgentUpdated(simulator, null);
+        fireAgentUpdated(simulator, null);
     }
 
     /**
      * Calculate range that containing  all the network node and area node.
+     * @return range
      */
     public Rectangle2D.Double calcRange() {
-	TrafficAreaNode[] tanl = map_id_trafficareanode_.values().toArray(new TrafficAreaNode[0]);
-	Rectangle2D.Double range = null;
-	for(int i=0; i<tanl.length; i++) {
-	    if(range==null)
-		range = new Rectangle2D.Double(tanl[i].getX(), tanl[i].getY(), 0, 0);
-	    else
-		range.add(tanl[i].getX(), tanl[i].getY());
-	}
-
-	return range;
+        TrafficAreaNode[] tanl = mapIDTrafficAreaNode.values().toArray(new TrafficAreaNode[0]);
+        Rectangle2D.Double range = null;
+        for (int i = 0; i < tanl.length; i++) {
+            if (range == null) {
+                range = new Rectangle2D.Double(tanl[i].getX(), tanl[i].getY(), 0, 0);
+            }
+            else {
+                range.add(tanl[i].getX(), tanl[i].getY());
+            }
+        }
+        return range;
     }
 
     /**
@@ -176,216 +220,321 @@ public class WorldManager {
      * For example, Traffic object has neighbors ids.
      * And this TrafficObjects create buf of neighbors instance at this time.
      */
-    public void check() throws Exception {
-	ArrayList<Exception> exception_list = new ArrayList<Exception>();
-	Exception exc = null;
-	try{
-	    synchronized(map_id_trafficobject_) {
-		TrafficObject[] values = map_id_trafficobject_.values().toArray(new TrafficObject[0]);
-		for(int i=0; i<values.length; i++) {
-		    try{
-			values[i].checkObject();
-		    }catch(Exception exception){
-			exception_list.add(exception);
-		    }
-		}
-	    }
-	}catch(Exception e) {
-	    exc = e;
-	}
-	fireChanged(this, null);
-	if(exception_list.size()>0) {
-	    StringBuffer sb = new StringBuffer();
-	    for(Exception e : exception_list)
-		sb.append(e.getMessage()).append("\n");
-	    alert(sb, "error");
-	    throw new Exception(sb.toString());
-	}
-	if(exc != null) throw exc;
+    public void check() throws WorldManagerException {
+        List<SimulatorException> exceptionList = new ArrayList<SimulatorException>();
+        WorldManagerException exc = null;
+        try {
+            synchronized (mapIDTrafficObject) {
+                TrafficObject[] values = mapIDTrafficObject.values().toArray(new TrafficObject[0]);
+                for (int i = 0; i < values.length; i++) {
+                    try {
+                        values[i].checkObject();
+                    }
+                    catch (Exception exception) {
+                        exceptionList.add(new SimulatorException(exception.getMessage()));
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            exc = new WorldManagerException(e.getMessage());
+        }
+        fireChanged(this, null);
+        if (exceptionList.size() > 0) {
+            StringBuffer sb = new StringBuffer();
+            for (Exception e : exceptionList) {
+                sb.append(e.getMessage()).append("\n");
+            }
+            alert(sb, "error");
+            throw new WorldManagerException(sb.toString());
+        }
+        if (exc != null) {
+            throw exc;
+        }
     }
 
     /**
-     * Get copy of all the TrafficObjectList
+     * Get copy of all the TrafficObjectList.
+     * @return all the objects
      */
     public synchronized TrafficObject[] getAll() {
-	return map_id_trafficobject_.values().toArray(new TrafficObject[0]);
+        return mapIDTrafficObject.values().toArray(new TrafficObject[0]);
     }
-    public synchronized TrafficBlockade[] getBlockadeList() {
-	return map_id_trafficblockade_.values().toArray(new TrafficBlockade[0]);
-    }
+
     /**
-     * Get copy of all the TrafficAreaList
+     * Get copy of all the Blockade.
+     * @return all the blockades
+     */
+    public synchronized TrafficBlockade[] getBlockadeList() {
+        return mapIDTrafficBlockade.values().toArray(new TrafficBlockade[0]);
+    }
+
+    /**
+     * Get copy of all the TrafficArea.
+     * @return  all the areas
      */
     public synchronized  TrafficArea[] getAreaList() {
-	return map_id_trafficarea_.values().toArray(new TrafficArea[0]);
+        return mapIDTrafficArea.values().toArray(new TrafficArea[0]);
     }
+
     /**
-     * Get copy of all the TrafficAreaConnectorEdgeList
+     * Get copy of all the TrafficAreaConnectorEdge.
+     * @return all the edges (of area)
      */
     public synchronized TrafficAreaEdge[] getAreaConnectorEdgeList() {
-	return map_id_trafficareaedge_.values().toArray(new TrafficAreaEdge[0]);
+        return mapIDTrafficAreaEdge.values().toArray(new TrafficAreaEdge[0]);
     }
+
     /**
-     * Get copy of all the TrafficAreaNodeList
+     * Get copy of all the TrafficAreaNodeList.
+     * @return all the nodes (of area)
      */
     public synchronized TrafficAreaNode[] getAreaNodeList() {
-	return map_id_trafficareanode_.values().toArray(new TrafficAreaNode[0]);
-    } 
+        return mapIDTrafficAreaNode.values().toArray(new TrafficAreaNode[0]);
+    }
+
     /**
-     * Get copy of all the TrafficAgentList
+     * Get copy of all the TrafficAgentList.
+     * @return all the agents
      */
     public synchronized TrafficAgent[] getAgentList() {
-	TrafficAgent[] result = null;
-	synchronized(map_id_trafficagent_) {
-	    result = map_id_trafficagent_.values().toArray(new TrafficAgent[0]);
-	}
-	return result;
+        TrafficAgent[] result = null;
+        synchronized (mapIDTrafficAgent) {
+            result = mapIDTrafficAgent.values().toArray(new TrafficAgent[0]);
+        }
+        return result;
     }
+
     /**
      * Import objects from file.
+     * @param file file
+     * @throws Exception exception
      */
-    public void open(File file) throws Exception {
-	if(!file.exists()) throw new FileNotFoundException();
-	if(file.getName().endsWith(".gml") || file.getName().endsWith(".xml"))
-	    ;//ok
-	else
-	    throw new Exception("File extension does not match: "+file.getName());
-	log("open file:"+file, "information");
-	//open(new FileInputStream(file));
-	auto_parser_.input(this, file);
-	fireInputted(this, null);
+    public void open(File file) throws FileNotFoundException, IOException, XMLParseException, ParserNotFoundException, WorldManagerException {
+        if (!file.exists()) {
+            throw new FileNotFoundException();
+        }
+        if (!file.getName().endsWith(".gml") && !file.getName().endsWith(".xml")) {
+            throw new IOException("File extension does not match: " + file.getName());
+        }
+        log("open file:" + file, "information");
+        //open(new FileInputStream(file));
+        autoParser.input(this, file);
+        fireInputted(this, null);
     }
-    public void save(File file, Parser parser) throws Exception {
-	parser.output(this, new FileOutputStream(file));
-    }
-    public Parser[] getParserList() {
-	return available_parser_;
-    }
-
 
     /**
-     * find area 
+     * Import objects from url.
+     * @param url url
+     * @throws Exception exception
+     */
+    public void open(URL url) throws FileNotFoundException, IOException, XMLParseException, ParserNotFoundException, WorldManagerException {
+        log("open file:" + url, "information");
+        //open(new FileInputStream(file));
+        autoParser.input(this, url);
+        fireInputted(this, null);
+    }
+
+    /**
+     * save to file.
+     * @param file file
+     * @param parser parser
+     * @throws Exception exception
+     */
+    public void save(File file, Parser parser) throws FileNotFoundException, IOException {
+        parser.output(this, new FileOutputStream(file));
+    }
+
+    /**
+     * get parser list.
+     * @return list of available parser
+     */
+    public Parser[] getParserList() {
+        return availableParser;
+    }
+
+    /**
+     * find area.
+     * @param x x
+     * @param y y
+     * @return area
      */
     public TrafficArea findArea(double x, double y) {
-	TrafficArea[] area_list = getAreaList();
-	for(int i=0; i<area_list.length; i++)
-	    if(area_list[i].contains(x, y, 0))
-		return area_list[i];
-	return null;
+        TrafficArea[] areaList = getAreaList();
+        for (int i = 0; i < areaList.length; i++) {
+            if (areaList[i].contains(x, y, 0)) {
+                return areaList[i];
+            }
+        }
+        return null;
     }
 
     /**
-     * Get nearlest TrafficAreaNode
+     * Getf nearlest TrafficAreaNode.
+     * @param x x
+     * @param y y
+     * @param z z
+     * @return node
      */
     public TrafficAreaNode getNearlestAreaNode(double x, double y, double z) {
-	TrafficAreaNode[] node_list = getAreaNodeList();
-	if(node_list.length==0) return null;
-	TrafficAreaNode min_object = node_list[0];
-	double min_distance = min_object.getDistance(x,y,z);
-	for(int i=1; i<node_list.length; i++) {
-	    double distance = node_list[i].getDistance(x,y,z);
-	    if(distance<min_distance) {
-		min_distance = distance;
-		min_object = node_list[i];
-	    }
-	}
-	return min_object;
+        TrafficAreaNode[] nodeList = getAreaNodeList();
+        if (nodeList.length == 0) {
+            return null;
+        }
+        TrafficAreaNode minObject = nodeList[0];
+        double minDistance = minObject.getDistance(x, y, z);
+        for (int i = 1; i < nodeList.length; i++) {
+            double distance = nodeList[i].getDistance(x, y, z);
+            if (distance < minDistance) {
+                minDistance = distance;
+                minObject = nodeList[i];
+            }
+        }
+        return minObject;
     }
-    
+
     /**
      * Create AreaNode that locate (x, y, z).
      * If already exists the same location (it means this.x=x, this.y=y,this.z=z) then return the instance that already exists.
      * Else create a new Instance.
+     * @param x x
+     * @param y y
+     * @param z z
+     * @return node
      */
-    public TrafficAreaNode createAreaNode(double x, double y, double z) throws Exception {
-	TrafficAreaNode nearlest = getNearlestAreaNode(x,y,z);
-	if(nearlest.getDistance(x,y,z) == 0.0) return nearlest;
-	TrafficAreaNode node = new TrafficAreaNode(this);
-	node.setLocation(x, y, z);
-	appendWithoutCheck(node);
-	return node;
+    public TrafficAreaNode createAreaNode(double x, double y, double z) throws WorldManagerException {
+        TrafficAreaNode nearlest = getNearlestAreaNode(x, y, z);
+        if (nearlest.getDistance(x, y, z) == 0.0) {
+            return nearlest;
+        }
+        TrafficAreaNode node = new TrafficAreaNode(this);
+        node.setLocation(x, y, z);
+        appendWithoutCheck(node);
+        return node;
     }
 
     /**
      * Get object by id.
+     * @param id id
+     * @return object
      */
     public TrafficObject getTrafficObject(String id) {
-	return map_id_trafficobject_.get(id);
+        return mapIDTrafficObject.get(id);
     }
 
     /**
-     * Add change listener
+     * Add change listener.
+     * @param listener listener
      */
     public void addWorldManagerListener(WorldManagerListener listener) {
-	change_listener_list_.add(listener);
+        changeListenerList.add(listener);
     }
+
     /**
-     * Add remove change listener
+     * Add remove change listener.
+     * @param listener listener
+     * @return successed to remove
      */
     public boolean removeWorldManagerListener(WorldManagerListener listener) {
-	return change_listener_list_.remove(listener);
-    }
-
-    public void notifyInputted(Object source) {
-	fireInputted(source, null);
+        return changeListenerList.remove(listener);
     }
 
     /**
-     * fire change
+     * notify inputted objects.
+     * @param source source
+     */
+    public void notifyInputted(Object source) {
+        fireInputted(source, null);
+    }
+
+    /**
+     * fire change.
+     * @param source source
+     * @param changed changed objects
      */
     protected void fireInputted(Object source, TrafficObject[] changed) {
-	final WorldManagerEvent e = new WorldManagerEvent(source, changed);
-	for(WorldManagerListener it : change_listener_list_) {
-	    final WorldManagerListener tmp = it;
-	    new Thread(new Runnable(){public void run(){
-		tmp.inputted(e);
-	    }}, "Notify changed of world manager").start();
-	}
+        final WorldManagerEvent e = new WorldManagerEvent(source, changed);
+        for (WorldManagerListener it : changeListenerList) {
+            final WorldManagerListener tmp = it;
+            new Thread(new Runnable() { public void run() {
+                tmp.inputted(e);
+            } }, "Notify changed of world manager").start();
+        }
     }
+
+    /**
+     * fire change.
+     * @param source source
+     * @param changed changed objects
+     */
     protected void fireAdded(Object source, TrafficObject[] changed) {
-	final WorldManagerEvent e = new WorldManagerEvent(source, changed);
-	for(WorldManagerListener it : change_listener_list_) {
-	    final WorldManagerListener tmp = it;
-	    new Thread(new Runnable(){public void run(){
-		tmp.added(e);
-	    }}, "Notify changed of world manager").start();
-	}
+        final WorldManagerEvent e = new WorldManagerEvent(source, changed);
+        for (WorldManagerListener it : changeListenerList) {
+            final WorldManagerListener tmp = it;
+            new Thread(new Runnable() { public void run() {
+                tmp.added(e);
+            } }, "Notify changed of world manager").start();
+        }
     }
-    
+
+    /**
+     * fire change.
+     * @param source source
+     * @param changed changed objects
+     */
     protected void fireRemoved(Object source, TrafficObject[] changed) {
-	final WorldManagerEvent e = new WorldManagerEvent(source, changed);
-	for(WorldManagerListener it : change_listener_list_) {
-	    final WorldManagerListener tmp = it;
-	    new Thread(new Runnable(){public void run(){
-		tmp.removed(e);
-	    }}, "Notify changed of world manager").start();
-	}
+        final WorldManagerEvent e = new WorldManagerEvent(source, changed);
+        for (WorldManagerListener it : changeListenerList) {
+            final WorldManagerListener tmp = it;
+            new Thread(new Runnable() { public void run() {
+                tmp.removed(e);
+            } }, "Notify changed of world manager").start();
+        }
     }
+
+    /**
+     * fire change.
+     * @param source source
+     * @param changed changed objects
+     */
     protected void fireChanged(Object source, TrafficObject[] changed) {
-	final WorldManagerEvent e = new WorldManagerEvent(source, changed);
-	for(WorldManagerListener it : change_listener_list_) {
-	    final WorldManagerListener tmp = it;
-	    new Thread(new Runnable(){public void run(){
-		tmp.changed(e);
-	    }}, "Notify changed of world manager").start();
-	}
+        final WorldManagerEvent e = new WorldManagerEvent(source, changed);
+        for (WorldManagerListener it : changeListenerList) {
+            final WorldManagerListener tmp = it;
+            new Thread(new Runnable() { public void run() {
+                tmp.changed(e);
+            } }, "Notify changed of world manager").start();
+        }
     }
+
+    /**
+     * fire change.
+     * @param source source
+     * @param changed changed objects
+     */
     protected void fireMapUpdated(Object source, TrafficObject[] changed) {
-	final WorldManagerEvent e = new WorldManagerEvent(source, changed);
-	for(WorldManagerListener it : change_listener_list_) {
-	    final WorldManagerListener tmp = it;
-	    new Thread(new Runnable(){public void run(){
-		tmp.mapUpdated(e);
-	    }}, "Notify changed of world manager").start();
-	}
+        final WorldManagerEvent e = new WorldManagerEvent(source, changed);
+        for (WorldManagerListener it : changeListenerList) {
+            final WorldManagerListener tmp = it;
+            new Thread(new Runnable() { public void run() {
+                tmp.mapUpdated(e);
+            } }, "Notify changed of world manager").start();
+        }
     }
+
+    /**
+     * fire change.
+     * @param source source
+     * @param changed changed objects
+     */
     protected void fireAgentUpdated(Object source, TrafficObject[] changed) {
-	final WorldManagerEvent e = new WorldManagerEvent(source, changed);
-	for(WorldManagerListener it : change_listener_list_) {
-	    final WorldManagerListener tmp = it;
-	    new Thread(new Runnable(){public void run(){
-		tmp.agentUpdated(e);
-	    }}, "Notify changed of world manager").start();
-	}
+        final WorldManagerEvent e = new WorldManagerEvent(source, changed);
+        for (WorldManagerListener it : changeListenerList) {
+            final WorldManagerListener tmp = it;
+            new Thread(new Runnable() { public void run() {
+                tmp.agentUpdated(e);
+            } }, "Notify changed of world manager").start();
+        }
     }
 }

@@ -7,7 +7,7 @@
 	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	  xsi:schemaLocation="http://www.opengis.net/app/networkExamples.xsd"
 	  xmlns:rcrs="http://sakura.meijo-u.ac.jp/rcrs">
-  <rcrs:Version>RCRSGML[1.0.0]</rcrs:Version>
+  <rcrs:Version>RCRSGML[1]</rcrs:Version>
   <rcrs:Description>Test Version</rcrs:Description>
   <rcrs:Area>
     <rcrs:NodeList>
