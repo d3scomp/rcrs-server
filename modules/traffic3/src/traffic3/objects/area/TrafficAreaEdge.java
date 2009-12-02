@@ -1,199 +1,302 @@
 package traffic3.objects.area;
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.geom.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import traffic3.manager.*;
-import traffic3.objects.*;
-import static traffic3.log.Logger.log;
-import static traffic3.log.Logger.alert;
-import org.util.xml.element.*;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
 
+import traffic3.manager.WorldManager;
+import traffic3.manager.WorldManagerException;
+import traffic3.objects.TrafficObject;
+import traffic3.objects.TrafficNode;
+
+import org.util.xml.element.TagElement;
+
+/**
+ *
+ */
 public class TrafficAreaEdge extends TrafficObject {
 
-    private String id1_;
-    private String id2_;
-    private GeneralPath path_;
-    private ArrayList<Line2D> line_list_ = new ArrayList<Line2D>();
-    private String[] directed_area_id_list_;
-    private TrafficArea[] directed_area_list_;
+    private String nodeId1;
+    private String nodeId2;
+    private GeneralPath path;
+    private List<Line2D> lineList = new ArrayList<Line2D>();
+    private String[] directedAreaIdList;
+    private TrafficArea[] directedAreaList;
 
-    private TrafficAreaNode n1_;
-    private TrafficAreaNode n2_;
-    private TrafficAreaNode center_;
+    private TrafficAreaNode node1;
+    private TrafficAreaNode node2;
+    private TrafficAreaNode center;
 
-    public TrafficAreaEdge(WorldManager world_manager) {
-	super(world_manager);
+    /**
+     * Constructor.
+     * @param wm world manager
+     */
+    public TrafficAreaEdge(WorldManager wm) {
+        super(wm);
     }
-    public TrafficAreaEdge(WorldManager world_manager, String id) {
-	super(world_manager, id);
+
+    /**
+     * Constructor.
+     * @param wm world manager
+     * @param id id
+     */
+    public TrafficAreaEdge(WorldManager wm, String id) {
+        super(wm, id);
     }
 
+    /**
+     * set end nodes.
+     * @param id1 node1 id
+     * @param id2 node2 id
+     */
     public void setDirectedNodes(String id1, String id2) {
-	id1_ = id1;
-	id2_ = id2;
-	if(line_list_.size() == 0) {
-	    TrafficAreaNode n1 = (TrafficAreaNode)getManager().getTrafficObject(id1_);
-	    TrafficAreaNode n2 = (TrafficAreaNode)getManager().getTrafficObject(id2_);
-	    line_list_.add(new Line2D.Double(n1.getX(), n1.getY(), n2.getX(), n2.getY()));
-	    GeneralPath gp = new GeneralPath();
-	    gp.moveTo(n1.getX(), n1.getY());
-	    gp.lineTo(n2.getX(), n2.getY());
-	    path_ = gp;
-	}
-
-	fireChanged();
+        nodeId1 = id1;
+        nodeId2 = id2;
+        if (lineList.size() == 0) {
+            TrafficAreaNode n1 = (TrafficAreaNode)getManager().getTrafficObject(nodeId1);
+            TrafficAreaNode n2 = (TrafficAreaNode)getManager().getTrafficObject(nodeId2);
+            lineList.add(new Line2D.Double(n1.getX(), n1.getY(), n2.getX(), n2.getY()));
+            GeneralPath gp = new GeneralPath();
+            gp.moveTo(n1.getX(), n1.getY());
+            gp.lineTo(n2.getX(), n2.getY());
+            path = gp;
+        }
+        fireChanged();
     }
 
+    /**
+     * length.
+     * @return length
+     */
     public double length() {
-	return n1_.getDistance(n2_);
+        return node1.getDistance(node2);
     }
 
+    /**
+     * get directed nodes.
+     * @return nodes (length == 2)
+     */
     public TrafficAreaNode[] getDirectedNodes() {
-	return new TrafficAreaNode[]{n1_, n2_};
+        return new TrafficAreaNode[]{node1, node2};
     }
 
+    /**
+     * get center.
+     * @return node
+     */
     public TrafficNode getCenter() {
-	if(center_==null) {
-	    double x = (n1_.getX()+n2_.getX())/2;
-	    double y = (n1_.getY()+n2_.getY())/2;
-	    double z = 0;
-	    try{
-		center_ = getManager().createAreaNode(x, y, z);
-	    }catch(Exception e) {
-		e.printStackTrace();
-	    }
-	}
-	return center_;
+        if (center == null) {
+            double x = (node1.getX() + node2.getX()) / 2;
+            double y = (node1.getY() + node2.getY()) / 2;
+            double z = 0;
+            try {
+                center = getManager().createAreaNode(x, y, z);
+            }
+            catch (WorldManagerException e) {
+                e.printStackTrace();
+            }
+        }
+        return center;
     }
 
     /*
     public void setLineList(ArrayList<Line2D> line_list) {
-	GeneralPath gp = new GeneralPath();
-	line_list_ = line_list;
-	for(Line2D line : line_list)
-	    gp.append(line);
-	path_ = path;
+    GeneralPath gp = new GeneralPath();
+    lineList = line_list;
+    for(Line2D line : line_list)
+        gp.append(line);
+    path = path;
     }
     */
 
+    /**
+     * get node1 id.
+     * @return node1 id
+     */
     public String getID1() {
-	return id1_;
+        return nodeId1;
     }
+
+    /**
+     * get node2 id.
+     * @return node2 id
+     */
     public String getID2() {
-	return id2_;
+        return nodeId2;
     }
 
-    public void checkObject() throws Exception {
-	directed_area_list_ = new TrafficArea[directed_area_id_list_.length];
-	for(int i=0; i<directed_area_id_list_.length; i++) {
-	    directed_area_list_[i] = (TrafficArea)getManager().getTrafficObject(directed_area_id_list_[i]);
-	}
-	n1_ = (TrafficAreaNode)getManager().getTrafficObject(id1_);
-	n2_ = (TrafficAreaNode)getManager().getTrafficObject(id2_);
+    /**
+     * check object.
+     * @throws Exception exception
+     */
+    public void checkObject() throws WorldManagerException {
+        directedAreaList = new TrafficArea[directedAreaIdList.length];
+        for (int i = 0; i < directedAreaIdList.length; i++) {
+            directedAreaList[i] = (TrafficArea)getManager().getTrafficObject(directedAreaIdList[i]);
+        }
+        node1 = (TrafficAreaNode)getManager().getTrafficObject(nodeId1);
+        node2 = (TrafficAreaNode)getManager().getTrafficObject(nodeId2);
 
-	if(n1_ == null) throw new Exception("Error: Node cannot be found: "+id1_+": "+toString());
-	if(n2_ == null) throw new Exception("Error: Node cannot be found: "+id2_+": "+toString());
-
-	checked_ = true;
+        if (node1 == null) {
+            throw new WorldManagerException("Error: Node cannot be found: " + nodeId1 + ": " + toString());
+        }
+        if (node2 == null) {
+            throw new WorldManagerException("Error: Node cannot be found: " + nodeId2 + ": " + toString());
+        }
+        checked = true;
     }
 
+    /**
+     * this AreaEdge has a line or not.
+     * @param o line
+     * @return has o or not
+     */
     public boolean has(Line2D o) {
-	for(int i=0; i<line_list_.size(); i++) {
-	    if((line_list_.get(i).getP1().getX()==o.getP1().getX() && line_list_.get(i).getP2().getX()==o.getP2().getX())
-	       &&(line_list_.get(i).getP1().getY()==o.getP1().getY() && line_list_.get(i).getP2().getY()==o.getP2().getY()))
-		return true;
-	    if((line_list_.get(i).getP1().getX()==o.getP2().getX() && line_list_.get(i).getP2().getX()==o.getP1().getX())
-	       &&(line_list_.get(i).getP1().getY()==o.getP2().getY() && line_list_.get(i).getP2().getY()==o.getP1().getY()))
-		return true;
-	    //System.out.print(line_list_.get(i).getP1()+o.getP1().toString()+", ");
-	    //System.out.println(line_list_.get(i).getP2()+o.getP2().toString());
-	}
-	return false;
+        for (int i = 0; i < lineList.size(); i++) {
+            if ((lineList.get(i).getP1().getX() == o.getP1().getX() && lineList.get(i).getP2().getX() == o.getP2().getX())
+                && (lineList.get(i).getP1().getY() == o.getP1().getY() && lineList.get(i).getP2().getY() == o.getP2().getY())) {
+                return true;
+            }
+            if ((lineList.get(i).getP1().getX() == o.getP2().getX() && lineList.get(i).getP2().getX() == o.getP1().getX())
+                && (lineList.get(i).getP1().getY() == o.getP2().getY() && lineList.get(i).getP2().getY() == o.getP1().getY())) {
+                return true;
+            }
+            //System.out.print(lineList.get(i).getP1()+o.getP1().toString()+", ");
+            //System.out.println(lineList.get(i).getP2()+o.getP2().toString());
+        }
+        return false;
     }
+
+    /**
+     * get next area.
+     * @param now area
+     * @return next area
+     */
     public TrafficArea getNextArea(TrafficArea now) {
-	if(directed_area_list_.length == 1) return null;
-	assert directed_area_list_.length==2 : "three directed area!";
+        if (directedAreaList.length == 1) {
+            return null;
+        }
+        assert directedAreaList.length == 2 : "three directed area!";
 
-	//alert("<html>"+now+" :</br> "+toLongString()+"</html>", "error");
-	if(directed_area_list_[0]==now) return directed_area_list_[1];
-	if(directed_area_list_[1]==now) return directed_area_list_[0];
-	return null;
+        //alert("<html>"+now+" :</br> "+toLongString()+"</html>", "error");
+        if (directedAreaList[0] == now) {
+            return directedAreaList[1];
+        }
+        if (directedAreaList[1] == now) {
+            return directedAreaList[0];
+        }
+        return null;
     }
+
+    /**
+     * get directed area.
+     * @return directed areas
+     */
     public TrafficArea[] getDirectedArea() {
-	return directed_area_list_;
-    }
-    public void setDirectedAreaIDList(String[] directed_area_id_list) {
-	directed_area_id_list_ = directed_area_id_list;
+        return directedAreaList;
     }
 
+    /**
+     * set directed area id list.
+     * @param ids ids
+     */
+    public void setDirectedAreaIDList(String... ids) {
+        directedAreaIdList = ids;
+    }
+
+    /**
+     * get line list.
+     * @return line list
+     */
     public Line2D[] getLineList() {
-	return line_list_.toArray(new Line2D[0]);
+        return lineList.toArray(new Line2D[0]);
     }
 
+    /**
+     * distance.
+     * @param x x
+     * @param y y
+     * @return distance
+     */
     public double distance(double x, double y) {
-	double min = line_list_.get(0).ptSegDist(x, y);
-	for(int i=1; i<line_list_.size(); i++)
-	    min = Math.min(min ,line_list_.get(i).ptSegDist(x, y));
-	return min;
+        double min = lineList.get(0).ptSegDist(x, y);
+        for (int i = 1; i < lineList.size(); i++) {
+            min = Math.min(min, lineList.get(i).ptSegDist(x, y));
+        }
+        return min;
     }
 
-    public void setProperties(TagElement gml_element) throws Exception {
-	// System.out.println("gml edge:"+gml_element);
-	TagElement[] ids = gml_element.getTagChildren("gml:directedNode");
-	String id1 = ids[0].getAttributeValue("xlink:href").replaceAll("#", "");
-	String id2 = ids[1].getAttributeValue("xlink:href").replaceAll("#", "");
-	String coordinates_text = gml_element.getTagChild("gml:centerLineOf").getTagChild("gml:LineString").getChildValue("gml:coordinates");
-	String[] coordinates_text_list = coordinates_text.split(" ");
-	GeneralPath gp = new GeneralPath();
-	String[] x_y = coordinates_text_list[0].split(",");
-	double lx = Double.parseDouble(x_y[0]);
-	double ly = Double.parseDouble(x_y[1]);
-	gp.moveTo(lx, ly);
-	for(int i=1; i<coordinates_text_list.length; i++) {
-	    x_y = coordinates_text_list[i].split(",");
-	    double x = Double.parseDouble(x_y[0]);
-      	    double y = Double.parseDouble(x_y[1]);
-	    gp.lineTo(x, y);
-	    line_list_.add(new Line2D.Double(lx, ly, x, y));
-	    lx = x;
-	    ly = y;
-	}
-	path_ = gp;
-	TagElement[] fids = gml_element.getTagChildren("gml:directedFace");
-	directed_area_id_list_ = new String[fids.length];
-	for(int i=0; i<fids.length; i++)
-	    directed_area_id_list_[i] = fids[i].getAttributeValue("xlink:href").replaceAll("#", "");
-	
-	setDirectedNodes(id1, id2);
+    /**
+     * set properties.
+     * @param gmlElement gml element
+     * @throws Exception exception
+     */
+    public void setProperties(TagElement gmlElement) throws WorldManagerException {
+        // System.out.println("gml edge:"+gmlElement);
+        TagElement[] ids = gmlElement.getTagChildren("gml:directedNode");
+        String id1 = ids[0].getAttributeValue("xlink:href").replaceAll("#", "");
+        String id2 = ids[1].getAttributeValue("xlink:href").replaceAll("#", "");
+        String coordinatesText = gmlElement.getTagChild("gml:centerLineOf").getTagChild("gml:LineString").getChildValue("gml:coordinates");
+        String[] coordinatesTextList = coordinatesText.split(" ");
+        GeneralPath gp = new GeneralPath();
+        String[] xy = coordinatesTextList[0].split(",");
+        double lx = Double.parseDouble(xy[0]);
+        double ly = Double.parseDouble(xy[1]);
+        gp.moveTo(lx, ly);
+        for (int i = 1; i < coordinatesTextList.length; i++) {
+            xy = coordinatesTextList[i].split(",");
+            double x = Double.parseDouble(xy[0]);
+            double y = Double.parseDouble(xy[1]);
+            gp.lineTo(x, y);
+            lineList.add(new Line2D.Double(lx, ly, x, y));
+            lx = x;
+            ly = y;
+        }
+        path = gp;
+        TagElement[] fids = gmlElement.getTagChildren("gml:directedFace");
+        directedAreaIdList = new String[fids.length];
+        for (int i = 0; i < fids.length; i++) {
+            directedAreaIdList[i] = fids[i].getAttributeValue("xlink:href").replaceAll("#", "");
+        }
+        setDirectedNodes(id1, id2);
     }
+
+    /**
+     * get path.
+     * @return path
+     */
     public GeneralPath getPath() {
-	return path_;
+        return path;
     }
 
+    /**
+     * description.
+     * @return description
+     */
     public String toString() {
-	return "TrafficAreaEdge[id:"+getID()+";id1:"+id1_+";id2:"+id2_+";]";
+        return "TrafficAreaEdge[id:" + getID() + ";id1:" + nodeId1 + ";id2:" + nodeId2 + ";]";
     }
+
+    /**
+     * detailed description.
+     * @return detailed description
+     */
     public String toLongString() {
-	StringBuffer sb = new StringBuffer();
-	sb.append("<div><div style='font-size:18;'>TrafficAreaEdge(id:"+getID()+")</div>");
-	sb.append("<div>id: ").append(getID()).append("</div>");
-	sb.append("<div style='margin-left:50px;'>");
-	sb.append("<div>node: ").append(n1_).append("</div>");
-	sb.append("<div>node: ").append(n2_).append("</div>");
-	if(directed_area_list_!=null) {
-	    for(int i=0; i<directed_area_list_.length; i++) {
-		sb.append("<div>directed face").append(i+1).append(":  ").append(directed_area_list_[i]).append("</div>");		
-	    }
-	}
-	sb.append("</div>");
-	sb.append("</div>");
-	return sb.toString();
+        StringBuffer sb = new StringBuffer();
+        sb.append("<div><div style='font-size:18;'>TrafficAreaEdge(id:" + getID() + ")</div>");
+        sb.append("<div>id: ").append(getID()).append("</div>");
+        sb.append("<div style='margin-left:50px;'>");
+        sb.append("<div>node: ").append(node1).append("</div>");
+        sb.append("<div>node: ").append(node2).append("</div>");
+        if (directedAreaList != null) {
+            for (int i = 0; i < directedAreaList.length; i++) {
+                sb.append("<div>directed face").append(i + 1).append(":  ").append(directedAreaList[i]).append("</div>");
+            }
+        }
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
     }
 }

@@ -13,6 +13,7 @@ import org.util.xml.element.Element;
 import org.util.xml.element.TagElement;
 import org.util.xml.parse.ElementParser;
 import org.util.xml.parse.policy.*;
+import org.util.xml.io.XMLConfigManager;
 
 import java.util.*;
 import rescuecore2.worldmodel.*;
@@ -68,8 +69,9 @@ public class GISServer {
 	world_manager.open(file1);
 	System.err.println("opening: "+file2);
 	world_manager.open(file2);
+        XMLConfigManager configManager = new XMLConfigManager("GISServerConfig.xml");
 
-	final WorldManagerGUI wmg = new WorldManagerGUI(world_manager);
+	final WorldManagerGUI wmg = new WorldManagerGUI(world_manager, configManager);
 	wmg.createGUI();
 	wmg.setPreferredSize(new java.awt.Dimension(500, 500));
 	final javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.BorderLayout());
