@@ -611,7 +611,10 @@ public class TrafficArea extends TrafficObject {
 
         sb.append("<div style='font-size:15;'>Agents</div>");
         sb.append("<div style='font-size:12;padding:0 0 0 30px;'>");
-        for (TrafficAgent agent : getAgentList()) {
+        TrafficAgent[] tal = getAgentList();
+        sb.append("<div>Number of Agents: ").append(tal.length).append("</div>");
+        
+        for (TrafficAgent agent : tal) {
             sb.append(agent.toString()).append("<br/>");
         }
         sb.append("</div>");

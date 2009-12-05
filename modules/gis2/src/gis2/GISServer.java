@@ -122,11 +122,14 @@ public class GISServer {
 	    EntityID rcrsid = getID(gmlid, gmlid_rcrsid_map);
 	    Area rcrs_area = null;
 	    String area_type = (traffic_area.getType()==null ? "area" : traffic_area.getType().toLowerCase());
-	    if(area_type.equals("building"))
-		rcrs_area = new Building(rcrsid);
-	    else
+	    if (area_type.equals("building")) {
+		Building building = new Building(rcrsid);
+                building.setBrokenness(0);
+                rcrs_area = building;
+	    }
+            else {
 		rcrs_area = new Area(rcrsid);
-	    
+            }
 	    rcrs_area.setCenter((int)traffic_area.getCenterX(), (int)traffic_area.getCenterY());
 	    TrafficAreaNode[] node_list = traffic_area.getNodeList();
 	    int[] shape = new int[node_list.length*2];
@@ -166,7 +169,7 @@ public class GISServer {
 	    n = node_list[0];
 	    nexts.add(new EntityID(-1));
 	    
-	    rcrs_area.setShape(shape, nexts);
+	    rcrs_area.setApexes(shape, nexts);
 	    pool.put(rcrs_area.getID(), rcrs_area);
 
 	    ArrayList<EntityID> eidl = new ArrayList<EntityID>();

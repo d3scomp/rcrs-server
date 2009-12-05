@@ -697,7 +697,13 @@ public class WorldManagerGUI extends JComponent {
      * @param v value
      */
     public void setValue(String k, Object v) {
-        RENDERING_SETTINGS.get(k).setValue(v);
+        Value value = RENDERING_SETTINGS.get(k);
+        if (value instanceof BooleanValue) {
+            ((BooleanValue)value).setValue((Boolean)v);
+        }
+        else {
+            System.err.println("set valeue: unknown type: " + value);
+        }
     }
 
     /**
@@ -1114,7 +1120,7 @@ public class WorldManagerGUI extends JComponent {
                 }
                 else if ("check".equals(te.getAttributeValue("type"))) {
                     String valueName = te.getAttributeValue("value");
-                    Value value = RENDERING_SETTINGS.get(valueName);
+                    BooleanValue value = (BooleanValue)RENDERING_SETTINGS.get(valueName);
                     try {
                         Boolean initValue = "true".equals(te.getAttributeValue("init"));
                         value.setValue(initValue);

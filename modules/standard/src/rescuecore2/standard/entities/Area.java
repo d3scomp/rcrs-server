@@ -9,17 +9,24 @@ import rescuecore2.worldmodel.properties.IntArrayProperty;
 import rescuecore2.worldmodel.properties.EntityRefListProperty;
 import rescuecore2.worldmodel.WorldModel;
 import rescuecore2.misc.Pair;
-
+import rescuecore2.worldmodel.Property;
 
 /**
    The Area object.
  */
 public class Area extends StandardEntity {
 
-    private IntProperty center_x;
-    private IntProperty center_y;
+    private IntProperty x;
+    private IntProperty y;
+    private BooleanProperty ignition;
+    private IntProperty fieryness;
+    private IntProperty brokenness;
+    private IntProperty groundArea;
+    private IntProperty temperature;
+    private IntProperty importance;
+    private IntArrayProperty apexes;
+    private EntityRefListProperty entrances;
     private IntProperty area_type;
-    private IntArrayProperty shape;
     private EntityRefListProperty next_area;
     private EntityRefListProperty blockade_list;
     //private IntProperty repair_cost;
@@ -29,28 +36,107 @@ public class Area extends StandardEntity {
        @param id The ID of this entity.
      */
     public Area(EntityID id) {
-	this(id, StandardEntityType.AREA);
+	this(id, StandardEntityURN.AREA);
     }
     
-    public Area(EntityID id, StandardEntityType type) {
-        super(id, type);
-	center_x = new IntProperty(StandardPropertyType.X);
-	center_y = new IntProperty(StandardPropertyType.Y);
-        area_type = new IntProperty(StandardPropertyType.AREA_TYPE);
-	shape = new IntArrayProperty(StandardPropertyType.AREA_APEXES);
-	next_area = new EntityRefListProperty(StandardPropertyType.NEXT_AREA);
-	blockade_list = new EntityRefListProperty(StandardPropertyType.BLOCKADE_LIST);
-	//repair_cost = new IntProperty(StandardPropertyType.REPAIR_COST);
-        addProperties(center_x, center_y, area_type, shape, next_area, blockade_list);
+
+    public Area(EntityID id, StandardEntityURN urn) {
+        super(id, urn);
+	x = new IntProperty(StandardPropertyURN.X);
+	y = new IntProperty(StandardPropertyURN.Y);
+        ignition = new BooleanProperty(StandardPropertyURN.IGNITION);
+        fieryness = new IntProperty(StandardPropertyURN.FIERYNESS);
+        brokenness = new IntProperty(StandardPropertyURN.BROKENNESS);
+        groundArea = new IntProperty(StandardPropertyURN.BUILDING_AREA_GROUND);
+        temperature = new IntProperty(StandardPropertyURN.TEMPERATURE);
+        importance = new IntProperty(StandardPropertyURN.IMPORTANCE);
+        apexes = new IntArrayProperty(StandardPropertyURN.BUILDING_APEXES);
+        entrances = new EntityRefListProperty(StandardPropertyURN.ENTRANCES);
+        area_type = new IntProperty(StandardPropertyURN.AREA_TYPE);
+	next_area = new EntityRefListProperty(StandardPropertyURN.NEXT_AREA);
+	blockade_list = new EntityRefListProperty(StandardPropertyURN.BLOCKADE_LIST);
+    }
+    public Area(Area other) {
+        super(other);
+	x = new IntProperty(other.x);
+	y = new IntProperty(other.y);
+        ignition = new BooleanProperty(other.ignition);
+        fieryness = new IntProperty(other.fieryness);
+        brokenness = new IntProperty(other.brokenness);
+        groundArea = new IntProperty(other.groundArea);
+        temperature = new IntProperty(other.temperature);
+        importance = new IntProperty(other.importance);
+        apexes = new IntArrayProperty(other.apexes);
+        entrances = new EntityRefListProperty(other.entrances);
+        area_type = new IntProperty(other.area_type);
+	next_area = new EntityRefListProperty(other.next_area);
+	blockade_list = new EntityRefListProperty(other.blockade_list);
     }
     
     public Pair<Integer, Integer> getLocation(WorldModel<? extends StandardEntity> world) {
-	return new Pair<Integer, Integer>(center_x.getValue(), center_y.getValue());
+	return new Pair<Integer, Integer>(x.getValue(), y.getValue());
     }
     
     @Override
     protected Entity copyImpl() {
         return new Area(getID());
+    }
+
+    @Override
+    public Property getProperty(String urn) {
+        StandardPropertyURN type;
+        try {
+            type = StandardPropertyURN.valueOf(urn);
+        }
+        catch (IllegalArgumentException e) {
+            return super.getProperty(urn);
+        }
+        switch (type) {
+        case X:
+            return x;
+        case Y:
+            return y;
+        case IGNITION:
+            return ignition;
+        case FIERYNESS:
+            return fieryness;
+        case BROKENNESS:
+            return brokenness;
+        case TEMPERATURE:
+            return temperature;
+        case IMPORTANCE:
+            return importance;
+        case BUILDING_APEXES:
+            return apexes;
+        case ENTRANCES:
+            return entrances;
+        case AREA_TYPE:
+            return area_type;
+        case NEXT_AREA:
+            return next_area;
+        case BLOCKADE_LIST:
+            return blockade_list;
+        default:
+            return super.getProperty(urn);
+        }
+    }
+
+    @Override
+    public Set<Property> getProperties() {
+        Set<Property> result = super.getProperties();
+        result.add(x);
+        result.add(y);
+        result.add(ignition);
+        result.add(fieryness);
+        result.add(brokenness);
+        result.add(temperature);
+        result.add(importance);
+        result.add(apexes);
+        result.add(entrances);
+        result.add(area_type);
+        result.add(next_area);
+        result.add(blockade_list);
+        return result;
     }
 
 
@@ -94,11 +180,11 @@ public class Area extends StandardEntity {
     }
 
     /**
-       Get the value of the center_x kind property.
-       @return The center_x kind.
+       Get the value of the x kind property.
+       @return The x kind.
      */
     public int getCenterX() {
-        return center_x.getValue();
+        return x.getValue();
     }
 
     public void setCenter(int x, int y) {
@@ -107,25 +193,27 @@ public class Area extends StandardEntity {
     }
 
     /**
-       Set the value of the center_x kind property.
-       @param newKind The new center_x kind.
+       Set the value of the x kind property.
+       @param newKind The new x kind.
     */
     public void setCenterX(int newKind) {
-        this.center_x.setValue(newKind);
+        this.x.setValue(newKind);
     }
 
     public int getCenterY() {
-        return center_y.getValue();
+        return y.getValue();
     }
     public void setCenterY(int newKind) {
-        this.center_y.setValue(newKind);
+        this.y.setValue(newKind);
     }
 
     public List<EntityID> getNeighbors() {
 	ArrayList<EntityID> list = new ArrayList<EntityID>();
-	for(EntityID id : getNextArea())
-	    if(id!=null && id.getValue()!=-1)
+	for (EntityID id : getNextArea()) {
+	    if (id != null && id.getValue() != -1) {
 		list.add(id);
+            }
+        }
         return list;
     }
 
@@ -195,14 +283,14 @@ public class Area extends StandardEntity {
 	return min_id;
     }
 
-    public int[] getShape() {
-        return shape.getValue();
+    public int[] getApexes() {
+        return apexes.getValue();
     }
     public List<EntityID> getNextArea() {
         return next_area.getValue();
     }
-    public void setShape(int[] newShape, List<EntityID> newNextArea) {
-        this.shape.setValue(newShape);
+    public void setApexes(int[] newShape, List<EntityID> newNextArea) {
+        this.apexes.setValue(newShape);
         this.next_area.setValue(newNextArea);
     }
 

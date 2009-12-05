@@ -45,17 +45,17 @@ public class TrafficAgent extends TrafficObject {
   //  private double stepDistanceMax = 1000;
 
   /**
-   * dest buf.
+   * force of going to destination.
    */
   private final double[] destBuf = new double[D];
 
   /**
-   * sumop buf.
+   * force of avoiding other people.
    */
   private final double[] sumopBuf = new double[D];
 
   /**
-   * sumw buf.
+   * force of avoiding walls.
    */
   private final double[] sumwBuf = new double[D];
 
@@ -123,6 +123,11 @@ public class TrafficAgent extends TrafficObject {
    * The destination that this agent wants to go.
    */
   private TrafficAreaNode finalDestination;
+
+  /**
+   * The destination that this agent wants to go.
+   */
+  private List<TrafficAreaNode> destinationList;
 
   /**
    * now destination.
@@ -352,16 +357,17 @@ public class TrafficAgent extends TrafficObject {
     setLocationCount++;
     double dx = x - locationX;
     double dy = y - locationY;
-    double dz = y - locationY;
+    //double dz = y - locationZ;
     if (setLocationCount % locationSaveSkipCount == 0 && savePositionHistory) {
       positionHistory.add(new Point2D.Double(x, y));
     }
 
-    this.totalDistance += Math.sqrt(dx * dx + dy * dy + dz * dz);
+    //this.totalDistance += Math.sqrt(dx * dx + dy * dy + dz * dz);
+    this.totalDistance += Math.sqrt(dx * dx + dy * dy);
 
     locationX = x;
     locationY = y;
-    locationZ = z;
+    //locationZ = z;
     if (this.nowArea == null || !this.nowArea.contains(x, y, z)) {
       TrafficArea area = null;
       if (this.nowArea != null) {
@@ -474,14 +480,18 @@ public class TrafficAgent extends TrafficObject {
   }
 
   /**
-   * set destination.
+   * set destination list.
    * @param destination destination
    */
-  public void setDestination(TrafficAreaNode destination) {
-    this.finalDestination = destination;
-    this.nowDestination = null;
-    //TrafficArea goal = getManager().findArea(destination.getX(), destination.getY());
-    plan();
+  public void setDestination(TrafficAreaNode... dl) {
+      this.destinationList = new ArrayList<TrafficAreaNode>();
+      for (TrafficAreaNode tan : dl) {
+          this.destinationList.add(tan);
+      }
+      this.finalDestination = dl[dl.length-1];
+      this.nowDestination = null;
+      //TrafficArea goal = getManager().findArea(destination.getX(), destination.getY());
+      plan();
   }
 
   /**
@@ -500,35 +510,34 @@ public class TrafficAgent extends TrafficObject {
     return this.nowDestination;
   }
 
-  /**
-   * plan.
-   */
-  public void plan() {
-    if (this.nowDestination == null) {
-      try {
-        planDestination();
-      }
-      catch (WorldManagerException e) {
-        alert(e, "error");
-      }
-    }
-
+    /**
+     * plan.
+     */
+    public void plan() {
+        if (this.nowDestination == null) {
+            try {
+                planDestination();
+            }
+            catch (WorldManagerException e) {
+                alert(e, "error");
+            }
+        }
     //if (this.isNetworkMode) {
     //  plan_network();
     //}
     //else {
-      planArea();
+        planArea();
     //}
-  }
+    }
 
-  /*
-  public void plan_network() {
-    forceX = 0;
-    forceY = 0;
-    forceZ = 0;
-    throw new RuntimeException("not supported network mode");
-  }
-  */
+    /*
+      public void plan_network() {
+      forceX = 0;
+      forceY = 0;
+      forceZ = 0;
+      throw new RuntimeException("not supported network mode");
+      }
+    */
 
   /**
    * plan area.
@@ -540,13 +549,13 @@ public class TrafficAgent extends TrafficObject {
 
     forceX = destBuf[0] + sumopBuf[0] + sumwBuf[0];
     forceY = destBuf[1] + sumopBuf[1] + sumwBuf[1];
-    forceZ = destBuf[2] + sumopBuf[2];
+    //forceZ = destBuf[2] + sumopBuf[2];
 
     if (Double.isNaN(forceX) || Double.isNaN(forceY) || Double.isNaN(forceZ)) {
       System.err.println("plan_area(): force is NaN!");
       forceX = 0;
       forceY = 0;
-      forceZ = 0;
+      //forceZ = 0;
     }
   }
 
@@ -554,7 +563,7 @@ public class TrafficAgent extends TrafficObject {
 
     double destx = 0;
     double desty = 0;
-    double destz = 0;
+    //double destz = 0;
     if (this.nowDestination != null) {
       double dx = this.nowDestination.getX() - locationX;
       double dy = this.nowDestination.getY() - locationY;
@@ -572,7 +581,6 @@ public class TrafficAgent extends TrafficObject {
         ndx /= ndist;
         ndy /= ndist;
         //ndz /= ndist;
-
         double cdx = locationX - n2.getX();
         double cdy = locationY - n2.getY();
         //double cdz = locationZ - n2.getZ();
@@ -596,9 +604,9 @@ public class TrafficAgent extends TrafficObject {
       }
       final double ddd = 0.001;
       if (this.nowDestination == this.finalDestination) {
-        dx = Math.min(this.velocityLimit, ddd * dist) * dx;
-        dy = Math.min(this.velocityLimit, ddd * dist) * dy;
-        //dz = Math.min(this.velocityLimit, 0.001 * dist) * dz;
+          dx = Math.min(this.velocityLimit, ddd * dist) * dx;
+          dy = Math.min(this.velocityLimit, ddd * dist) * dy;
+          //dz = Math.min(this.velocityLimit, 0.001 * dist) * dz;
       }
       else {
         dx = (1.0) * dx;
@@ -647,61 +655,62 @@ public class TrafficAgent extends TrafficObject {
       return sumop;
     }
 
+    final double cutoffX = 3000.0;
+    final double cutoffY = 3000.0;
+    final double randomMax = 0.001;
+    final double randomMean = 0.5;
+
     TrafficArea[] areaList = this.nowArea.getNeighborList();
     for (int j = -1; j < areaList.length; j++) {
-      TrafficAgent[] agentList = null;
-      if (j == -1) {
-        agentList = this.nowArea.getAgentList();
-      }
-      else {
-        agentList = areaList[j].getAgentList();
-      }
-      double opdx;
-      double opdy;
-      for (int i = 0; i < agentList.length; i++) {
-        TrafficAgent op = agentList[i];
-        if (op == this) {
-          continue;
-        }
-        opdx = op.getX() - locationX;
-        final double cutoffX = 3000;
-        final double cutoffY = 3000;
-        if (opdx < -cutoffX || cutoffX < opdx) {
-          continue;
-        }
-        opdy = op.getY() - locationY;
-        if (opdy < -cutoffY || cutoffY < opdy) {
-          continue;
-        }
-     // double opdz = op.getZ() - locationZ;
-        double r = this.radius + op.getRadius();
-        double opdist2 = opdx * opdx + opdy * opdy;
-        final double randomMax = 0.001;
-        final double randomMean = 0.5;
-        if (opdist2 == 0) {
-          sumopx += randomMax * (this.valueRandomX - randomMean);
-          sumopy += randomMax * (this.valueRandomY - randomMean);
-          continue;
-        }
-        double opdist = Math.sqrt(opdist2);
-        double opdxn = opdx / opdist;
-        double opdyn = opdy / opdist;
-     // double opdzn = opdz / opdist;
-        double opp = r - opdist;
-        double tmp = -this.valueAgentA * Math.exp(opp / this.valueAgentB);
-        if (Double.isInfinite(tmp)) {
-          System.out.println("calculateAgentsForce(): A result of exp is infinite: exp(" + (opp / this.valueAgentB) + ")");
+        TrafficAgent[] agentList = null;
+        if (j == -1) {
+            agentList = this.nowArea.getAgentList();
         }
         else {
-          sumopx += tmp * opdxn;
-          sumopy += tmp * opdyn;
+            agentList = areaList[j].getAgentList();
         }
-        if (opp > 0) {
-          sumopx += -this.valueAgentK * (opp) * opdxn;
-          sumopy += -this.valueAgentK * (opp) * opdyn;
-       // sumopz += -this.valueAgentK * (opp) * opdzn;
+        double opdx;
+        double opdy;
+        for (int i = 0; i < agentList.length; i++) {
+            TrafficAgent op = agentList[i];
+            if (op == this) {
+                continue;
+            }
+            opdx = op.getX() - locationX;
+            if (opdx < -cutoffX || cutoffX < opdx) {
+                continue;
+            }
+            opdy = op.getY() - locationY;
+            if (opdy < -cutoffY || cutoffY < opdy) {
+                continue;
+            }
+            // double opdz = op.getZ() - locationZ;
+            double r = this.radius + op.getRadius();
+            double opdist2 = opdx * opdx + opdy * opdy;
+            if (opdist2 == 0) {
+                sumopx += randomMax * (this.valueRandomX - randomMean);
+                sumopy += randomMax * (this.valueRandomY - randomMean);
+                continue;
+            }
+            double opdist = Math.sqrt(opdist2);
+            double opdxn = opdx / opdist;
+            double opdyn = opdy / opdist;
+            // double opdzn = opdz / opdist;
+            double opp = r - opdist;
+            double tmp = -this.valueAgentA * Math.exp(opp / this.valueAgentB);
+            if (Double.isInfinite(tmp)) {
+                System.out.println("calculateAgentsForce(): A result of exp is infinite: exp(" + (opp / this.valueAgentB) + ")");
+            }
+            else {
+                sumopx += tmp * opdxn;
+                sumopy += tmp * opdyn;
+            }
+            if (opp > 0) {
+                sumopx += -this.valueAgentK * (opp) * opdxn;
+                sumopy += -this.valueAgentK * (opp) * opdyn;
+                // sumopz += -this.valueAgentK * (opp) * opdzn;
+            }
         }
-      }
     }
 
     double d2 = sumopx * sumopx + sumopy * sumopy;
@@ -811,15 +820,23 @@ public class TrafficAgent extends TrafficObject {
     }
     TrafficArea start = getManager().findArea(getX(), getY());
     TrafficArea goal = getManager().findArea(this.finalDestination.getX(), this.finalDestination.getY());
-    // this should be changed!
+
+    // this block should be changed!
     if (start == null || goal == null) {
       this.nowDestination = this.finalDestination;
       return;
     }
 
+    
     if (start.equals(goal)) {
-      this.nowDestination = this.finalDestination;
-      return;
+        if (destinationList.size() > 0) {
+            this.nowDestination = destinationList.remove(destinationList.size() - 1);
+            planDestination();
+            return;
+        }
+        else {
+            return;
+        }
     }
 
     Map<TrafficArea, Double> traceAreaMap = new HashMap<TrafficArea, Double>();
@@ -952,8 +969,8 @@ public class TrafficAgent extends TrafficObject {
   public String toString() {
     StringBuffer sb = new StringBuffer("TrafficAgent[");
     sb.append("id:").append(getID()).append(";");
-    sb.append("x:").append(getX()).append(";");
-    sb.append("y:").append(getY()).append(";");
+    sb.append("x:").append((int)getX()).append(";");
+    sb.append("y:").append((int)getY()).append(";");
     sb.append("]");
     return sb.toString();
   }
@@ -964,14 +981,15 @@ public class TrafficAgent extends TrafficObject {
    */
   public String toLongString() {
     StringBuffer sb = new StringBuffer("TrafficAgent[");
-    sb.append(getID());
+    sb.append("id:").append(getID()).append(";");
+    sb.append("type:").append(type).append(";");
     sb.append("x:").append(getX()).append(";");
     sb.append("y:").append(getY()).append(";");
     sb.append("z:").append(getZ()).append(";");
-    sb.append("now area:").append(this.nowArea).append(";");
-    sb.append("is network mode:").append(this.isNetworkMode).append(";");
-    sb.append("now destination:").append(this.nowDestination).append(";");
-    sb.append("final destination:").append(this.finalDestination).append(";");
+    sb.append("now-area:").append(this.nowArea).append(";");
+    //sb.append("is network mode[").append(this.isNetworkMode).append("]");
+    sb.append("now-destination:").append(this.nowDestination).append(";");
+    sb.append("final-destination:").append(this.finalDestination).append(";");
     //sb.append("now area:").append().append(";");
     sb.append("]");
     return sb.toString();

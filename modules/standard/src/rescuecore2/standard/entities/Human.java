@@ -19,7 +19,7 @@ public abstract class Human extends StandardEntity {
     private IntProperty x;
     private IntProperty y;
     private EntityRefProperty position;
-    private IntArrayProperty positionHistory;
+    private EntityRefListProperty positionHistory;
     private IntProperty travelDistance;
     private IntProperty direction;
     private IntProperty stamina;
@@ -38,7 +38,7 @@ public abstract class Human extends StandardEntity {
         y = new IntProperty(StandardPropertyURN.Y);
         travelDistance = new IntProperty(StandardPropertyURN.TRAVEL_DISTANCE);
         position = new EntityRefProperty(StandardPropertyURN.POSITION);
-        positionExtra = new IntProperty(StandardPropertyURN.POSITION_EXTRA);
+        //positionExtra = new IntProperty(StandardPropertyURN.POSITION_EXTRA);
         positionHistory = new EntityRefListProperty(StandardPropertyURN.POSITION_HISTORY);
         direction = new IntProperty(StandardPropertyURN.DIRECTION);
         stamina = new IntProperty(StandardPropertyURN.STAMINA);
@@ -55,7 +55,7 @@ public abstract class Human extends StandardEntity {
     public Human(Human other) {
         super(other);
         position = new EntityRefProperty(other.position);
-        positionExtra = new IntProperty(other.positionExtra);
+        //positionExtra = new IntProperty(other.positionExtra);
         positionHistory = new EntityRefListProperty(other.positionHistory);
         direction = new IntProperty(other.direction);
         stamina = new IntProperty(other.stamina);
@@ -77,8 +77,8 @@ public abstract class Human extends StandardEntity {
         switch (type) {
         case POSITION:
             return position;
-        case POSITION_EXTRA:
-            return positionExtra;
+            //case POSITION_EXTRA:
+            //return positionExtra;
         case POSITION_HISTORY:
             return positionHistory;
         case DIRECTION:
@@ -87,6 +87,10 @@ public abstract class Human extends StandardEntity {
             return stamina;
         case HP:
             return hp;
+        case X:
+            return x;
+        case Y:
+            return y;
         case DAMAGE:
             return damage;
         case BURIEDNESS:
@@ -162,7 +166,7 @@ public abstract class Human extends StandardEntity {
        Get the position history property.
        @return The position history property.
      */
-    public IntArrayProperty getPositionHistoryProperty() {
+    public EntityRefListProperty getPositionHistoryProperty() {
         return positionHistory;
     }
 
@@ -170,7 +174,7 @@ public abstract class Human extends StandardEntity {
        Get the position history.
        @return The position history.
      */
-    public int[] getPositionHistory() {
+    public List<EntityID> getPositionHistory() {
         return positionHistory.getValue();
     }
 
@@ -178,7 +182,7 @@ public abstract class Human extends StandardEntity {
        Set the position history.
        @param history The new position history.
     */
-    public void setPositionHistory(int[] history) {
+    public void setPositionHistory(List<EntityID> history) {
         this.positionHistory.setValue(history);
     }
 

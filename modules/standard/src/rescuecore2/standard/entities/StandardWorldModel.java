@@ -126,7 +126,8 @@ public class StandardWorldModel extends DefaultWorldModel<StandardEntity> {
                 // Include apexes in the bounds
                 Building b = (Building)next;
                 //if (b.isApexesDefined()) {
-                    int[] apexes = b.getShape();
+                    int[] apexes = b.getApexes();
+                    if (apexes !=null) {
                     for (int i = 0; i < apexes.length; i += 2) {
                         minX = Math.min(minX, apexes[i]);
                         maxX = Math.max(maxX, apexes[i]);
@@ -134,6 +135,7 @@ public class StandardWorldModel extends DefaultWorldModel<StandardEntity> {
                     for (int i = 1; i < apexes.length; i += 2) {
                         minY = Math.min(minY, apexes[i]);
                         maxY = Math.max(maxY, apexes[i]);
+                    }
                     }
 		    //}
             }
