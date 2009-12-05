@@ -47,16 +47,16 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
             sendClear(time, location.getID());
             return;
         }
-	Pair<Integer, Integer> l = me().getLocation(world);
+	Pair<Integer, Integer> l = me().getLocation(model);
 
 	//System.err.println(((Area)location).getNearlestBlockade(l.first(), l.second(), world));
-	if(location instanceof Area && ((Area)location).getNearlestBlockade(l.first(), l.second(), world)!=null) {
+	if(location instanceof Area && ((Area)location).getNearlestBlockade(l.first(), l.second(), model)!=null) {
 	//if(location instanceof Area && ((Area)location).getBlockadeList().size()>0) {
-	    EntityID blockade_id = ((Area)location).getNearlestBlockade(l.first(), l.second(), world);
+	    EntityID blockade_id = ((Area)location).getNearlestBlockade(l.first(), l.second(), model);
             AKClear clear = new AKClear(getID(), time, blockade_id);
             //System.out.println(me() + " clear road: " + clear);
             //System.err.println(me() + ":" + location + " clear road: " + clear);
-	    List<EntityID> bl = ((Area)location).getNearBlockadeList(world);
+	    List<EntityID> bl = ((Area)location).getNearBlockadeList(model);
 	    System.err.println(bl+", clear: "+blockade_id);
 
             send(clear);
@@ -92,7 +92,7 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
     }
 
     private List<Area> getBlockedAreas() {
-        Collection<StandardEntity> e = world.getEntitiesOfType(StandardEntityType.ROAD);
+        Collection<StandardEntity> e = model.getEntitiesOfType(StandardEntityURN.ROAD);
         List<Area> result = new ArrayList<Area>();
         for (StandardEntity next : e) {
             if (next instanceof Area) {

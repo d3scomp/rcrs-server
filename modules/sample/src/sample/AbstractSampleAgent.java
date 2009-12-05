@@ -15,7 +15,6 @@ import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.Human;
-import rescuecore2.standard.entities.StandardEntityType;
 
 /**
    Abstract base class for sample agents.

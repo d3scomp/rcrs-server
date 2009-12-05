@@ -4,12 +4,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
 
-<<<<<<< HEAD:modules/standard/src/rescuecore2/standard/kernel/StandardAgentRegistrar.java
 import kernel.AgentRegistrar;
-=======
-import kernel.Agent;
-import kernel.AgentProcessor;
->>>>>>> bug fix of kernel:modules/kernel/src/kernel/standard/StandardAgentProcessor.java
 import kernel.ComponentManager;
 
 import rescuecore2.config.Config;
@@ -174,7 +169,8 @@ public class StandardAgentRegistrar implements AgentRegistrar {
         for (Property next : a.getProperties()) {
             // Building properties: 
             // Everything else should be undefined
-            switch ((StandardPropertyType)next.getType()) {
+            StandardPropertyURN urn = StandardPropertyURN.valueOf(next.getURN());
+            switch (urn) {
             case X:
             case Y:
             case AREA_TYPE:

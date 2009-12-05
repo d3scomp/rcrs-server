@@ -1,6 +1,6 @@
 package traffic3.simulator;
 
-//import java.util.*;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -22,13 +22,14 @@ import rescuecore2.connection.ConnectionListener;
 import rescuecore2.connection.Connection;
 import rescuecore2.worldmodel.Entity;
 import rescuecore2.worldmodel.EntityID;
-import rescuecore2.worldmodel.EntityRegistry;
+import rescuecore2.registry.Registry;
+import rescuecore2.worldmodel.ChangeSet;
+
 import rescuecore2.messages.Message;
-import rescuecore2.messages.MessageRegistry;
 import rescuecore2.messages.Command;
 
-import rescuecore2.messages.control.Update;
-import rescuecore2.messages.control.Commands;
+import rescuecore2.messages.control.KSUpdate;
+import rescuecore2.messages.control.KSCommands;
 import rescuecore2.messages.control.KSConnectOK;
 import rescuecore2.messages.control.SKAcknowledge;
 import rescuecore2.messages.control.SKConnect;
@@ -49,6 +50,7 @@ import rescuecore2.standard.messages.StandardMessageFactory;
 import rescuecore2.connection.ConnectionException;
 
 import rescuecore2.standard.entities.StandardEntityFactory;
+import rescuecore2.standard.entities.StandardPropertyFactory;
 import org.util.xml.io.XMLConfigManager;
 import traffic3.manager.WorldManagerException;
 
@@ -90,8 +92,9 @@ public class RCRSTrafficSimulator {
      * @param dt dt
      */
     public RCRSTrafficSimulator(WorldManager wm, XMLConfigManager cm,  double dt) {
-        MessageRegistry.register(StandardMessageFactory.INSTANCE);
-        EntityRegistry.register(StandardEntityFactory.INSTANCE);
+        Registry.getCurrentRegistry().registerMessageFactory(StandardMessageFactory.INSTANCE);
+        Registry.getCurrentRegistry().registerEntityFactory(StandardEntityFactory.INSTANCE);
+        Registry.getCurrentRegistry().registerPropertyFactory(StandardPropertyFactory.INSTANCE);
 
         worldManager = wm;
         configManager = cm;
@@ -114,7 +117,7 @@ public class RCRSTrafficSimulator {
         TCPConnection connection = new TCPConnection(port);
         connection.addConnectionListener(new ConnectionManager());
         connection.startup();
-        connection.sendMessage(new SKConnect(requestId, simulatorId));
+        connection.sendMessage(new SKConnect(requestId, simulatorId, traffic3.Main.getVersion()));
     }
 
     private EntityID transID(String id) {
@@ -133,7 +136,7 @@ public class RCRSTrafficSimulator {
                 }
                 double cx = area.getCenterX();
                 double cy = area.getCenterY();
-                TrafficArea trafficArea = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getShape(), nextAreaIdTextList);
+                TrafficArea trafficArea = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexes(), nextAreaIdTextList);
                 if (area instanceof Building) {
                     trafficArea.setType("building");
                 }
@@ -179,7 +182,7 @@ public class RCRSTrafficSimulator {
                     agent.setType("Unknown");
                     agent.setColor(Color.black);
                 }
-
+                System.err.println(human);
                 rescuecore2.misc.Pair<java.lang.Integer, java.lang.Integer> loc = human.getLocation(null);
                 agent.setLocation(loc.first(), loc.second(), 0);
                 humanTrafficAgentMap.put(human.getID(), agent);
@@ -239,7 +242,7 @@ public class RCRSTrafficSimulator {
         alert("\n[initialized]\n");
     }
 
-    private void receiveCommands(Connection c, Commands com) {
+    private void receiveCommands(Connection c, KSCommands com) {
         log(com);
         rcrsTimeStep = com.getTime();
         for (Command command : com.getCommands()) {
@@ -300,11 +303,17 @@ public class RCRSTrafficSimulator {
             }
             agent.clearPositionHistory();
             human.setPosition(id, (int)agent.getX(), (int)agent.getY());
-            human.setPositionHistory(rcrsPList);
+            List<EntityID> ids = new ArrayList<EntityID>();
+            for (int tmpid : rcrsPList) {
+                ids.add(new EntityID(tmpid));
+            }
+            human.setPositionHistory(ids);
             updateList.add(human);
         }
+        ChangeSet changeSet = new ChangeSet();
+        changeSet.addAll(updateList);
         try {
-            c.sendMessage(new SKUpdate(simulatorId, rcrsTimeStep, updateList));
+            c.sendMessage(new SKUpdate(simulatorId, rcrsTimeStep, changeSet));
             updateList.clear();
         }
         catch (ConnectionException e) {
@@ -314,9 +323,13 @@ public class RCRSTrafficSimulator {
     }
 
 
-    private void receiveUpdate(Connection c, Update up) {
+    private void receiveUpdate(Connection c, KSUpdate up) {
 
-        Collection<Entity> entities = up.getUpdatedEntities();
+        Collection<EntityID> entityIDs = up.getChangeSet().getChangedEntities();
+        List<Entity> entities = new ArrayList<Entity>();
+        for (EntityID eid : entityIDs) {
+            entities.add(entityidEntityMap.get(eid));
+        }
         for (Entity ent : entities) {
             if (ent instanceof Blockade) {
                 TrafficBlockade tb = blockadeTrafficblockadeMap.get(ent.getID());
@@ -364,14 +377,14 @@ public class RCRSTrafficSimulator {
                 receiveKSConnectOK(c, (KSConnectOK)msg);
                 state = 1;
             }
-            else if (state == 1 && msg instanceof Commands) {
+            else if (state == 1 && msg instanceof KSCommands) {
 
-                receiveCommands(c, (Commands)msg);
+                receiveCommands(c, (KSCommands)msg);
                 state = 2;
             }
-            else if (state == 2 && msg instanceof Update) {
+            else if (state == 2 && msg instanceof KSUpdate) {
 
-                receiveUpdate(c, (Update)msg);
+                receiveUpdate(c, (KSUpdate)msg);
                 state = 1;
             }
             else {

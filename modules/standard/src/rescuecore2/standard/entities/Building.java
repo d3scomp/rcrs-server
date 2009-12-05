@@ -71,11 +71,8 @@ public class Building extends Area {
        @param id The ID of this entity.
        @param urn The real urn of this building.
     */
-<<<<<<< HEAD
     protected Building(EntityID id, StandardEntityURN urn) {
         super(id, urn);
-        x = new IntProperty(StandardPropertyURN.X);
-        y = new IntProperty(StandardPropertyURN.Y);
         floors = new IntProperty(StandardPropertyURN.FLOORS);
         ignition = new BooleanProperty(StandardPropertyURN.IGNITION);
         fieryness = new IntProperty(StandardPropertyURN.FIERYNESS);
@@ -86,8 +83,8 @@ public class Building extends Area {
         totalArea = new IntProperty(StandardPropertyURN.BUILDING_AREA_TOTAL);
         temperature = new IntProperty(StandardPropertyURN.TEMPERATURE);
         importance = new IntProperty(StandardPropertyURN.IMPORTANCE);
-        apexes = new IntArrayProperty(StandardPropertyURN.BUILDING_APEXES);
-        entrances = new EntityRefListProperty(StandardPropertyURN.ENTRANCES);
+fieryness.setValue(0);
+brokenness.setValue(0);
     }
 
     /**
@@ -106,8 +103,8 @@ public class Building extends Area {
         totalArea = new IntProperty(other.totalArea);
         temperature = new IntProperty(other.temperature);
         importance = new IntProperty(other.importance);
-        apexes = new IntArrayProperty(other.apexes);
-        entrances = new EntityRefListProperty(other.entrances);
+fieryness.setValue(0);
+brokenness.setValue(0);
     }
 
     @Override
@@ -125,10 +122,6 @@ public class Building extends Area {
             return super.getProperty(urn);
         }
         switch (type) {
-        case X:
-            return x;
-        case Y:
-            return y;
         case FLOORS:
             return floors;
         case IGNITION:
@@ -149,10 +142,6 @@ public class Building extends Area {
             return temperature;
         case IMPORTANCE:
             return importance;
-        case BUILDING_APEXES:
-            return apexes;
-        case ENTRANCES:
-            return entrances;
         default:
             return super.getProperty(urn);
         }
@@ -161,8 +150,6 @@ public class Building extends Area {
     @Override
     public Set<Property> getProperties() {
         Set<Property> result = super.getProperties();
-        result.add(x);
-        result.add(y);
         result.add(floors);
         result.add(ignition);
         result.add(fieryness);
@@ -173,8 +160,6 @@ public class Building extends Area {
         result.add(totalArea);
         result.add(temperature);
         result.add(importance);
-        result.add(apexes);
-        result.add(entrances);
         return result;
     }
 

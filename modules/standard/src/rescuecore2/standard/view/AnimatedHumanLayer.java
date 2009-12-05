@@ -128,7 +128,7 @@ public class AnimatedHumanLayer extends HumanLayer {
                 continue;
             }
             Pair<EntityID, Integer> start = agentLastPositions.get(next);
-            agentLastPositions.put(next, new Pair<EntityID, Integer>(human.getPosition(), human.isPositionExtraDefined() ? human.getPositionExtra() : 0));
+            //agentLastPositions.put(next, new Pair<EntityID, Integer>(human.getPosition(), human.isPositionExtraDefined() ? human.getPositionExtra() : 0));
             //            System.out.println("Last position: " + start);
             //            System.out.println("Current position: " + agentLastPositions.get(next));
             if (start == null) {
@@ -156,4 +156,6 @@ public class AnimatedHumanLayer extends HumanLayer {
             ready = true;
         }
     }
+
+
 }

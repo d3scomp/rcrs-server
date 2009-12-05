@@ -48,15 +48,15 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         int[] ys = new int[count];
 	List<EntityID> next_id = b.getNextArea();
 	GeneralPath path = new GeneralPath();
-	path.moveTo(t.scaleX(apexes[0]), t.scaleY(apexes[1]));
+	path.moveTo(t.xToScreen(apexes[0]), t.yToScreen(apexes[1]));
         for (int i = 0; i < count; ++i) {
             xs[i] = t.xToScreen(apexes[i * 2]);
             ys[i] = t.yToScreen(apexes[(i * 2) + 1]);
 	    if(i==0)continue;
 	    if(next_id.get(i-1).getValue()==-1)
-		path.lineTo(t.scaleX(apexes[i*2]), t.scaleY(apexes[i*2+1]));
+		path.lineTo(t.xToScreen(apexes[i*2]), t.yToScreen(apexes[i*2+1]));
 	    else
-		path.moveTo(t.scaleX(apexes[i*2]), t.scaleY(apexes[i*2+1]));
+		path.moveTo(t.xToScreen(apexes[i*2]), t.yToScreen(apexes[i*2+1]));
         }
         Polygon shape = new Polygon(xs, ys, count);
         drawBrokenness(b, shape, g);
@@ -64,15 +64,17 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         g.setColor(OUTLINE);
         g.draw(shape);
         // Draw a line to each entrance
-        int x = t.xToScreen(b.getX());
-        int y = t.yToScreen(b.getY());
+        int x = t.xToScreen(b.getCenterX());
+        int y = t.yToScreen(b.getCenterY());
         g.setColor(ENTRANCE);
+        /*
         for (EntityID next : b.getEntrances()) {
             Node n = (Node)world.getEntity(next);
             int nx = t.xToScreen(n.getX());
             int ny = t.yToScreen(n.getY());
             g.drawLine(x, y, nx, ny);
         }
+        */
         return shape;
     }
 
@@ -118,7 +120,6 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         g.setColor(new Color(colour, colour, colour));
         g.fill(shape);
         g.setColor(Color.BLACK);
-        g.draw(path);
-        return shape;
+        g.draw(shape);
     }
 }

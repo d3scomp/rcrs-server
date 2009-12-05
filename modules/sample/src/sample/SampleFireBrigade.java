@@ -8,6 +8,7 @@ import java.util.EnumSet;
 
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.messages.Command;
+import rescuecore2.standard.messages.AKMove;
 
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -51,7 +52,7 @@ public class SampleFireBrigade extends AbstractSampleAgent<FireBrigade> {
         }
         FireBrigade me = me();
         // Are we currently filling with water?
-        if (me.getWater() < maxWater && location() instanceof Refuge) {
+        if (me.isWaterDefined() && me.getWater() < maxWater && location() instanceof Refuge) {
             //            System.out.println(me() + " filling with water at " + location());
             sendRest(time);
             return;

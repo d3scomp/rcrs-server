@@ -18,6 +18,7 @@ import org.util.xml.parse.policy.*;
 
 import java.util.*;
 import rescuecore2.worldmodel.*;
+import rescuecore2.registry.Registry;
 import rescuecore2.connection.*;
 import rescuecore2.messages.*;
 import rescuecore2.messages.control.*;
@@ -36,7 +37,8 @@ import static traffic3.log.Logger.log;
  * java gis2.Main config/gis2.xml
  */
 public class BlockadeSimulator {
-    
+
+    private static final String SIMULATOR_NAME = "Blockade Simulator(Area Model).";
     private int state_ = -1;
     private int version_ = 1;
     private int request_id_ = 8;
@@ -47,8 +49,9 @@ public class BlockadeSimulator {
 
     public BlockadeSimulator(File file1, String host, int port) throws Exception {
 	state_ = 0;
-	MessageRegistry.register(StandardMessageFactory.INSTANCE);
-	EntityRegistry.register(StandardEntityFactory.INSTANCE);
+	Registry.getCurrentRegistry().registerMessageFactory(StandardMessageFactory.INSTANCE);
+	Registry.getCurrentRegistry().registerEntityFactory(StandardEntityFactory.INSTANCE);
+        Registry.getCurrentRegistry().registerPropertyFactory(StandardPropertyFactory.INSTANCE);
 	
 	update_list_ = new java.util.ArrayList<Entity>();
 
@@ -91,24 +94,26 @@ public class BlockadeSimulator {
 			}
 			log("send SKAcknowledge: "+ack);
 			state_ = 2;
-		    } else if(state_ == 2 && msg instanceof Commands) {
+		    } else if(state_ == 2 && msg instanceof KSCommands) {
 			
-			Commands commands = (Commands)msg;
+			KSCommands commands = (KSCommands)msg;
 			time_ = commands.getTime();
 
 			try{
-			    SKUpdate sk_update = new SKUpdate(simulator_id_, time_, update_list_);
+                            ChangeSet cs = new ChangeSet();
+                            cs.addAll(update_list_);
+			    SKUpdate sk_update = new SKUpdate(simulator_id_, time_, cs);
 			    connection.sendMessage(sk_update);
 			}catch(Exception exc) {
 			    exc.printStackTrace();
 			}
 			
 			state_ = 3;
-		    } else if(state_ == 3 && msg instanceof Update) {
+		    } else if(state_ == 3 && msg instanceof KSUpdate) {
 			
 			state_ = 4;
-		    } else if(state_ == 4 && msg instanceof Commands) {
-			Commands commands = (Commands)msg;
+		    } else if(state_ == 4 && msg instanceof KSCommands) {
+			KSCommands commands = (KSCommands)msg;
 			time_ = commands.getTime();
 
 			for(Command command : commands.getCommands())
@@ -150,7 +155,9 @@ public class BlockadeSimulator {
 			    }
 
 			try{
-			    SKUpdate sk_update = new SKUpdate(simulator_id_, time_, update_list_);
+                            ChangeSet cs = new ChangeSet();
+                            cs.addAll(update_list_);
+			    SKUpdate sk_update = new SKUpdate(simulator_id_, time_, cs);
 			    connection.sendMessage(sk_update);
 			    update_list_.clear();
 			}catch(Exception exc) {
@@ -164,7 +171,7 @@ public class BlockadeSimulator {
 	    });
 	connection.startup();
 
-	SKConnect sk_connect = new SKConnect(request_id_, version_);
+	SKConnect sk_connect = new SKConnect(request_id_, version_, SIMULATOR_NAME);
 	connection.sendMessage(sk_connect);
 	
 	
