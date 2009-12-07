@@ -9,7 +9,7 @@
   <!-- Modules directory -->
   <property name="modules.dir" value="${basedir}/modules"/>
 
-  <property name="modules" value="rescuecore2,kernel,standard,sample,handy,human,collapse,blockade,misc,resq-fire,traffic-old,ignition"/>
+  <property name="modules" value="rescuecore2,kernel,standard,sample,handy,human,collapse,blockade,misc,resq-fire,traffic-old,ignition,injury"/>
   <property name="modules.kernel.depend" value="rescuecore2,handy"/>
   <property name="modules.standard.depend" value="rescuecore2,kernel"/>
   <property name="modules.sample.depend" value="rescuecore2,standard"/>
@@ -20,6 +20,7 @@
   <property name="modules.resq-fire.depend" value="rescuecore2,standard"/>
   <property name="modules.traffic-old.depend" value="rescuecore2,standard"/>
   <property name="modules.ignition.depend" value="rescuecore2,standard"/>
+  <property name="modules.injury.depend" value="rescuecore2,standard"/>
 
   <import file="${modules.dir}/rescuecore2/build.xml" optional="true"/>
   <import file="${modules.dir}/kernel/build.xml" optional="true"/>
@@ -33,6 +34,7 @@
   <import file="${modules.dir}/resq-fire/build.xml" optional="true"/>
   <import file="${modules.dir}/traffic-old/build.xml" optional="true"/>
   <import file="${modules.dir}/ignition/build.xml" optional="true"/>
+  <import file="${modules.dir}/injury/build.xml" optional="true"/>
 
   <!-- Common properties: modules, lib, build and jar directories -->
   <!-- 3rd party libraries used by all modules -->
