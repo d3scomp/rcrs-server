@@ -285,16 +285,4 @@ public abstract class Area extends StandardEntity {
     public void undefineBlockades() {
         blockades.undefine();
     }
-
-    /**
-       Set the center of this area.
-       @param x The x coordinate of the center.
-       @param y The y coordinate of the center.
-    */
-    /*
-    public void setCenter(int x, int y) {
-	setX(x);
-	setY(y);
-    }
-    */
 }

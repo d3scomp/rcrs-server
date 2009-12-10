@@ -45,17 +45,17 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         int count = apexes.length / 2;
         int[] xs = new int[count];
         int[] ys = new int[count];
-	List<EntityID> next_id = b.getNeighbours();
-	GeneralPath path = new GeneralPath();
-	path.moveTo(t.xToScreen(apexes[0]), t.yToScreen(apexes[1]));
+        List<EntityID> neighbours = b.getNeighbours();
+        GeneralPath path = new GeneralPath();
+        path.moveTo(t.xToScreen(apexes[0]), t.yToScreen(apexes[1]));
         for (int i = 0; i < count; ++i) {
             xs[i] = t.xToScreen(apexes[i * 2]);
             ys[i] = t.yToScreen(apexes[(i * 2) + 1]);
-	    if(i==0)continue;
-	    if(next_id.get(i-1).getValue()==-1)
-		path.lineTo(t.xToScreen(apexes[i*2]), t.yToScreen(apexes[i*2+1]));
-	    else
-		path.moveTo(t.xToScreen(apexes[i*2]), t.yToScreen(apexes[i*2+1]));
+            if(i==0)continue;
+            if(next_id.get(i-1).getValue()==-1)
+                path.lineTo(t.xToScreen(apexes[i*2]), t.yToScreen(apexes[i*2+1]));
+            else
+                path.moveTo(t.xToScreen(apexes[i*2]), t.yToScreen(apexes[i*2+1]));
         }
         Polygon shape = new Polygon(xs, ys, count);
         drawBrokenness(b, shape, g);
