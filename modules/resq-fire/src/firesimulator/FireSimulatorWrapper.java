@@ -110,9 +110,11 @@ public class FireSimulatorWrapper extends StandardSimulator {
                 else if (r instanceof MovingObject && e instanceof rescuecore2.standard.entities.Human) {
                     mapHumanProperties((rescuecore2.standard.entities.Human)e, (MovingObject)r);
                 }
+                /*
                 else if (r instanceof StreetNode && e instanceof rescuecore2.standard.entities.Node) {
                     mapNodeProperties((rescuecore2.standard.entities.Node)e, (StreetNode)r);
                 }
+                */
                 else if (r instanceof Road && e instanceof rescuecore2.standard.entities.Road) {
                     mapRoadProperties((rescuecore2.standard.entities.Road)e, (Road)r);
                 }
@@ -178,11 +180,13 @@ public class FireSimulatorWrapper extends StandardSimulator {
             mapBuildingProperties((rescuecore2.standard.entities.Building)e, b);
             return b;
         }
+        /*
         if (e instanceof rescuecore2.standard.entities.Node) {
             StreetNode sn = new StreetNode(id);
             mapNodeProperties((rescuecore2.standard.entities.Node)e, sn);
             return sn;
         }
+        */
         if (e instanceof rescuecore2.standard.entities.Road) {
             Road r = new Road(id);
             mapRoadProperties((rescuecore2.standard.entities.Road)e, r);
@@ -228,9 +232,11 @@ public class FireSimulatorWrapper extends StandardSimulator {
         if (oldB.isBrokennessDefined()) {
             newB.setBrokenness(oldB.getBrokenness());
         }
+        /*
         if (oldB.isEntrancesDefined()) {
             newB.setEntrances(collectionToIDArray(oldB.getEntrances()));
         }
+        */
         if (oldB.isBuildingCodeDefined()) {
             newB.setCode(oldB.getBuildingCode());
         }
@@ -251,6 +257,7 @@ public class FireSimulatorWrapper extends StandardSimulator {
         }
     }
 
+    /*
     private void mapNodeProperties(rescuecore2.standard.entities.Node oldN, StreetNode newN) {
         if (oldN.isEdgesDefined()) {
             newN.setEdges(collectionToIDArray(oldN.getEdges()));
@@ -262,8 +269,10 @@ public class FireSimulatorWrapper extends StandardSimulator {
             newN.setY(oldN.getY());
         }
     }
+    */
 
     private void mapRoadProperties(rescuecore2.standard.entities.Road oldR, Road newR) {
+        /*
         if (oldR.isWidthDefined()) {
             newR.setWidth(oldR.getWidth());
         }
@@ -285,6 +294,7 @@ public class FireSimulatorWrapper extends StandardSimulator {
         if (oldR.isLengthDefined()) {
             newR.setLength(oldR.getLength());
         }
+        */
     }
 
     private void mapHumanProperties(rescuecore2.standard.entities.Human oldH, MovingObject newH) {
@@ -303,9 +313,9 @@ public class FireSimulatorWrapper extends StandardSimulator {
         if (oldH.isPositionDefined()) {
             newH.setPositionId(oldH.getPosition().getValue());
         }
-        if (oldH.isPositionExtraDefined()) {
-            newH.setPositionExtra(oldH.getPositionExtra());
-        }
+        //        if (oldH.isPositionExtraDefined()) {
+        //            newH.setPositionExtra(oldH.getPositionExtra());
+        //        }
         if (oldH instanceof rescuecore2.standard.entities.FireBrigade && newH instanceof FireBrigade) {
             rescuecore2.standard.entities.FireBrigade oldFB = (rescuecore2.standard.entities.FireBrigade)oldH;
             FireBrigade newFB = (FireBrigade)newH;
