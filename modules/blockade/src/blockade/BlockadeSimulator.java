@@ -13,7 +13,6 @@ import rescuecore2.standard.components.StandardSimulator;
 import rescuecore2.standard.entities.StandardPropertyURN;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.Road;
-import rescuecore2.standard.entities.Node;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -83,6 +82,7 @@ public class BlockadeSimulator extends StandardSimulator {
                     // Brokenness has changed. Add some blockedness to nearby roads
                     LOG.debug(b + " is broken. Updating nearby roads");
                     for (Road r : nearbyRoads.get(b.getID())) {
+                        /*
                         int width = r.isWidthDefined() ? r.getWidth() : 0;
                         int block = r.isBlockDefined() ? r.getBlock() : 0;
                         int increase = calculateBlock(b);
@@ -94,12 +94,14 @@ public class BlockadeSimulator extends StandardSimulator {
                         LOG.debug("New block: " + block);
                         r.setBlock(block);
                         changes.addChange(r, r.getBlockProperty());
+                        */
                     }
                 }
             }
         }
     }
 
+    /*
     private int calculateBlock(Building b) {
         if (!b.isBrokennessDefined() || !b.isGroundAreaDefined() || !b.isFloorsDefined()) {
             return 0;
@@ -107,11 +109,14 @@ public class BlockadeSimulator extends StandardSimulator {
         long rubble = b.getBrokenness() * b.getGroundArea() * b.getFloors();
         return (int)(rubble / RUBBLE_DIVISOR);
     }
+    */
 
     private boolean isNear(Road r, Building b) {
-        return isNear((Node)r.getHead(model), b) || isNear((Node)r.getTail(model), b);
+        return false;
+        //        return isNear((Node)r.getHead(model), b) || isNear((Node)r.getTail(model), b);
     }
 
+    /*
     private boolean isNear(Node n, Building b) {
         if (n == null) {
             return false;
@@ -136,4 +141,5 @@ public class BlockadeSimulator extends StandardSimulator {
         }
         return false;
     }
+    */
 }
