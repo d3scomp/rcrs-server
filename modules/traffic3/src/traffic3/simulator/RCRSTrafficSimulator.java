@@ -146,13 +146,13 @@ public class RCRSTrafficSimulator {
         try {
             for (Area area : areaListBuf) {
                 entityidEntityMap.put(area.getID(), area);
-                java.util.List<EntityID> nextAreaIdList = area.getNextArea();
+                java.util.List<EntityID> nextAreaIdList = area.getNeighbours();
                 String[] nextAreaIdTextList = new String[nextAreaIdList.size()];
                 for (int i = 0; i < nextAreaIdList.size(); i++) {
                     nextAreaIdTextList[i] = "rcrs(" + nextAreaIdList.get(i).getValue() + ")";
                 }
-                double cx = area.getCenterX();
-                double cy = area.getCenterY();
+                double cx = area.getX();
+                double cy = area.getY();
                 TrafficArea trafficArea = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexes(), nextAreaIdTextList);
                 if (area instanceof Building) {
                     trafficArea.setType("building");
@@ -208,13 +208,13 @@ public class RCRSTrafficSimulator {
 
 
             for (Blockade blockade : blockadeListBuf) {
-                double cx = blockade.getCenterX();
-                double cy = blockade.getCenterY();
+                double cx = blockade.getX();
+                double cy = blockade.getY();
                 //Area a = (Area)entityidEntityMap.get(blockade.getArea());
-                TrafficArea area = areaTrafficareaMap.get(blockade.getArea());
-                int[] xy = blockade.getShape();
+                TrafficArea area = areaTrafficareaMap.get(blockade.getPosition());
+                int[] xy = blockade.getApexes();
                 String id = "rcrs(" + blockade.getID().getValue() + ")";
-                TrafficBlockade tblockade = new TrafficBlockade(worldManager, id, cx, cy, blockade.getShape());
+                TrafficBlockade tblockade = new TrafficBlockade(worldManager, id, cx, cy, blockade.getApexes());
                 area.addBlockade(tblockade);
                 blockadeTrafficblockadeMap.put(blockade.getID(), tblockade);
                 worldManager.appendWithoutCheck(tblockade);
@@ -329,11 +329,7 @@ public class RCRSTrafficSimulator {
             }
             agent.clearPositionHistory();
             human.setPosition(id, (int)agent.getX(), (int)agent.getY());
-            List<EntityID> ids = new ArrayList<EntityID>();
-            for (int tmpid : rcrsPList) {
-                ids.add(new EntityID(tmpid));
-            }
-            human.setPositionHistory(ids);
+            human.setPositionHistory(rcrsPList);
             updateList.add(human);
         }
         ChangeSet changeSet = new ChangeSet();
@@ -359,14 +355,14 @@ public class RCRSTrafficSimulator {
         for (Entity ent : entities) {
             if (ent instanceof Blockade) {
                 TrafficBlockade tb = blockadeTrafficblockadeMap.get(ent.getID());
-                tb.setLineList(((Blockade)ent).getShape());
+                tb.setLineList(((Blockade)ent).getApexes());
             }
             else if (ent instanceof Area) {
                 Area area = (Area)ent;
                 //Area parea = (Area)entityidEntityMap.get(area.getID());
                 TrafficArea tarea = areaTrafficareaMap.get(area.getID());
                 assert tarea != null : "Error!";
-                java.util.List<EntityID> idList = area.getBlockadeList();
+                java.util.List<EntityID> idList = area.getBlockades();
                 TrafficBlockade[] tBlockadeList = tarea.getBlockadeList();
                 if (idList.size() != 0 || tBlockadeList.length != 0) {
                     List<TrafficBlockade> blist = new ArrayList<TrafficBlockade>();
