@@ -8,7 +8,7 @@
 
   <!-- Modules directory -->
   <property name="modules.dir" value="${basedir}/modules"/>
-  <property name="modules" value="rescuecore2,kernel,standard,sample,handy,human,collapse,blockade,misc,resq-fire,ignition,gis2,traffic3,clear"/>
+  <property name="modules" value="rescuecore2,kernel,standard,sample,handy,human,collapse,blockade,misc,resq-fire,ignition,clear,traffic3,gis2"/>
   <property name="modules.kernel.depend" value="rescuecore2,handy"/>
   <property name="modules.standard.depend" value="rescuecore2,kernel"/>
   <property name="modules.sample.depend" value="rescuecore2,standard"/>
