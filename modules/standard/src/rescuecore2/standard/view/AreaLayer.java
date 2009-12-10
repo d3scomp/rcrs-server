@@ -11,7 +11,6 @@ import rescuecore2.standard.entities.Refuge;
 import rescuecore2.standard.entities.FireStation;
 import rescuecore2.standard.entities.AmbulanceCentre;
 import rescuecore2.standard.entities.PoliceOffice;
-import rescuecore2.standard.entities.Node;
 import rescuecore2.standard.entities.StandardWorldModel;
 import rescuecore2.standard.entities.Blockade;
 import rescuecore2.misc.gui.ScreenTransform;
@@ -50,10 +49,10 @@ public class AreaLayer extends StandardEntityViewLayer<Area> {
         g.setColor(Color.GRAY);
         g.fill(shape);
 	g.setColor(Color.BLACK);
-	if(a.isBlockadeListDefined()) {
-	    for(EntityID id : a.getBlockadeList()) {
+	if(a.isBlockadesDefined()) {
+	    for(EntityID id : a.getBlockades()) {
 		Blockade blockade = (Blockade)world.getEntity(id);
-		apexes = blockade.getShape();
+		apexes = blockade.getApexes();
 		count = apexes.length /2;
 		xs = new int[count];
 		ys = new int[count];

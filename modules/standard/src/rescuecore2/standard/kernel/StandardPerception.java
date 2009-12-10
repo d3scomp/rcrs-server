@@ -209,8 +209,8 @@ public class StandardPerception implements Perception, GUIComponent {
     }
 
     private void addRoadProperties(Road road, ChangeSet result) {
-        // Only update BLOCK
-        result.addChange(road, road.getBlockProperty());
+        // Only update blockades
+        result.addChange(road, road.getBlockadesProperty());
     }
 
     private void addBuildingProperties(Building building, ChangeSet result) {

@@ -9,7 +9,6 @@ import java.util.List;
 
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.Node;
 import rescuecore2.misc.gui.ScreenTransform;
 
 /**
@@ -46,7 +45,7 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         int count = apexes.length / 2;
         int[] xs = new int[count];
         int[] ys = new int[count];
-	List<EntityID> next_id = b.getNextArea();
+	List<EntityID> next_id = b.getNeighbours();
 	GeneralPath path = new GeneralPath();
 	path.moveTo(t.xToScreen(apexes[0]), t.yToScreen(apexes[1]));
         for (int i = 0; i < count; ++i) {
@@ -64,17 +63,9 @@ public class BuildingLayer extends StandardEntityViewLayer<Building> {
         g.setColor(OUTLINE);
         g.draw(shape);
         // Draw a line to each entrance
-        int x = t.xToScreen(b.getCenterX());
-        int y = t.yToScreen(b.getCenterY());
+        int x = t.xToScreen(b.getX());
+        int y = t.yToScreen(b.getY());
         g.setColor(ENTRANCE);
-        /*
-        for (EntityID next : b.getEntrances()) {
-            Node n = (Node)world.getEntity(next);
-            int nx = t.xToScreen(n.getX());
-            int ny = t.yToScreen(n.getY());
-            g.drawLine(x, y, nx, ny);
-        }
-        */
         return shape;
     }
 
