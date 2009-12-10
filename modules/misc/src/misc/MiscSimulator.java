@@ -178,7 +178,13 @@ public class MiscSimulator extends StandardSimulator implements GUIComponent {
             boolean isBuried = buriedness > 0;
             if ((hasDamage || isBuried) && isAlive) {
                 format.format("%1$9d | %2$6d | %3$6d | %4$8.3f | %5$8.3f | %6$8.3f | %7$6d%n",
-                              ha.getID().getValue(), hp, damage, ha.getBuriednessDamage(), ha.getCollapseDamage(), ha.getFireDamage(), buriedness);
+                              ha.getID().getValue(),
+                              hp,
+                              damage,
+                              ha.getBuriednessDamage(),
+                              ha.getCollapseDamage(),
+                              ha.getFireDamage(),
+                              buriedness);
             }
         }
         LOG.debug(builder.toString());
