@@ -1,6 +1,5 @@
 package rescuecore2.standard.entities;
 
-import java.util.*;
 import rescuecore2.worldmodel.Entity;
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.worldmodel.properties.IntProperty;
@@ -10,6 +9,8 @@ import rescuecore2.worldmodel.properties.EntityRefListProperty;
 import rescuecore2.worldmodel.WorldModel;
 import rescuecore2.misc.Pair;
 import rescuecore2.worldmodel.Property;
+
+import java.util.List;
 
 /**
    The Area object.
