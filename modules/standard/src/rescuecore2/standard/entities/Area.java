@@ -11,6 +11,7 @@ import rescuecore2.misc.Pair;
 import rescuecore2.worldmodel.Property;
 
 import java.util.List;
+import java.util.Set;
 
 /**
    The Area object.
