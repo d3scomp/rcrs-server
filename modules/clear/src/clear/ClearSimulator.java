@@ -1,6 +1,9 @@
 package clear;
 
 import rescuecore2.worldmodel.ChangeSet;
+import rescuecore2.worldmodel.EntityID;
+import rescuecore2.messages.Command;
+import rescuecore2.messages.control.KSCommands;
 
 import rescuecore2.standard.components.StandardSimulator;
 import rescuecore2.standard.entities.Area;
@@ -11,6 +14,8 @@ import rescuecore2.standard.messages.AKClear;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+
 
 /**
    The area model clear simulator. This simulator processes AKClear messages.
@@ -46,13 +51,13 @@ public class ClearSimulator extends StandardSimulator {
                     area.setBlockades(ids);
                     model.removeEntity(blockadeID);
                     changes.addChange(area, area.getBlockadesProperty());
-                    changes.entityRemoved(blockadeID);
+                    changes.entityDeleted(blockadeID);
                     partiallyCleared.remove(blockade);
                 }
                 else {
                     // Update the repair cost
                     if (!partiallyCleared.containsKey(blockade)) {
-                        partiallyClear.put(blockade, cost);
+                        partiallyCleared.put(blockade, cost);
                     }
                     cost -= rate;
                     blockade.setRepairCost(cost);
@@ -79,8 +84,8 @@ public class ClearSimulator extends StandardSimulator {
                 // Shift both x and y so they are now d * dx from the centre
                 double newX = cx + (dx * d);
                 double newY = cy + (dy * d);
-                apexes[i] = newX;
-                apexes[i + 1] = newY;
+                apexes[i] = (int)newX;
+                apexes[i + 1] = (int)newY;
             }
             b.setApexes(apexes);
             changes.addChange(b, b.getApexesProperty());
