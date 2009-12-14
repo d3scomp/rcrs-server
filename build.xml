@@ -34,6 +34,8 @@
   <import file="${modules.dir}/resq-fire/build.xml" optional="true"/>
   <import file="${modules.dir}/ignition/build.xml" optional="true"/>
   <import file="${modules.dir}/clear/build.xml" optional="true"/>
+  <import file="${modules.dir}/gis2/build.xml" optional="true"/>
+  <import file="${modules.dir}/traffic3/build.xml" optional="true"/>
 
   <!-- Common properties: modules, lib, build and jar directories -->
   <!-- 3rd party libraries used by all modules -->
