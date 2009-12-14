@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
 import java.io.Writer;
+import java.io.InterruptedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -95,65 +96,255 @@ public class GISServer implements Runnable {
 
     public void checkImportedInformation() {
 
-        // [TODO: check]
+    private static HashMap<EntityID, Entity> importFromFile(File file1, File file2) throws Exception {
 
-        StringBuffer sb = new StringBuffer();
-        sb.append("\nImported GML Objects:\n");
-        sb.append("   GML Node: ").append(nodeMap.size()).append("\n");
-        sb.append("   GML Edge: ").append(edgeMap.size()).append("\n");
-        sb.append("   GML Face: ").append(faceMap.size()).append("\n");
-        sb.append("   Agent: ").append(agentMap.size()).append("\n");
-        log(sb);
-    }
+	final HashMap<EntityID, Entity> pool = new HashMap<EntityID, Entity>();
+	WorldManager world_manager = new WorldManager();
+	int unique_number = 1;
+	System.err.println("opening: "+file1);
+	world_manager.open(file1);
+	System.err.println("opening: "+file2);
+	world_manager.open(file2);
+        XMLConfigManager configManager = new XMLConfigManager("GISServerConfig.xml");
 
-    public void readFiles(List<String> filenames) throws FileNotFoundException, IOException, XMLParseException {
-        for (String filename : filenames) {
-            readFile(filename);
-        }
-    }
+	final WorldManagerGUI wmg = new WorldManagerGUI(world_manager, configManager);
+	wmg.createGUI();
+	wmg.setPreferredSize(new java.awt.Dimension(500, 500));
+	final javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.BorderLayout());
+	panel.add(wmg, java.awt.BorderLayout.CENTER);
+	panel.add(wmg.createMenuBar(), java.awt.BorderLayout.NORTH);
+	final Object finish_flag = new Object();
+	// this should be fixed!! 
+	// fitView() method should be called after appearing gui.
+	javax.swing.SwingUtilities.invokeAndWait(new Runnable(){public void run(){
+	    try{
+		final javax.swing.JFrame frame = new javax.swing.JFrame();
+		javax.swing.JPanel buttonpane = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+		buttonpane.add(new javax.swing.JButton(new javax.swing.AbstractAction("Finished"){
+			public void actionPerformed(java.awt.event.ActionEvent e) {
+			    synchronized(finish_flag) {
+				finish_flag.notifyAll();
+				frame.setVisible(false);
+				frame.dispose();
+			    }
+			}
+		    }));
+		javax.swing.JPanel contentpane = new javax.swing.JPanel(new java.awt.BorderLayout());
+		StringBuffer sb = new StringBuffer();
+		sb.append("<html>");
+		sb.append("Edit initial state!");
+		sb.append("</html>");
+		javax.swing.JLabel label = new javax.swing.JLabel(sb.toString());
+		contentpane.add(label, java.awt.BorderLayout.NORTH);
+		contentpane.add(panel, java.awt.BorderLayout.CENTER);
+		contentpane.add(buttonpane, java.awt.BorderLayout.SOUTH);
+		
+		frame.setDefaultCloseOperation(javax.swing.JFrame.DO_NOTHING_ON_CLOSE);
+		frame.setContentPane(contentpane);
+		frame.pack();
+		frame.setVisible(true);
+	    }catch(Exception exc){exc.printStackTrace();}
+	}});
 
-    public void readFile(String filename) throws FileNotFoundException, IOException, XMLParseException {
-        File file = new File(filename);
-        log("read: " + file.getAbsolutePath());
-        if (!file.exists()) {
-            throw new FileNotFoundException(file.getAbsolutePath());
-        }
-        ElementParser parser = new ElementParser(new FileInputStream(file));
-        parser.setPolicy(new XMLParserPolicy() {
-                public Element allowElement(Element element) {
-                    if (element.isTagElement()) {
-                        TagElement tag = (TagElement)element;
-                        String key = tag.getKey().toLowerCase();
-                        if (!"agent".equals(key) || !"topology".equals(key)) {
-                            log("skipped: " + tag.getKey());
+	wmg.fitView();
+
+	synchronized(finish_flag) {
+	    finish_flag.wait();
+	}
+	
+	TrafficArea[] area_list = world_manager.getAreaList();
+	for(TrafficArea traffic_area : area_list) {
+	    String gmlid = traffic_area.getID();
+	    EntityID rcrsid = getID(gmlid, gmlid_rcrsid_map);
+	    Area rcrs_area = null;
+	    String area_type = (traffic_area.getType()==null ? "area" : traffic_area.getType().toLowerCase());
+	    if (area_type.equals("building")) {
+		Building building = new Building(rcrsid);
+                building.setBrokenness(0);
+                rcrs_area = building;
+	    }
+            else {
+		rcrs_area = new Road(rcrsid);
+            }
+	    rcrs_area.setX((int)traffic_area.getCenterX());
+            rcrs_area.setY((int)traffic_area.getCenterY());
+	    List<EntityID> nexts = new ArrayList<EntityID>();
+            int[] shape = null;
+            List<TrafficAreaNode> shapeBuffer = new ArrayList<TrafficAreaNode>();
+            TrafficAreaDirectedEdge[] dedges = traffic_area.getDirectedEdges();
+            for (int i = 0; i < dedges.length; i++) {
+                TrafficAreaNode[] dedgenodes = dedges[i].getNodes();
+                EntityID eid = null;
+                TrafficArea nextArea = dedges[i].getEdge().getNextArea(traffic_area);
+                if (nextArea == null) {
+                    eid = new EntityID(-1);
+                }
+                else {
+                    eid = getID(nextArea.getID(), gmlid_rcrsid_map);
+                }
+                for (int j = 0; j < dedgenodes.length-1; j++) {
+                    shapeBuffer.add(dedgenodes[j]);
+                    nexts.add(eid);
+                }
+            }
+            shape = new int[shapeBuffer.size() * 2];
+            for (int i = 0; i < shapeBuffer.size(); i++) {
+                TrafficAreaNode n = shapeBuffer.get(i);
+                shape[i * 2    ] = (int)n.getX();
+                shape[i * 2 + 1] = (int)n.getY();
+            }
+            /*
+	    TrafficAreaNode[] node_list = traffic_area.getNodes();
+	    shape = new int[node_list.length*2];
+	    TrafficAreaNode n = node_list[0];
+	    int x = (int)n.getX();
+	    int y = (int)n.getY();
+	    int lx = x;
+	    int ly = y;
+	    TrafficAreaNode ln = n;
+            TrafficArea next = null;
+	    for(int i=1; i<node_list.length; i++) {
+		n = node_list[i];
+		x = n.getX();
+		y = n.getY();
+		shape[i*2]   = (int)x;
+		shape[i*2+1] = (int)y;
+		for(TrafficAreaDirectedEdge e : traffic_area.getDirectedEdges()) {
+                    if (e.getAreas().length >= 2) {
+                        if(e.getEdge().has(new java.awt.geom.Line2D.Double(x, y, lx, ly))) {
+                            next = e.getEdge().getNextArea(traffic_area);
+                            break;
                         }
                     }
                     return null;
                 }
-                public ParserPolicy getInnerPolicy(Element element) {
-                    if (element.isTagElement()) {
-                        TagElement tag = (TagElement)element;
-                        String key = tag.getKey().toLowerCase();
-                        if ("topology".equals(key) || "rcrs:area".equals(key)) {
-                            return this;
-                        }
-                        else if ("agent_list".equals(key)) {
-                            return readAgentPolicy;
-                        }
-                        else if ("rcrs:nodelist".equals(key)) {
-                            return readNodePolicy;
-                        }
-                        else if ("rcrs:edgelist".equals(key)) {
-                            return readEdgePolicy;
-                        }
-                        else if ("rcrs:facelist".equals(key)) {
-                            return readFacePolicy;
-                        }
+		else {
+		    EntityID id = getID(next.getID(), gmlid_rcrsid_map);
+		    nexts.add(id);
+		}
+                Edge edge = new Edge(lx, ly, x, y, neighbour);
+                edges.add(edge);
+		ln = n;
+		lx = x;
+		ly = y;
+	    }
+	    n = node_list[0];
+            
+            x = n.getX();
+            y = n.getY();
+            for(TrafficAreaDirectedEdge e : traffic_area.getDirectedEdges()) {
+                if (e.getAreas().length >= 2) {
+                    if(e.getEdge().has(new java.awt.geom.Line2D.Double(x, y, lx, ly))) {
+                        next = e.getEdge().getNextArea(traffic_area);
+                        break;
                     }
                     return new XMLParserPolicy();
                 }
-            });
-        parser.parse();
+            }
+            if (rcrsid.getValue() == 113) {
+                System.err.println("last:"+next);
+            }
+            if(next == null) {
+                nexts.add(new EntityID(-1));
+            }
+            else {
+                EntityID id = getID(next.getID(), gmlid_rcrsid_map);
+                nexts.add(id);
+            }
+            
+            //nexts.add(new EntityID(-1));
+            if (rcrsid.getValue() == 113) {
+                StringBuffer sb = new StringBuffer();
+                for (int i = 0; i< nexts.size(); i++)
+                    sb.append(nexts.get(i)).append(",");
+                System.err.println(sb.toString());
+            }
+            */
+
+	    
+	    rcrs_area.setEdges(edges);
+	    pool.put(rcrs_area.getID(), rcrs_area);
+
+	    ArrayList<EntityID> eidl = new ArrayList<EntityID>();
+	    for(TrafficBlockade tb : traffic_area.getBlockadeList()) {
+		Blockade blockade = new Blockade(new EntityID(getUniqueNumber()));
+		eidl.add(blockade.getID());
+		blockade.setX((int)tb.getCenterX());
+                blockade.setY((int)tb.getCenterY());
+		Line2D[] line_list = tb.getLineList();
+		int[] xy = new int[(line_list.length)*2];
+		//xy[0] = (int)line_list[0].getP1().getX();
+		//xy[1] = (int)line_list[0].getP1().getY();
+		for(int i=0; i<line_list.length; i++) {
+		    xy[i*2] = (int)line_list[i].getP1().getX();
+		    xy[i*2+1] = (int)line_list[i].getP1().getY();
+		}
+		blockade.setApexes(xy);
+		EntityID area_id = rcrs_area.getID();
+		blockade.setPosition(area_id);
+		Area area = (Area)pool.get(area_id);
+		ArrayList<EntityID> blockade_list = new ArrayList<EntityID>();
+		blockade_list.add(blockade.getID());
+		area.setBlockades(blockade_list);
+		pool.put(blockade.getID(), blockade);
+
+	    }
+	    rcrs_area.setBlockades(eidl);
+	}
+
+
+	for(TrafficAgent traffic_agent : world_manager.getAgentList()) {
+	    EntityID id = new EntityID(getUniqueNumber());
+	    Human human = null;
+	    String type = traffic_agent.getType();
+	    if(type==null) type="unknown type";
+	    else type = type.toLowerCase();
+	    
+	    if(type.startsWith("ambulanceteam"))
+		human = new AmbulanceTeam(id);
+	    else if(type.startsWith("firebrigade"))
+		human = new FireBrigade(id);
+	    else if(type.startsWith("policeforce"))
+		human = new PoliceForce(id);
+	    else
+		human = new Civilian(id);
+	    double x = traffic_agent.getX();
+	    double y = traffic_agent.getY();
+	    double z = 0;
+	    human.setHP(10000);
+	    EntityID position = gmlid_rcrsid_map.get(traffic_agent.getArea());
+	    if(position==null) {
+		for(TrafficArea area : world_manager.getAreaList())
+		    if(area.contains(x, y, z))
+			position = gmlid_rcrsid_map.get(area.getID());
+	    }
+	    human.setPosition(position, (int)x, (int)y);
+	    pool.put(human.getID(), human);
+	}
+
+
+	/*
+	for(TrafficBlockade tblockade : world_manager.getBlockadeList()) {
+	    Blockade blockade = new Blockade(new EntityID(getUniqueNumber()));
+	    blockade.setCenter(455000,408000);
+	    int[] xy = new int[]{452000, 403000, 457000, 413000, 451000, 414000, 447000, 406000};
+	    blockade.setShape(xy);
+	    EntityID area_id = gmlid_rcrsid_map.get("95");
+	    blockade.setArea(area_id);
+	    Area area = (Area)pool.get(area_id);
+	    ArrayList<EntityID> blockade_list = new ArrayList<EntityID>();
+	    blockade_list.add(blockade.getID());
+	    area.setBlockadeList(blockade_list);
+	    pool.put(blockade.getID(), blockade);
+	}
+	*/
+	//addTestBlockade(pool);
+	
+	
+
+	System.out.println(gmlid_rcrsid_map);
+	
+	return pool;
     }
 
     private KeepAllPolicy keepAllPolicy = new KeepAllPolicy();
@@ -201,78 +392,37 @@ public class GISServer implements Runnable {
         }
     }
 
-    private class ReadEdgePolicy extends XMLParserPolicy {
-        public Element allowElement(Element element) {
-            if (element.isTagElement()) {
-                TagElement tag = (TagElement)element;
-                String key = tag.getKey().toLowerCase();
-                if ("gml:edge".equals(key)) {
-                    GMLID id = new GMLID(tag.getAttributeValue("gml:id"));
-                    TagElement[] nodeTags = tag.getTagChildren("gml:directedNode");
-                    GMLID[] nodes = new GMLID[nodeTags.length];
-                    for (int i = 0; i < nodeTags.length; i++) {
-                        String nn = nodeTags[i].getAttributeValue("xlink:href");
-                        nodes[i] = new GMLID(nn.replace("#", ""));
-                    }
-                    TagElement[] faceTags = tag.getTagChildren("gml:directedFace");
-                    GMLID[] faces = new GMLID[faceTags.length];
-                    for (int i = 0; i < faceTags.length; i++) {
-                        String ff = faceTags[i].getAttributeValue("xlink:href");
-                        faces[i] = new GMLID(ff.replace("#", ""));
-                    }
-                    TagElement centerLineOf = tag.getTagChild("gml:centerLineOf");
-                    TagElement lineString = centerLineOf.getTagChild("gml:LineString");
-                    TagElement coordinates = lineString.getTagChild("gml:coordinates");
-                    String[] xytexts = coordinates.getValue().split(" ");
-                    Point2D[] points = new Point2D[xytexts.length];
-                    for (int i = 0; i < xytexts.length; i++) {
-                        String[] xytext = xytexts[i].split(",");
-                        double x = Double.parseDouble(xytext[0]);
-                        double y = Double.parseDouble(xytext[1]);
-                        points[i] = new Point2D.Double(x, y);
-                    }
-                    GMLEdge edge = new GMLEdge(id, nodes, faces);
-                    edge.setBorder(points);
-                    log(edge);
-                    edgeMap.put(edge.getID(), edge);
-                }
+    private static void startWaiting(int port, HashMap<EntityID, Entity> pool) throws Exception {
+	print("waiting for kernel");
+	ServerSocket server = new ServerSocket(port);
+        while (true) {
+            try {
+                Socket socket = server.accept();
+                handleConnection(socket, pool.values());
             }
-            return null; 
-        }
-        public ParserPolicy getInnerPolicy(Element element) {
-            return keepAllPolicy;
+            catch (InterruptedIOException e) {
+                // Ignore
+            }
         }
     }
 
-    private class ReadFacePolicy extends XMLParserPolicy {
-        public Element allowElement(Element element) {
-            if (element.isTagElement()) {
-                TagElement tag = (TagElement)element;
-                String key = tag.getKey().toLowerCase();
-                if ("rcrs:face".equals(key)) {
-                    String type = tag.getAttributeValue("type").toLowerCase();
-                    //out.println(tag);
-                    TagElement gtag = tag.getTagChild("gml:Face");
-                    GMLID gid = new GMLID(gtag.getAttributeValue("gml:id"));
-                    TagElement[] edgeTags = gtag.getTagChildren("gml:directedEdge");
-                    //out.println(java.util.Arrays.toString(edgeTags));
-                    GMLDirectedEdge[] dedges = new GMLDirectedEdge[edgeTags.length];
-                    for (int i = 0; i < edgeTags.length; i++) {
-                        boolean or = "+".equals(edgeTags[i].getAttributeValue("orientation"));
-                        String nn = edgeTags[i].getAttributeValue("xlink:href");
-                        dedges[i] = new GMLDirectedEdge(or, new GMLID(nn.replaceAll("#", "")));
-                    }
-                    GMLFace face = new GMLFace(gid, dedges);
-                    face.setType(type);
-                    log(face);
-                    faceMap.put(face.getID(), face);
-                }
-            }
-            return null;
-        }
-        public ParserPolicy getInnerPolicy(Element element) {
-            return keepAllPolicy;
-        }
+    private static void handleConnection(Socket socket, Collection<Entity> entities) throws Exception {
+	TCPConnection connection = new TCPConnection(socket);
+	SynchronousConnectionListener l  = new SynchronousConnectionListener();
+	connection.addConnectionListener(l);
+	connection.startup();
+
+	print("waiting kgconnect");
+	KGConnect kg_connect = (KGConnect)l.waitForMessage();
+	print("received kgconnect");
+	print("version: "+kg_connect.getVersion());
+	
+	GKConnectOK gk_connect_ok = new GKConnectOK(entities);
+	//print("gk_connect_ok: "+gk_connect_ok);
+	connection.sendMessage(gk_connect_ok);
+	
+	KGAcknowledge kg_acknowledge = (KGAcknowledge)l.waitForMessage();
+	print("received acknowledge");
     }
 
     private class ReadAgentPolicy extends XMLParserPolicy {
