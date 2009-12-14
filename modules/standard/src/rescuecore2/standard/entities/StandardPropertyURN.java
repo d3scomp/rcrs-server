@@ -29,6 +29,7 @@ public enum StandardPropertyURN {
     BUILDING_AREA_GROUND,
     BUILDING_AREA_TOTAL,
     APEXES,
+    EDGES,
 
     POSITION,
     DIRECTION,

@@ -11,6 +11,7 @@ import rescuecore2.misc.Pair;
 import rescuecore2.worldmodel.Property;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 
 /**
@@ -19,8 +20,7 @@ import java.util.Set;
 public abstract class Area extends StandardEntity {
     private IntProperty x;
     private IntProperty y;
-    private IntArrayProperty apexes;
-    private EntityRefListProperty neighbours;
+    private EdgeListProperty edges;
     private EntityRefListProperty blockades;
 
     /**
@@ -32,8 +32,7 @@ public abstract class Area extends StandardEntity {
         super(id, type);
 	x = new IntProperty(StandardPropertyURN.X);
 	y = new IntProperty(StandardPropertyURN.Y);
-        apexes = new IntArrayProperty(StandardPropertyURN.APEXES);
-	neighbours = new EntityRefListProperty(StandardPropertyURN.NEIGHBOURS);
+        edges = new EdgeListProperty(StandardPropertyURN.EDGES);
 	blockades = new EntityRefListProperty(StandardPropertyURN.BLOCKADES);
     }
 
@@ -45,8 +44,7 @@ public abstract class Area extends StandardEntity {
         super(other);
 	x = new IntProperty(other.x);
 	y = new IntProperty(other.y);
-        apexes = new IntArrayProperty(other.apexes);
-	neighbours = new EntityRefListProperty(other.neighbours);
+        edges = new EdgeListProperty(other.edges);
 	blockades = new EntityRefListProperty(other.blockades);
     }
 
@@ -69,10 +67,8 @@ public abstract class Area extends StandardEntity {
             return x;
         case Y:
             return y;
-        case APEXES:
-            return apexes;
-        case NEIGHBOURS:
-            return neighbours;
+        case EDGES:
+            return edges;
         case BLOCKADES:
             return blockades;
         default:
@@ -85,8 +81,7 @@ public abstract class Area extends StandardEntity {
         Set<Property> result = super.getProperties();
         result.add(x);
         result.add(y);
-        result.add(apexes);
-        result.add(neighbours);
+        result.add(edges);
         result.add(blockades);
         return result;
     }
@@ -170,81 +165,42 @@ public abstract class Area extends StandardEntity {
     }
 
     /**
-       Get the apexes property.
-       @return The apexes property.
+       Get the edges property.
+       @return The edges property.
      */
-    public IntArrayProperty getApexesProperty() {
-        return apexes;
+    public EdgeListProperty getEdgesProperty() {
+        return edges;
     }
 
     /**
-       Get the apexes of this area.
-       @return The apexes.
+       Get the edges of this area.
+       @return The edges.
      */
-    public int[] getApexes() {
-        return apexes.getValue();
+    public List<Edge> getEdges() {
+        return edges.getValue();
     }
 
     /**
-       Set the apexes.
-       @param apexes The new apexes.
+       Set the edges.
+       @param edges The new edges.
     */
-    public void setApexes(int[] apexes) {
-        this.apexes.setValue(apexes);
+    public void setEdges(List<Edge> edges) {
+        this.edges.setEdges(edges);
     }
 
     /**
-       Find out if the apexes property has been defined.
-       @return True if the apexes property has been defined, false otherwise.
+       Find out if the edges property has been defined.
+       @return True if the edges property has been defined, false otherwise.
      */
-    public boolean isApexesDefined() {
-        return apexes.isDefined();
+    public boolean isEdgesDefined() {
+        return edges.isDefined();
     }
 
     /**
-       Undefine the apexes property.
+       Undefine the edges property.
     */
-    public void undefineApexes() {
-        apexes.undefine();
-    }
-
-    /**
-       Get the neighbours property.
-       @return The neighbours property.
-     */
-    public EntityRefListProperty getNeighboursProperty() {
-        return neighbours;
-    }
-
-    /**
-       Get the neighbours of this area.
-       @return The neighbours.
-     */
-    public List<EntityID> getNeighbours() {
-        return neighbours.getValue();
-    }
-
-    /**
-       Set the neighbours of this area.
-       @param neighbours The new neighbours.
-    */
-    public void setNeighbours(List<EntityID> neighbours) {
-        this.neighbours.setValue(neighbours);
-    }
-
-    /**
-       Find out if the neighbours property has been defined.
-       @return True if the neighbours property has been defined, false otherwise.
-     */
-    public boolean isNeighboursDefined() {
-        return neighbours.isDefined();
-    }
-
-    /**
-       Undefine the neighbours property.
-    */
-    public void undefineNeighbours() {
-        neighbours.undefine();
+    public void undefineEdges() {
+        edges.undefine();
     }
 
     /**
@@ -284,5 +240,34 @@ public abstract class Area extends StandardEntity {
     */
     public void undefineBlockades() {
         blockades.undefine();
+    }
+
+    /**
+       Get the neighbours of this area.
+       @return The neighbours.
+     */
+    public List<EntityID> getNeighbours() {
+        List<EntityID> result = new ArrayList<EntityID>();
+        for (Edge next : edges.getValue()) {
+            if (next.isPassable()) {
+                result.add(next.getNeighbour());
+            }
+        }
+        return result;
+    }
+
+    /**
+       Get the list of apexes for this area.
+       @return The list of apexes.
+    */
+    public int[] getApexList() {
+        List<Edge> edges = getEdges();
+        int[] apexes = new int[edges.size() * 2];
+        int i = 0;
+        for (Edge next : edges) {
+            apexes[i++] = next.getStartX();
+            apexes[i++] = next.getStartY();
+        }
+        return apexes;
     }
 }
