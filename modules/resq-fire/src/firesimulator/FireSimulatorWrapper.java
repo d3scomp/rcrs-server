@@ -10,6 +10,7 @@ import rescuecore2.messages.control.KSCommands;
 import rescuecore2.messages.control.SKUpdate;
 
 import rescuecore2.standard.messages.AKExtinguish;
+import rescuecore2.standard.entities.Edge;
 import rescuecore2.standard.components.StandardSimulator;
 
 import firesimulator.kernel.Kernel;
@@ -33,6 +34,7 @@ import firesimulator.simulator.ExtinguishRequest;
 import firesimulator.util.Configuration;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -246,8 +248,8 @@ public class FireSimulatorWrapper extends StandardSimulator {
         if (oldB.isTotalAreaDefined()) {
             newB.setBuildingAreaTotal(oldB.getTotalArea());
         }
-        if (oldB.isApexesDefined()) {
-            newB.setApexes(oldB.getApexes());
+        if (oldB.isEdgesDefined()) {
+            newB.setApexes(oldB.getApexList());
         }
         if (oldB.isXDefined()) {
             newB.setX(oldB.getX());
