@@ -153,7 +153,7 @@ public class RCRSTrafficSimulator {
                 }
                 double cx = area.getX();
                 double cy = area.getY();
-                TrafficArea trafficArea = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexes(), nextAreaIdTextList);
+                TrafficArea trafficArea = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexList(), nextAreaIdTextList);
                 if (area instanceof Building) {
                     trafficArea.setType("building");
                 }
