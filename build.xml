@@ -8,8 +8,10 @@
 
   <!-- Modules directory -->
   <property name="modules.dir" value="${basedir}/modules"/>
-
+<!-- Network based simulator cannot be compiled.
   <property name="modules" value="rescuecore2,kernel,standard,sample,handy,human,collapse,blockade,misc,resq-fire,traffic-old,ignition,gis2,traffic3,blockade2"/>
+-->
+  <property name="modules" value="rescuecore2,kernel,standard,sample,handy,human,collapse,misc,ignition,traffic3,gis2,blockade2"/>
   <property name="modules.kernel.depend" value="rescuecore2,handy"/>
   <property name="modules.standard.depend" value="rescuecore2,kernel"/>
   <property name="modules.sample.depend" value="rescuecore2,standard"/>
