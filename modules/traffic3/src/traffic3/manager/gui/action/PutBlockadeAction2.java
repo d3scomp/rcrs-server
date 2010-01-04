@@ -55,7 +55,7 @@ public class PutBlockadeAction2 extends TrafficAction {
                                 continue;
                             }
                             TrafficArea tarea = (TrafficArea)tobj;
-                            TrafficAreaNode[] nodeList = tarea.getNodeList();
+                            TrafficAreaNode[] nodeList = tarea.getNodes();
                             int length = nodeList.length;
                             int[] xs = new int[length];
                             int[] ys = new int[length];

@@ -47,7 +47,7 @@ public class ImageOutputTool {
             throw new NullPointerException();
         }
         if (!rootFolder.exists()) {
-            if (rootFolder.mkdir()) {
+            if (!rootFolder.mkdir()) {
                 throw new FileNotFoundException("cannot create directory: " + rootFolder.getAbsolutePath());
             }
         }
@@ -132,7 +132,7 @@ public class ImageOutputTool {
 
 
     private static void copy(String path, File ofile) throws IOException {
-        InputStream is = getResourceAsStream(path);
+        InputStream is = org.util.Handy.getResourceAsStream(path);
         OutputStream os = new FileOutputStream(ofile);
         copy(is, os);
     }
@@ -146,7 +146,7 @@ public class ImageOutputTool {
         out.flush();
         out.close();
     }
-
+    /*
     private static InputStream getResourceAsStream(String path) throws IOException {
         //        URL url = getClass().getClassLoader().getResource("org/util/capture/ImageOutputTool.class");
         URL url = ClassLoader.getSystemClassLoader().getResource(path);
@@ -168,7 +168,7 @@ public class ImageOutputTool {
         }
         throw new IOException("cannot find resource: " + path);
     }
-
+    */
     private class ImageObject {
         File savedFile;
         Double time;

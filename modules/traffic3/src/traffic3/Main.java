@@ -136,8 +136,8 @@ public final class Main {
             final int fontSize = 25;
             title.setFont(new Font("Arial", Font.BOLD, fontSize));
             window[0].add(title, BorderLayout.NORTH);
-            //window[0].add(new Label("  "), BorderLayout.EAST);
-            //window[0].add(new Label("  "), BorderLayout.WEST);
+            window[0].add(new Label("  "), BorderLayout.EAST);
+            window[0].add(new Label("  "), BorderLayout.WEST);
             window[0].add(tmp, BorderLayout.SOUTH);
             //window[0].setVisible(true);
             window[0].add(textarea[0], BorderLayout.CENTER);
@@ -193,47 +193,15 @@ public final class Main {
 
                                         Object message = e.getMessage();
                                         if (message instanceof Exception) {
-                                            JPanel panel = new JPanel(new BorderLayout());
-                                            Exception exc = (Exception)message;
-                                            StringBuffer sb = new StringBuffer(getLog(exc));
-                                            JTextArea title = new JTextArea();
-                                            if (message instanceof FileNotFoundException) {
-                                                title.setText("Cannot find file.");
-                                            }
-                                            else {
-                                                title.setText(exc.getMessage());
-                                            }
-                                            final float titleFontSize = (float)20;
-                                            title.setEditable(false);
-                                            title.setFont(title.getFont().deriveFont(titleFontSize).deriveFont(Font.BOLD));
-                                            title.setBackground(new Color(0, 0, 0, 0));
-                                            title.setOpaque(false);
-                                            final int titleBorderWidth = 10;
-                                            title.setBorder(BorderFactory.createEmptyBorder(titleBorderWidth, titleBorderWidth, titleBorderWidth, titleBorderWidth));
-                                            title.setLineWrap(true);
-                                            JTextArea ta = new JTextArea();
-                                            ta.setText(sb.toString());
-                                            final float logFontSize = (float)11;
-                                            ta.setFont(title.getFont().deriveFont(logFontSize));
-                                            final int tabSize = 3;
-                                            ta.setTabSize(tabSize);
-                                            ta.setOpaque(false);
-                                            ta.setBackground(new Color(0, 0, 0, 0));
-                                            JScrollPane sp = new JScrollPane(ta);
-                                            // sp.setBorder(null);
-                                            sp.setOpaque(false);
-                                            sp.setBackground(new Color(0, 0, 0, 0));
-                                            panel.setPreferredSize(new Dimension(preferredFrameSizeWidth, preferredFrameSizeHeight));
-                                            panel.add(title, BorderLayout.NORTH);
-                                            panel.add(sp, BorderLayout.CENTER);
-                                            JOptionPane.showMessageDialog(frame, panel, "message", e.getType());
+                                            ((Exception)message).printStackTrace();
+                                            org.util.Handy.show(frame, "Exception", message);
                                         }
                                         else {
                                             if (e.getType() == JOptionPane.ERROR_MESSAGE) {
-                                                JOptionPane.showMessageDialog(frame, message, "message", e.getType());
+                                                org.util.Handy.show(frame, "Error", message);
                                             }
                                             else {
-                                                JOptionPane.showMessageDialog(frame, message, "message", e.getType());
+                                                org.util.Handy.show(frame, "Information", message);
                                                 //worldManagerGUI[0].setStatus(message.toString());
                                             }
                                         }
@@ -253,7 +221,7 @@ public final class Main {
 
                             frame.setTitle(getVersion());
                             frame.setContentPane(contentpane);
-                            frame.setJMenuBar(worldManagerGUI[0].getMenuBar());
+                            frame.setJMenuBar(worldManagerGUI[0].createMenuBar());
                             frame.pack();
                             final int preferredWidth = 600;
                             final int preferredHeight = 400;

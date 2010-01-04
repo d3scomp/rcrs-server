@@ -200,7 +200,7 @@ public class WorldManagerGUI extends JComponent {
      *
      */
 
-    private static final int VIEW_ZOOM_DEFAULT = 40;
+    private static final double VIEW_ZOOM_DEFAULT = 40;
     private static final double MOUSE_WHEEL_ZOOM_IN_SPEED = 1.1;
     private static final double MOUSE_WHEEL_ZOOM_OUT_SPEED = 0.9;
     private static final double SIMULATION_TIME_STEP_DEFAULT = 100;
@@ -226,7 +226,7 @@ public class WorldManagerGUI extends JComponent {
     private int videoSkipFrameCounter = 0;
 
     private volatile boolean createImageDrawing = false;
-    private volatile boolean createImageCancelToDraw = false;
+    private volatile boolean createImageCancelDrawing = false;
     private volatile AffineTransform createImageTransform;
     private BufferedImage agentLayerImageBuf;
     private Action getShowTargetsActionBuf;
@@ -245,11 +245,6 @@ public class WorldManagerGUI extends JComponent {
      *
      */
     private WorldManager worldManager;
-
-    /**
-     *
-     */
-    private JMenuBar menuBar;
 
     /**
      *
@@ -447,6 +442,11 @@ public class WorldManagerGUI extends JComponent {
      */
     private JLabel imageUpdateRateLabel;
 
+    private Point2D mousePoint = null;
+    private Point2D mouseDraggingPoint = null;
+    private Rectangle2D mouseRectangle = null;
+    final private Map<Integer, TrafficObject> preSelectionList = new HashMap<Integer, TrafficObject>();
+
     /**
      *
      */
@@ -464,6 +464,7 @@ public class WorldManagerGUI extends JComponent {
     private ImageOutputTool imageOutputTool;
 
     private XMLConfigManager configManager;
+
 
     /**
      * Constructor.
@@ -516,40 +517,13 @@ public class WorldManagerGUI extends JComponent {
         }
     }
 
-    private TagElement getConfigTag() {
-        TagElement guiConfigPopup = configManager.getTag("gui/popup");
+    private TagElement getConfigTag(String path) {
+        TagElement guiConfigPopup = configManager.getTag(path);
         if (guiConfigPopup.getTagChildren() == null) {
             try {
-                StringBuffer sb;
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ShowTargetsAsTextAction\"/>");
-                TagElement showTargetsTag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.PutAgentsAction\"/>");
-                TagElement putAgentsTag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.PutAgentsAction2\"/>");
-                TagElement putAgents2Tag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.SetDestinationAction\"/>");
-                TagElement setDestinationTag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.PutBlockadeAction\"/>");
-                TagElement putBlockadeTag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.PutBlockadeAction2\"/>");
-                TagElement putBlockadeTag2 = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.SetAreaTypeAction\"/>");
-                TagElement setAreaTypeTag = XMLIO.read(sb);
-
-                guiConfigPopup.setChildren(showTargetsTag, putAgentsTag, putAgents2Tag, setDestinationTag, putBlockadeTag, putBlockadeTag2, setAreaTypeTag);
+                java.io.InputStream in = org.util.Handy.getResourceAsStream("data/resources/default-popup.xml");
+                TagElement[] defaultTags = XMLIO.read(in).getTagChildren();
+                guiConfigPopup.setChildren(defaultTags);
                 configManager.outputSetting();
                 guiConfigPopup = configManager.getTag("gui/popup");
             }
@@ -568,7 +542,7 @@ public class WorldManagerGUI extends JComponent {
      */
     public void createGUI() {
 
-        TagElement guiConfigPopup = getConfigTag();
+        TagElement guiConfigPopup = getConfigTag("gui/popup");
         Action createImageAction = new AbstractAction("create image action") {
                 public void actionPerformed(ActionEvent e) {
                     createImageInOtherThread();
@@ -655,7 +629,6 @@ public class WorldManagerGUI extends JComponent {
         bg.add(isPutAgentMode);
         isSelectMode.setSelected(true);
 
-        createMenuBar();
 
         statusLabel = new JLabel("status");
         mouseStatusLabel = new JLabel("X, Y");
@@ -754,12 +727,11 @@ public class WorldManagerGUI extends JComponent {
             requestFocus();
             mouseDragging = true;
             pressedMousePressedButtonIndex = e.getButton();
-            if (pressedMousePressedButtonIndex == 1) {
+            if (pressedMousePressedButtonIndex == MouseEvent.BUTTON1) {
 
                 //if (isSelectMode.isSelected()) {
 
                     if (e.isControlDown()) {
-
                         try {
                             TrafficAreaNode tan = worldManager.createAreaNode(sx2mx(e.getX()), sy2my(e.getY()), 0);
                             if (selectedAgentGroupList.size() == 0) {
@@ -784,26 +756,26 @@ public class WorldManagerGUI extends JComponent {
                         }
                     }
                     else {
-                        isSometihgSelected = listAllHitsToTarget(sx2mx(e.getX()), sy2my(e.getY()), !e.isShiftDown());
+                        //isSometihgSelected = listAllHitsToTarget(sx2mx(e.getX()), sy2my(e.getY()), e.isShiftDown());
+                        mousePoint = new Point2D.Double(e.getX(), e.getY());
                     }
                     /*
-                }
-                else if (isInputAreaMode.isSelected()) {
-                    alert(new UnsupportedOperationException(), "error");
-                }
-                else if (isInputNetworkMode.isSelected()) {
-                    //alert(new UnsupportedOperationException(), "error");
-                    try {
-                        TrafficAreaNode tan = worldManager.createAreaNode(sx2mx(e.getX()), sy2my(e.getY()), 0);
-                    }
-                    catch (Exception exc) {
-                        alert(exc, "error");
-                    }
-                }
+                      }
+                      else if (isInputAreaMode.isSelected()) {
+                      alert(new UnsupportedOperationException(), "error");
+                      }
+                      else if (isInputNetworkMode.isSelected()) {
+                      //alert(new UnsupportedOperationException(), "error");
+                      try {
+                      TrafficAreaNode tan = worldManager.createAreaNode(sx2mx(e.getX()), sy2my(e.getY()), 0);
+                      }
+                      catch (Exception exc) {
+                      alert(exc, "error");
+                      }
+                      }
                     */
             }
             else if (pressedMousePressedButtonIndex == MouseEvent.BUTTON3) {
-
                 final double x = sx2mx(e.getX());
                 final double y = sy2my(e.getY());
                 //final JPopupMenu popup = new JPopupMenu();
@@ -817,9 +789,19 @@ public class WorldManagerGUI extends JComponent {
         }
 
         public void mouseReleased(MouseEvent e) {
+            if (mousePoint != null) {
+                if (mousePoint.getX() == e.getX() && mousePoint.getY() == e.getY()) {
+                    isSometihgSelected = listAllHitsToTarget(sx2mx(e.getX()), sy2my(e.getY()), e.isShiftDown());
+                }
+            }
+
+
             isSometihgSelected = false;
             mouseDragging = false;
             pressedMousePressedButtonIndex = -1;
+            mouseRectangle = null;
+            mousePoint = null;
+            mouseDraggingPoint = null;
             createImageInOtherThread();
         }
         public void mouseEntered(MouseEvent e) {}
@@ -837,9 +819,65 @@ public class WorldManagerGUI extends JComponent {
         public void mouseDragged(MouseEvent e) {
             int x = e.getX();
             int y = e.getY();
-            if (pressedMousePressedButtonIndex == 1 && !isSometihgSelected && isSelectMode.isSelected()) {
+            if (mousePoint != null) {
+                double mlx = sx2mx(mousePoint.getX());
+                double mly = sy2my(mousePoint.getY());
+                double mx = sx2mx(x);
+                double my = sy2my(y);
+                double mdx = mlx - mx;
+                double mdy = mly - my;
+                double distance = Math.sqrt(mdx * mdx + mdy - mdy);
+                String xtext = org.util.Handy.toNaturalString((int)mx);
+                String ytext = org.util.Handy.toNaturalString((int)my);
+                String distanceText = org.util.Handy.toNaturalString((int)distance);
+                setMouseStatus("X:" + xtext + "[mm] Y:" + ytext + "[mm]" + " distance:" + distanceText + "[mm]");
+            }
+            mouseDraggingPoint = new Point2D.Double(x, y);
+            if (pressedMousePressedButtonIndex == 2 && !isSometihgSelected && isSelectMode.isSelected()) {
                 drag(x - mouseLastX, y - mouseLastY);
-        }
+            }
+            else if(pressedMousePressedButtonIndex == 1) {
+                if (targetList.size() != 0) {
+                    boolean flag = true;
+                    Map<String, TrafficAreaNode> tnlist = new HashMap<String, TrafficAreaNode>();
+                    for (TrafficObject o : targetList.values()) {
+                        if (o instanceof TrafficAreaNode) {
+                            tnlist.put(o.getID(), (TrafficAreaNode)o);
+                        }
+                        /*
+                        //dragg area
+                        else if (o instanceof TrafficArea) {
+                            TrafficArea area = (TrafficArea)o;
+                            for (TrafficAreaNode n : area.getNodes())
+                                tnlist.put(n.getID(), n);
+                        }
+                        //dragg edge
+                        else if (o instanceof TrafficAreaEdge) {
+                            TrafficAreaEdge edge = (TrafficAreaEdge)o;
+                            for (TrafficAreaNode n : edge.getNodes()) {
+                                tnlist.put(n.getID(), n);
+                            }
+                        }
+                        */
+                    }
+                    if (tnlist.size() != 0) {
+                        double dx = (x - mouseLastX);
+                        double dy = (y - mouseLastY);
+                        for (TrafficAreaNode node : tnlist.values()) {
+                            double newX = node.getX() + dx / viewZoom;
+                            double newY = node.getY() - dy / viewZoom;
+                            node.setLocation(newX, newY);
+                        }
+                    }
+                } else {
+                    double minX = Math.min(mousePoint.getX(), x);
+                    double minY = Math.min(mousePoint.getY(), y);
+                    double maxX = Math.max(mousePoint.getX(), x);
+                    double maxY = Math.max(mousePoint.getY(), y);
+                    mouseRectangle = new Rectangle2D.Double(minX, minY, maxX - minX, maxY - minY);
+                }
+                createImageInOtherThread();
+            }
             mouseLastX = x;
             mouseLastY = y;
         }
@@ -857,7 +895,7 @@ public class WorldManagerGUI extends JComponent {
             return;
         }
         isSimulationRunning = true;
-
+        Exception exc = null;
         try {
             TrafficAgent[] agentList = worldManager.getAgentList();
             for (int i = 0; i < agentList.length; i++) {
@@ -872,7 +910,24 @@ public class WorldManagerGUI extends JComponent {
             }
         }
         catch (NullPointerException e) {
-            alert(e, "error");
+            exc = e;
+        }
+        catch (ArrayIndexOutOfBoundsException e) {
+            exc = e;
+        }
+        if (exc != null) {
+            alert(exc, "error");
+            boolean retry = false;
+            try {
+                retry = org.util.Handy.confirm(this, "Simulation is unexpectedly stopped.\nDo you want to restart simulation?\n"+exc.toString());
+            }
+            catch (org.util.CannotStopEDTException e) {
+                e.printStackTrace();
+            }
+            isSimulationRunning = false;
+            if (retry) {
+                startSimulation();
+            }
         }
     }
 
@@ -927,9 +982,9 @@ public class WorldManagerGUI extends JComponent {
         isSimulationRunning = false;
     }
 
-    private boolean listAllHitsToTarget(double mx, double my, boolean clear) {
+    private boolean listAllHitsToTarget(double mx, double my, boolean isShiftDown) {
         boolean isAdded = false;
-        if (clear) {
+        if (!isShiftDown) {
             targetList.clear();
         }
 
@@ -939,7 +994,13 @@ public class WorldManagerGUI extends JComponent {
             double dx = agent.getX() - mx;
             double dy = agent.getY() - my;
             if (agent.getRadius() * agent.getRadius() > dx * dx + dy * dy) {
-                targetList.put(agent.getID(), agent);
+                String id = agent.getID();
+                if (isShiftDown && targetList.get(id) != null) {
+                    targetList.remove(id);
+                }
+                else {
+                    targetList.put(id, agent);
+                }
                 isAdded = true;
             }
         }
@@ -951,7 +1012,13 @@ public class WorldManagerGUI extends JComponent {
                 double d = MOUSE_CLICK_NODE_DISTANCE / viewZoom;
                 System.out.println(node.getDistance(mx, my, 0));
                 if (node.getDistance(mx, my, 0) < d) {
-                    targetList.put(node.getID(), node);
+                    String id = node.getID();
+                    if (isShiftDown && targetList.get(id) != null) {
+                        targetList.remove(id);
+                    }
+                    else {
+                        targetList.put(id, node);
+                    }
                     isAdded = true;
                 }
             }
@@ -960,7 +1027,13 @@ public class WorldManagerGUI extends JComponent {
         if (!isAdded && showAreaEdgeValue.getValue().booleanValue()) {
             for (TrafficAreaEdge edge : worldManager.getAreaConnectorEdgeList()) {
                 if (edge.distance(mx, my) < MOUSE_CLICK_EDGE_DISTANCE / viewZoom) {
-                    targetList.put(edge.getID(), edge);
+                    String id = edge.getID();
+                    if (isShiftDown && targetList.get(id) != null) {
+                        targetList.remove(id);
+                    }
+                    else {
+                        targetList.put(id, edge);
+                    }
                     isAdded = true;
                 }
             }
@@ -969,7 +1042,13 @@ public class WorldManagerGUI extends JComponent {
         if (!isAdded && showAreaValue.getValue().booleanValue()) {
             for (TrafficArea area : worldManager.getAreaList()) {
                 if (area.getShape().contains(mx, my)) {
-                    targetList.put(area.getID(), area);
+                    String id = area.getID();
+                    if (isShiftDown && targetList.get(id) != null) {
+                        targetList.remove(id);
+                    }
+                    else {
+                        targetList.put(id, area);
+                    }
                     isAdded = true;
                 }
             }
@@ -1067,7 +1146,7 @@ public class WorldManagerGUI extends JComponent {
             });
     }
 
-    private JMenuBar createMenuBar(TagElement menuElement) {
+    public JMenuBar createMenuBar(TagElement menuElement) {
         JMenuBar menubar = new JMenuBar();
         TagElement[] menuElementTags = menuElement.getTagChildren("menu-item");
         for (TagElement te : menuElementTags) {
@@ -1092,6 +1171,9 @@ public class WorldManagerGUI extends JComponent {
                     Exception exc = null;
                     try {
                         TrafficAction action = (TrafficAction)(Class.forName(actionClassName).newInstance());
+                        if (actionName != null && actionName.length() > 0) {
+                            action.putValue("Name", actionName);
+                        }
                         action.setWorldManagerGUI(this);
                         menu.add(new JMenuItem(action));
                     }
@@ -1165,58 +1247,15 @@ public class WorldManagerGUI extends JComponent {
     /**
      *
      */
-    private void createMenuBar() {
+    public JMenuBar createMenuBar() {
 
         TagElement guiConfigMenu = configManager.getTag("gui/menu");
 
         if (guiConfigMenu.getTagChildren() == null) {
             try {
-                StringBuffer sb;
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"list\" name=\"File\">");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ImportAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ExportAction\"/>");
-                sb.append("<menu-item type=\"separator\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ExitAction\"/>");
-                sb.append("</menu-item>");
-                TagElement fileTag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"list\" name=\"View\">");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.FitViewAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ShowAllAsTextAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ShowTargetsAsTextAction\"/>");
-                sb.append("<menu-item type=\"separator\"/>");
-                sb.append("<menu-item type=\"check\" value=\"antiariasing\" init=\"false\"/>");
-                sb.append("<menu-item type=\"check\" value=\"showArea\" init=\"true\"/>");
-                sb.append("<menu-item type=\"check\" value=\"showAreaEdge\" init=\"true\"/>");
-                sb.append("<menu-item type=\"check\" value=\"showAreaNode\" init=\"false\"/>");
-                sb.append("<menu-item type=\"check\" value=\"showAreaConnector\" init=\"false\"/>");
-                sb.append("<menu-item type=\"check\" value=\"showAreaNodeID\" init=\"false\"/>");
-                sb.append("</menu-item>");
-                TagElement viewTag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"list\" name=\"Edit\">");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ClearAllAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ClearAllAgentsAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.SelectAllAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.SelectByIdAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.SelectAgentGroupAction\"/>");
-                sb.append("</menu-item>");
-                TagElement editTag = XMLIO.read(sb);
-
-                sb = new StringBuffer();
-                sb.append("<menu-item type=\"list\" name=\"Devel\">");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.RecAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ShowLogAction\"/>");
-                sb.append("<menu-item type=\"action\" class=\"traffic3.manager.gui.action.ShowVersionAction\"/>");
-                sb.append("<menu-item type=\"separator\"/>");
-                sb.append("<menu-item type=\"check\" value=\"simulating\" init=\"false\"/>");
-                sb.append("</menu-item>");
-                TagElement develTag = XMLIO.read(sb);
-
-                guiConfigMenu.setChildren(fileTag, viewTag, editTag, develTag);
+                java.io.InputStream in = org.util.Handy.getResourceAsStream("data/resources/default-menubar.xml");
+                TagElement[] defaultTags = XMLIO.read(in).getTagChildren();
+                guiConfigMenu.setChildren(defaultTags);
                 configManager.outputSetting();
                 guiConfigMenu = configManager.getTag("gui/menu");
             }
@@ -1227,7 +1266,7 @@ public class WorldManagerGUI extends JComponent {
                 alert(e, "error");
             }
         }
-        menuBar = createMenuBar(guiConfigMenu);
+        JMenuBar mb = createMenuBar(guiConfigMenu);
 
         JMenu editMenu = new JMenu("Edit-old");
         editMenu.setMnemonic(KeyEvent.VK_E);
@@ -1236,7 +1275,8 @@ public class WorldManagerGUI extends JComponent {
         editMenu.add(isInputNetworkMode);
         editMenu.add(isPutAgentMode);
 
-        menuBar.add(editMenu);
+        mb.add(editMenu);
+        return mb;
     }
 
     /**
@@ -1387,9 +1427,9 @@ public class WorldManagerGUI extends JComponent {
      */
     public void createImageInOtherThread() {
         if (createImageThread  ==  null) {
+            log("creating image thread.");
             createImageThread = new Thread(new Runnable() { public void run() {
                 while (true) {
-                    createImage();
                     try {
                         synchronized (createImageThread) {
                             createImageThread.wait();
@@ -1397,12 +1437,17 @@ public class WorldManagerGUI extends JComponent {
                     }
                     catch (InterruptedException e) {
                         e.printStackTrace();
+                        org.util.Handy.show(null, null, e);
+                        createImageThread = null;
                     }
+                    createImage();
                 }
             } }, "create image");
             createImageThread.start();
         }
-        else {
+        else if (createImageDrawing) {
+            createImageCancelDrawing = true;
+        } else {
             synchronized (createImageThread) {
                 createImageThread.notifyAll();
             }
@@ -1425,7 +1470,10 @@ public class WorldManagerGUI extends JComponent {
             offImage = new BufferedImage(Math.max(offImage.getWidth(), w), Math.max(offImage.getHeight(), h), BufferedImage.TYPE_INT_RGB);
             agentLayerImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         }
-        draw((Graphics2D)offImage.getGraphics(), w, h);
+        Graphics2D g2 = (Graphics2D)offImage.getGraphics();
+        g2.setColor(Color.white);
+        g2.fillRect(0, 0, w, h);
+        draw(g2, w, h);
         repaint();
     }
 
@@ -1436,21 +1484,19 @@ public class WorldManagerGUI extends JComponent {
         return targetList.values().toArray(new TrafficObject[0]);
     }
 
-
     private void draw(Graphics2D g, int w, int h) {
-
+        /*
         if (createImageDrawing) {
-            createImageCancelToDraw = true;
+            createImageCancelDrawing = true;
+System.out.println("create image cancel");
             return;
         }
+System.out.println("create image start");
+        */
 
         createImageDrawing = true;
-        createImageCancelToDraw = false;
+        createImageCancelDrawing = false;
         long drawStartTime = System.currentTimeMillis();
-
-        // clear screen
-        g.setColor(getBackground());
-        g.fillRect(0, 0, w, h);
 
         TrafficObject[] copyOfTargetList = createCopyOfTargetList();
 
@@ -1489,9 +1535,16 @@ public class WorldManagerGUI extends JComponent {
         if (showAreaConnectorValue.getValue().booleanValue()) {
 
             g.setColor(areaConnectorColor);
-
+            /*
             for (TrafficArea area : worldManager.getAreaList()) {
                 for (TrafficAreaEdge edge : area.getConnectorEdgeList()) {
+                    draw(g, edge);
+                }
+            }
+            */
+            for (TrafficAreaEdge edge : worldManager.getAreaConnectorEdgeList()) {
+                TrafficArea[] areas = edge.getAreas();
+                if (areas != null && areas.length >= 2) {
                     draw(g, edge);
                 }
             }
@@ -1503,10 +1556,11 @@ public class WorldManagerGUI extends JComponent {
             }
         }
 
-        // draw area edge
-        if (showAreaEdgeValue.getValue().booleanValue()) {
+        // draw edgemp
+        if (!createImageCancelDrawing && showAreaEdgeValue.getValue().booleanValue()) {
 
             g.setColor(areaEdgeColor);
+            /*
             for (TrafficArea area : worldManager.getAreaList()) {
                 for (Line2D line : area.getUnconnectedEdgeList()) {
                     Point2D p1 = line.getP1();
@@ -1514,6 +1568,14 @@ public class WorldManagerGUI extends JComponent {
                     g.draw(new Line2D.Double(mx2sx(p1.getX()), my2sy(p1.getY()), mx2sx(p2.getX()), my2sy(p2.getY())));
                 }
             }
+            */
+            for (TrafficAreaEdge edge : worldManager.getAreaConnectorEdgeList()) {
+                TrafficArea[] areas = edge.getAreas();
+                if (areas == null || areas.length < 2) {
+                    draw(g, edge);
+                }
+            }
+
             g.setColor(Color.red);
             for (TrafficObject target : copyOfTargetList) {
                 if (target instanceof TrafficAreaEdge) {
@@ -1522,14 +1584,24 @@ public class WorldManagerGUI extends JComponent {
             }
         }
 
-        if (showAreaNodeValue.getValue().booleanValue()) {
+        if (!createImageCancelDrawing && showAreaNodeValue.getValue().booleanValue()) {
             g.setColor(areaNodeColor);
             for (TrafficAreaNode node : worldManager.getAreaNodeList()) {
                 draw(g, node, showAreaNodeIDValue.getValue().booleanValue());
             }
+            g.setColor(Color.red);
+            for (TrafficObject target : copyOfTargetList) {
+                if (target instanceof TrafficAreaNode) {
+                    draw(g, (TrafficAreaNode)target, false);
+                }
+            }
         }
 
-        updateAgentLayer();
+       
+
+        if (!createImageCancelDrawing) {
+            updateAgentLayer();
+        }
 
         g.setColor(Color.black);
 
@@ -1538,7 +1610,7 @@ public class WorldManagerGUI extends JComponent {
 
         createImageDrawing = false;
 
-        if (createImageCancelToDraw) { // if cancelled then it is required to recreate image
+        if (createImageCancelDrawing) { // if cancelled then it is required to recreate image
             createImage();
         }
     }
@@ -1612,10 +1684,32 @@ public class WorldManagerGUI extends JComponent {
 
         if (offImage != null) {
             g.drawImage(offImage, 0, 0, this);
-            drawAgentLayer((Graphics2D)g);
+            Graphics2D g2 = (Graphics2D)g;
+            drawAgentLayer(g2);
+            if (mouseRectangle != null) {
+                g2.setColor(new Color(0, 0, 255, 50));
+                g2.fill(mouseRectangle);
+                g2.setColor(Color.black);
+                g2.draw(mouseRectangle);
+                if (mouseDraggingPoint != null) {
+                    g2.draw(new Line2D.Double(mouseDraggingPoint.getX(), mouseDraggingPoint.getY(), mousePoint.getX(), mousePoint.getY()));
+                }
+            }
+            /*
+            g.setColor(Color.red);
+            testcount = 0;
+            synchronized (worldManager.getRTree()) {   
+                int id = worldManager.getRTree().getRootNodeId();
+                debugNodes(g, worldManager.getRTree(), id);
+            }
+            g.setColor(Color.blue);
+            for (traffic3.manager.RTreeRectangle r : worldManager.rTreeBoundMap.values().toArray(new traffic3.manager.RTreeRectangle[0])) {
+                drawMapRect(g, r.min[0], r.min[1], r.max[0], r.max[1]);
+            }
+            */
 
             if (imageOutputTool != null) {
-                int line = 1 + 1 + 1;
+                int line = 3;
                 g.setColor(Color.black);
                 g.drawString("REC[" + imageOutputTool.getLength() + "]", DRAW_STRING_MARGIN, line * DRAW_STRING_LINE_HEIGHT);
             }
@@ -1629,6 +1723,55 @@ public class WorldManagerGUI extends JComponent {
         }
     }
 
+    private int testcount = 0;
+    public void debugNodes(Graphics g, com.infomatiq.jsi.rtree.RTree rTree, int id) {
+        if (testcount++ > 5000) {
+            return;
+        }
+        com.infomatiq.jsi.rtree.Node n = rTree.getNode(id);
+        if (n == null || n.getLevel()<0) return;
+        com.infomatiq.jsi.Rectangle r = n.getMBR();
+        if (r !=null) {
+            g.setColor(Color.black);
+            g.drawString(id + "[" + n.getLevel() + "]", (int)mx2sx(r.min[0]), (int)my2sy(r.max[1]));
+            /*
+              g.setColor(new Color((n.getLevel()), 0, 0));
+              fillMapRect(g, r.min[0], r.min[1], r.max[0], r.max[1]);
+            */
+            g.setColor(Color.red);
+            drawMapRect(g, r.min[0], r.min[1], r.max[0], r.max[1]);
+        }
+        for (int i = 0; i < n.getEntryCount(); i++) {
+            int idd = n.getId(i);
+            int a = n.getLevel();
+            debugNodes(g, rTree, idd);
+        }
+    }
+
+    public void drawMapRect(Graphics g, double mx0, double my0, double mx1, double my1) {
+        drawScreenRect(g, mx2sx(mx0), my2sy(my0), mx2sx(mx1), my2sy(my1));
+    }
+
+    public void drawScreenRect(Graphics g, double sx0, double sy0, double sx1, double sy1) {
+        int x = (int)Math.min(sx0, sx1);
+        int y = (int)Math.min(sy0, sy1);
+        int www = (int)Math.abs(sx1 - sx0) + 1;
+        int hhh = (int)Math.abs(sy1 - sy0) + 1;
+        g.drawRect(x, y, www, hhh);
+    }
+
+    public void fillMapRect(Graphics g, double mx0, double my0, double mx1, double my1) {
+        fillScreenRect(g, mx2sx(mx0), my2sy(my0), mx2sx(mx1), my2sy(my1));
+    }
+
+    public void fillScreenRect(Graphics g, double sx0, double sy0, double sx1, double sy1) {
+        int x = (int)Math.min(sx0, sx1);
+        int y = (int)Math.min(sy0, sy1);
+        int www = (int)Math.abs(sx1 - sx0) + 1;
+        int hhh = (int)Math.abs(sy1 - sy0) + 1;
+        g.fillRect(x, y, www, hhh);
+    }
+    
 
     /**
      * draw edge to graphics.
@@ -1648,7 +1791,8 @@ public class WorldManagerGUI extends JComponent {
      * @param showID whether show id or not
      */
     public void draw(Graphics2D g, TrafficAreaNode node, boolean showID) {
-        double d = 2;
+        double d = MOUSE_CLICK_NODE_DISTANCE;
+        //double d = 4; //<?>
         Shape arc = new Ellipse2D.Double(mx2sx(node.getX()) - d, my2sy(node.getY()) - d, d + d, d + d);
         g.fill(arc);
         if (showID) {
@@ -1662,6 +1806,9 @@ public class WorldManagerGUI extends JComponent {
      * @param area area
      */
     public void fill(Graphics2D g, TrafficArea area) {
+        if (area == null || area.getShape() == null) {
+            return;
+        }
         GeneralPath gp = (GeneralPath)(area.getShape().clone());
         gp.transform(createImageTransform);
         g.fill(gp);
@@ -1673,6 +1820,9 @@ public class WorldManagerGUI extends JComponent {
      * @param area area
      */
     public void draw(Graphics2D g, TrafficArea area) {
+        if (area == null || area.getShape() == null) {
+            return;
+        }
         GeneralPath gp = (GeneralPath)(area.getShape().clone());
         gp.transform(createImageTransform);
         g.draw(gp);
@@ -1770,23 +1920,33 @@ public class WorldManagerGUI extends JComponent {
     public void showInformation(final TrafficObject... objectList) {
 
         new Thread(new Runnable() { public void run() {
-            final Dimension preferredSize = new Dimension(500, 300);
-            thisObject.requestFocus();
-            StringBuffer sb = new StringBuffer();
-            sb.append("<html>");
-            for (int i = 0; i < objectList.length; i++) {
-                sb.append(objectList[i].toLongString()).append("<br/>");
+            try {
+            
+                //final Dimension preferredSize = new Dimension(500, 300);
+                //thisObject.requestFocus();
+                StringBuffer sb = new StringBuffer();
+                sb.append("<html>");
+                for (int i = 0; i < objectList.length; i++) {
+                    sb.append("<div>").append(objectList[i].toLongString()).append("</div>");
+                }
+                sb.append("</html>");
+                /*
+                  TextPane tp = new JTextPane();
+                  tp.setContentType("text/html");
+                  tp.setText(sb.toString());
+                  tp.setBackground(getBackground());
+                  JScrollPane sp = new JScrollPane(tp);
+                  sp.setBorder(null);
+                  sp.setPreferredSize(preferredSize);
+                  JOptionPane.showMessageDialog(thisObject, sp);
+                */
+                org.util.Handy.show(thisObject, null, sb.toString());
             }
-            sb.append("</html>");
-            JTextPane tp = new JTextPane();
-            tp.setContentType("text/html");
-            tp.setText(sb.toString());
-            tp.setBackground(getBackground());
-            JScrollPane sp = new JScrollPane(tp);
-            sp.setBorder(null);
-            sp.setPreferredSize(preferredSize);
-            JOptionPane.showMessageDialog(thisObject, sp);
-        } }, "show targets").start();
+            catch (Exception e) {
+                alert(e);
+                //org.util.Handy.show(thisObject, null, e);
+            }
+        } }, "show information").start();
     }
 
     /**
@@ -1922,9 +2082,11 @@ public class WorldManagerGUI extends JComponent {
      * menubar.
      * @return menubar
      */
+    /*
     public JMenuBar getMenuBar() {
         return menuBar;
     }
+    */
 
     /**
      * statusbar.

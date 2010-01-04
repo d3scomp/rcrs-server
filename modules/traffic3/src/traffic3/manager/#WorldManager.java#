@@ -160,7 +160,7 @@ public class WorldManager {
     }
 
     /**
-     * remove object.
+     * removeS object.
      * @param tobject object
      */
     public synchronized void remove(TrafficObject tobject) throws WorldManagerException {

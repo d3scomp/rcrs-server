@@ -45,7 +45,6 @@ public class GISServer {
     private GISServer(){}
 
     public static void startProcess(File file1, File file2, int port) throws Exception {
-	
 	print("gis2.gml: " + file1.getAbsolutePath());
 	print("agent.xml: " + file2.getAbsolutePath());
 	print("waiting port: " + port);
@@ -76,7 +75,7 @@ public class GISServer {
 	wmg.setPreferredSize(new java.awt.Dimension(500, 500));
 	final javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.BorderLayout());
 	panel.add(wmg, java.awt.BorderLayout.CENTER);
-	panel.add(wmg.getMenuBar(), java.awt.BorderLayout.NORTH);
+	panel.add(wmg.createMenuBar(), java.awt.BorderLayout.NORTH);
 	final Object finish_flag = new Object();
 	// this should be fixed!! 
 	// fitView() method should be called after appearing gui.
@@ -96,7 +95,7 @@ public class GISServer {
 		javax.swing.JPanel contentpane = new javax.swing.JPanel(new java.awt.BorderLayout());
 		StringBuffer sb = new StringBuffer();
 		sb.append("<html>");
-		sb.append("You can edit initial state.");
+		sb.append("Edit initial state!");
 		sb.append("</html>");
 		javax.swing.JLabel label = new javax.swing.JLabel(sb.toString());
 		contentpane.add(label, java.awt.BorderLayout.NORTH);
@@ -131,10 +130,34 @@ public class GISServer {
 		rcrs_area = new Area(rcrsid);
             }
 	    rcrs_area.setCenter((int)traffic_area.getCenterX(), (int)traffic_area.getCenterY());
-	    TrafficAreaNode[] node_list = traffic_area.getNodeList();
-	    int[] shape = new int[node_list.length*2];
-	    ArrayList<EntityID> nexts = new ArrayList<EntityID>();
-	    
+	    List<EntityID> nexts = new ArrayList<EntityID>();
+            int[] shape = null;
+            List<TrafficAreaNode> shapeBuffer = new ArrayList<TrafficAreaNode>();
+            TrafficAreaDirectedEdge[] dedges = traffic_area.getDirectedEdges();
+            for (int i = 0; i < dedges.length; i++) {
+                TrafficAreaNode[] dedgenodes = dedges[i].getNodes();
+                EntityID eid = null;
+                TrafficArea nextArea = dedges[i].getEdge().getNextArea(traffic_area);
+                if (nextArea == null) {
+                    eid = new EntityID(-1);
+                }
+                else {
+                    eid = getID(nextArea.getID(), gmlid_rcrsid_map);
+                }
+                for (int j = 0; j < dedgenodes.length-1; j++) {
+                    shapeBuffer.add(dedgenodes[j]);
+                    nexts.add(eid);
+                }
+            }
+            shape = new int[shapeBuffer.size() * 2];
+            for (int i = 0; i < shapeBuffer.size(); i++) {
+                TrafficAreaNode n = shapeBuffer.get(i);
+                shape[i * 2    ] = (int)n.getX();
+                shape[i * 2 + 1] = (int)n.getY();
+            }
+            /*
+	    TrafficAreaNode[] node_list = traffic_area.getNodes();
+	    shape = new int[node_list.length*2];
 	    TrafficAreaNode n = node_list[0];
 	    double x = n.getX();
 	    double y = n.getY();
@@ -143,21 +166,24 @@ public class GISServer {
 	    double lx = x;
 	    double ly = y;
 	    TrafficAreaNode ln = n;
+            TrafficArea next = null;
 	    for(int i=1; i<node_list.length; i++) {
 		n = node_list[i];
 		x = n.getX();
 		y = n.getY();
 		shape[i*2]   = (int)x;
 		shape[i*2+1] = (int)y;
-		TrafficArea next = null;
-		for(TrafficAreaEdge e : traffic_area.getConnectorEdgeList()) {
-		    if(e.has(new java.awt.geom.Line2D.Double(x, y, lx, ly))) {
-			next = e.getNextArea(traffic_area);
-			break;
-		    }
+		for(TrafficAreaDirectedEdge e : traffic_area.getDirectedEdges()) {
+                    if (e.getAreas().length >= 2) {
+                        if(e.getEdge().has(new java.awt.geom.Line2D.Double(x, y, lx, ly))) {
+                            next = e.getEdge().getNextArea(traffic_area);
+                            break;
+                        }
+                    }
 		}
-		if(next == null)
+		if(next == null) {
 		    nexts.add(new EntityID(-1));
+                }
 		else {
 		    EntityID id = getID(next.getID(), gmlid_rcrsid_map);
 		    nexts.add(id);
@@ -167,7 +193,37 @@ public class GISServer {
 		ly = y;
 	    }
 	    n = node_list[0];
-	    nexts.add(new EntityID(-1));
+            
+            x = n.getX();
+            y = n.getY();
+            for(TrafficAreaDirectedEdge e : traffic_area.getDirectedEdges()) {
+                if (e.getAreas().length >= 2) {
+                    if(e.getEdge().has(new java.awt.geom.Line2D.Double(x, y, lx, ly))) {
+                        next = e.getEdge().getNextArea(traffic_area);
+                        break;
+                    }
+                }
+            }
+            if (rcrsid.getValue() == 113) {
+                System.err.println("last:"+next);
+            }
+            if(next == null) {
+                nexts.add(new EntityID(-1));
+            }
+            else {
+                EntityID id = getID(next.getID(), gmlid_rcrsid_map);
+                nexts.add(id);
+            }
+            
+            //nexts.add(new EntityID(-1));
+            if (rcrsid.getValue() == 113) {
+                StringBuffer sb = new StringBuffer();
+                for (int i = 0; i< nexts.size(); i++)
+                    sb.append(nexts.get(i)).append(",");
+                System.err.println(sb.toString());
+            }
+            */
+
 	    
 	    rcrs_area.setApexes(shape, nexts);
 	    pool.put(rcrs_area.getID(), rcrs_area);

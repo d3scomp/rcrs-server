@@ -95,8 +95,8 @@ public class TrafficBlockade extends TrafficObject {
 
             String edgeId = wm.getUniqueID("_");
             edge = new TrafficAreaEdge(wm, edgeId);
-            edge.setDirectedNodes(lastNode.getID(), firstNode.getID());
-            edge.setDirectedAreaIDList(new String[]{id});
+            edge.setNodeIDs(lastNode.getID(), firstNode.getID());
+            edge.setAreaIDs(new String[]{id});
             wm.appendWithoutCheck(edge);
             ndirectedEdgeIdList.add(edgeId);
             nodeList = nodeBuf.toArray(new TrafficAreaNode[0]);
@@ -292,7 +292,7 @@ public class TrafficBlockade extends TrafficObject {
 
     private void createUnconnectEdgeList() {
         for (TrafficAreaEdge edge : unconnectorList) {
-            for (Line2D line : edge.getLineList()) {
+            for (Line2D line : edge.getLines()) {
                 unconnectEdgeList.add(line);
             }
         }
