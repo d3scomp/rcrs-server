@@ -105,7 +105,12 @@ public final class Logger {
                     sb.append(sw.toString());
                 }
                 else {
-                    sb.append(message.toString());
+                    if (message != null) {
+                        sb.append(message.toString());
+                    }
+                    else {
+                        sb.append("null");
+                    }
                 }
                 writer.write(sb.toString());
                 writer.newLine();

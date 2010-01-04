@@ -46,7 +46,7 @@ public class PutBlockadeAction extends TrafficAction {
                             }
                             TrafficArea tarea = (TrafficArea)tobj;
                             TrafficBlockade tblockade = new TrafficBlockade(wmgui.getWorldManager(), wmgui.getWorldManager().getUniqueID("_"));
-                            TrafficAreaNode[] nodeList = tarea.getNodeList();
+                            TrafficAreaNode[] nodeList = tarea.getNodes();
                             //tblockade.setCenter(nodeList[0].getX(), nodeList[0].getY());
                             double cx = tarea.getCenterX();
                             double cy = tarea.getCenterY();

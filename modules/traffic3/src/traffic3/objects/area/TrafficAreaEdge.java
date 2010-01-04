@@ -18,16 +18,15 @@ import org.util.xml.element.TagElement;
  */
 public class TrafficAreaEdge extends TrafficObject {
 
-    private String nodeId1;
-    private String nodeId2;
+    private String[] nodeIDs;
+    private String[] areaIDs;
+
+    private TrafficAreaNode[] nodes;
+    private TrafficArea[] areas;
+    private TrafficAreaNode center;
+
     private GeneralPath path;
     private List<Line2D> lineList = new ArrayList<Line2D>();
-    private String[] directedAreaIdList;
-    private TrafficArea[] directedAreaList;
-
-    private TrafficAreaNode node1;
-    private TrafficAreaNode node2;
-    private TrafficAreaNode center;
 
     /**
      * Constructor.
@@ -46,14 +45,37 @@ public class TrafficAreaEdge extends TrafficObject {
         super(wm, id);
     }
 
+    public TrafficAreaEdge(WorldManager wm, String id, TrafficAreaNode[] nodes) {
+        super(wm, id);
+        setNodes(nodes);
+    }
+
+    public void createCache() {
+        GeneralPath gp = new GeneralPath();
+        double lx = nodes[0].getX();
+        double ly = nodes[0].getY();
+        gp.moveTo(lx, ly);
+        List<Line2D> lList = new ArrayList<Line2D>();
+        for (int i = 1; i < nodes.length; i++) {
+            double x = nodes[i].getX();
+            double y = nodes[i].getY();
+            gp.lineTo(x, y);
+            lList.add(new Line2D.Double(lx, ly, x, y));
+            lx = x;
+            ly = y;
+        }
+        path = gp;
+        lineList = lList;
+    }
+
     /**
      * set end nodes.
      * @param id1 node1 id
      * @param id2 node2 id
      */
-    public void setDirectedNodes(String id1, String id2) {
-        nodeId1 = id1;
-        nodeId2 = id2;
+    public void setNodeIDs(String... ids) {
+        nodeIDs = ids;
+        /*
         if (lineList.size() == 0) {
             TrafficAreaNode n1 = (TrafficAreaNode)getManager().getTrafficObject(nodeId1);
             TrafficAreaNode n2 = (TrafficAreaNode)getManager().getTrafficObject(nodeId2);
@@ -63,24 +85,32 @@ public class TrafficAreaEdge extends TrafficObject {
             gp.lineTo(n2.getX(), n2.getY());
             path = gp;
         }
+        */
         fireChanged();
     }
+
+    public void setNodes(TrafficAreaNode... ns) {
+        String[] nids = new String[ns.length];
+        for (int i = 0; i < ns.length; i++) {
+            nids[i] = ns[i].getID();
+        }
+        nodeIDs = nids;
+        nodes = ns;
+        fireChanged();
+    }    
 
     /**
      * length.
      * @return length
      */
     public double length() {
-        return node1.getDistance(node2);
+        double length = 0;
+        for (int i = 1; i < nodes.length; i++) {
+            length += nodes[i].getDistance(nodes[i - 1]);
+        }
+        return length;
     }
 
-    /**
-     * get directed nodes.
-     * @return nodes (length == 2)
-     */
-    public TrafficAreaNode[] getDirectedNodes() {
-        return new TrafficAreaNode[]{node1, node2};
-    }
 
     /**
      * get center.
@@ -88,8 +118,8 @@ public class TrafficAreaEdge extends TrafficObject {
      */
     public TrafficNode getCenter() {
         if (center == null) {
-            double x = (node1.getX() + node2.getX()) / 2;
-            double y = (node1.getY() + node2.getY()) / 2;
+            double x = (nodes[0].getX() + nodes[nodes.length - 1].getX()) / 2;
+            double y = (nodes[0].getY() + nodes[nodes.length - 1].getY()) / 2;
             double z = 0;
             try {
                 center = getManager().createAreaNode(x, y, z);
@@ -115,16 +145,16 @@ public class TrafficAreaEdge extends TrafficObject {
      * get node1 id.
      * @return node1 id
      */
-    public String getID1() {
-        return nodeId1;
+    public String getEndNodeID1() {
+        return nodeIDs[0];
     }
 
     /**
      * get node2 id.
      * @return node2 id
      */
-    public String getID2() {
-        return nodeId2;
+    public String getEndNodeID2() {
+        return nodeIDs[nodeIDs.length - 1];
     }
 
     /**
@@ -132,20 +162,34 @@ public class TrafficAreaEdge extends TrafficObject {
      * @throws Exception exception
      */
     public void checkObject() throws WorldManagerException {
-        directedAreaList = new TrafficArea[directedAreaIdList.length];
-        for (int i = 0; i < directedAreaIdList.length; i++) {
-            directedAreaList[i] = (TrafficArea)getManager().getTrafficObject(directedAreaIdList[i]);
+        //directedAreaList = new TrafficArea[directedAreaIdList.size()];
+        //for (int i = 0; i < directedAreaIdList.length; i++) {
+        //    directedAreaList[i] = (TrafficArea)getManager().getTrafficObject(directedAreaIdList[i]);
+        //}
+        if (nodes == null) {
+            TrafficAreaNode[] ns = new TrafficAreaNode[nodeIDs.length];
+            for (int i = 0; i < nodeIDs.length; i++) {
+                ns[i] = (TrafficAreaNode)getManager().getTrafficObject(nodeIDs[i]);
+                if (ns[i] == null) {
+                    throw new WorldManagerException("Error: Node cannot be found: " + nodeIDs + ": " + toString());
+                }
+                ns[i].addChangeListener(new javax.swing.event.ChangeListener() {
+                        public void stateChanged(javax.swing.event.ChangeEvent e) {
+                            fireChanged();
+                            createCache();
+                        }
+                    });
+            }
+            setNodes(ns);
         }
-        node1 = (TrafficAreaNode)getManager().getTrafficObject(nodeId1);
-        node2 = (TrafficAreaNode)getManager().getTrafficObject(nodeId2);
-
-        if (node1 == null) {
-            throw new WorldManagerException("Error: Node cannot be found: " + nodeId1 + ": " + toString());
-        }
-        if (node2 == null) {
-            throw new WorldManagerException("Error: Node cannot be found: " + nodeId2 + ": " + toString());
+        if (areas == null) {
+            areas = new TrafficArea[areaIDs.length];
+            for (int i = 0; i < areaIDs.length; i++) {
+                areas[i] = (TrafficArea)getManager().getTrafficObject(areaIDs[i]);
+            }
         }
         checked = true;
+        createCache();
     }
 
     /**
@@ -175,17 +219,20 @@ public class TrafficAreaEdge extends TrafficObject {
      * @return next area
      */
     public TrafficArea getNextArea(TrafficArea now) {
-        if (directedAreaList.length == 1) {
+        if (areas == null) {
             return null;
         }
-        assert directedAreaList.length == 2 : "three directed area!";
+        if (areas.length == 1) {
+            return null;
+        }
+        assert areas.length == 2 : "three directed area!";
 
         //alert("<html>"+now+" :</br> "+toLongString()+"</html>", "error");
-        if (directedAreaList[0] == now) {
-            return directedAreaList[1];
+        if (areas[0] == now) {
+            return areas[1];
         }
-        if (directedAreaList[1] == now) {
-            return directedAreaList[0];
+        if (areas[1] == now) {
+            return areas[0];
         }
         return null;
     }
@@ -194,23 +241,23 @@ public class TrafficAreaEdge extends TrafficObject {
      * get directed area.
      * @return directed areas
      */
-    public TrafficArea[] getDirectedArea() {
-        return directedAreaList;
+    public TrafficArea[] getAreas() {
+        return areas;
     }
 
     /**
      * set directed area id list.
      * @param ids ids
      */
-    public void setDirectedAreaIDList(String... ids) {
-        directedAreaIdList = ids;
+    public void setAreaIDs(String... ids) {
+        areaIDs = ids;
     }
 
     /**
      * get line list.
      * @return line list
      */
-    public Line2D[] getLineList() {
+    public Line2D[] getLines() {
         return lineList.toArray(new Line2D[0]);
     }
 
@@ -221,11 +268,16 @@ public class TrafficAreaEdge extends TrafficObject {
      * @return distance
      */
     public double distance(double x, double y) {
-        double min = lineList.get(0).ptSegDist(x, y);
-        for (int i = 1; i < lineList.size(); i++) {
-            min = Math.min(min, lineList.get(i).ptSegDist(x, y));
+        if (lineList.size() > 0) {
+            double min = lineList.get(0).ptSegDist(x, y);
+            for (int i = 1; i < lineList.size(); i++) {
+                min = Math.min(min, lineList.get(i).ptSegDist(x, y));
+            }
+            return min;
         }
-        return min;
+        else {
+            return Double.NaN;
+        }
     }
 
     /**
@@ -238,17 +290,25 @@ public class TrafficAreaEdge extends TrafficObject {
         TagElement[] ids = gmlElement.getTagChildren("gml:directedNode");
         String id1 = ids[0].getAttributeValue("xlink:href").replaceAll("#", "");
         String id2 = ids[1].getAttributeValue("xlink:href").replaceAll("#", "");
-        String coordinatesText = gmlElement.getTagChild("gml:centerLineOf").getTagChild("gml:LineString").getChildValue("gml:coordinates");
+        TagElement centerLineOfTag = gmlElement.getTagChild("gml:centerLineOf");
+        TagElement lineStringTag = centerLineOfTag.getTagChild("gml:LineString");
+        String coordinatesText = lineStringTag.getChildValue("gml:coordinates");
         String[] coordinatesTextList = coordinatesText.split(" ");
+        List<String> nIDList = new ArrayList<String>();
         GeneralPath gp = new GeneralPath();
         String[] xy = coordinatesTextList[0].split(",");
         double lx = Double.parseDouble(xy[0]);
         double ly = Double.parseDouble(xy[1]);
         gp.moveTo(lx, ly);
+        nIDList.add(getManager().createAreaNode(lx, ly, 0).getID());
         for (int i = 1; i < coordinatesTextList.length; i++) {
             xy = coordinatesTextList[i].split(",");
             double x = Double.parseDouble(xy[0]);
             double y = Double.parseDouble(xy[1]);
+            String nid = getManager().createAreaNode(x, y, 0).getID();
+            if (!nid.equals(nIDList.get(nIDList.size() - 1))) {
+                nIDList.add(nid);
+            }
             gp.lineTo(x, y);
             lineList.add(new Line2D.Double(lx, ly, x, y));
             lx = x;
@@ -256,11 +316,17 @@ public class TrafficAreaEdge extends TrafficObject {
         }
         path = gp;
         TagElement[] fids = gmlElement.getTagChildren("gml:directedFace");
-        directedAreaIdList = new String[fids.length];
+        areaIDs = new String[fids.length];
         for (int i = 0; i < fids.length; i++) {
-            directedAreaIdList[i] = fids[i].getAttributeValue("xlink:href").replaceAll("#", "");
+            areaIDs[i] = fids[i].getAttributeValue("xlink:href").replaceAll("#", "");
         }
-        setDirectedNodes(id1, id2);
+        /*
+        String[] eids = new String[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            eids[i] = ids[i].getAttributeValue("xlink:href").replaceAll("#", "");
+        }
+        */
+        setNodeIDs(nIDList.toArray(new String[0]));
     }
 
     /**
@@ -268,7 +334,14 @@ public class TrafficAreaEdge extends TrafficObject {
      * @return path
      */
     public GeneralPath getPath() {
+        if (path == null) {
+            createCache();
+        }
         return path;
+    }
+
+    public TrafficAreaNode[] getNodes() {
+        return nodes;
     }
 
     /**
@@ -276,7 +349,31 @@ public class TrafficAreaEdge extends TrafficObject {
      * @return description
      */
     public String toString() {
-        return "TrafficAreaEdge[id:" + getID() + ";id1:" + nodeId1 + ";id2:" + nodeId2 + ";]";
+        StringBuffer sb = new StringBuffer("TrafficAreaEdge[");
+        sb.append("id:").append(getID()).append(";");
+        sb.append("nodes:{");
+        if (nodes == null) {
+            sb.append("null");
+        }
+        else {
+            sb.append(nodes[0].getID());
+            for (int i = 1; i < nodes.length; i++) {
+                sb.append(",").append(nodes[i].getID());
+            }
+        }
+        sb.append("};");
+        sb.append("areas:{");
+        if (areas == null) {
+            sb.append("null");
+        }
+        else {
+            sb.append(areas[0].getID());
+            for (int i = 1; i < areas.length; i++) {
+                sb.append(",").append(areas[i].getID());
+            }
+        }
+        sb.append("};");
+        return sb.toString();
     }
 
     /**
@@ -288,11 +385,12 @@ public class TrafficAreaEdge extends TrafficObject {
         sb.append("<div><div style='font-size:18;'>TrafficAreaEdge(id:" + getID() + ")</div>");
         sb.append("<div>id: ").append(getID()).append("</div>");
         sb.append("<div style='margin-left:50px;'>");
-        sb.append("<div>node: ").append(node1).append("</div>");
-        sb.append("<div>node: ").append(node2).append("</div>");
-        if (directedAreaList != null) {
-            for (int i = 0; i < directedAreaList.length; i++) {
-                sb.append("<div>directed face").append(i + 1).append(":  ").append(directedAreaList[i]).append("</div>");
+        for (int i = 0; i < nodes.length; i++) {
+            sb.append("<div>").append(nodes[i]).append("</div>");
+        }
+        if (areas != null) {
+            for (int i = 0; i < areas.length; i++) {
+                sb.append("<div>area").append(i + 1).append(":  ").append(areas[i]).append("</div>");
             }
         }
         sb.append("</div>");

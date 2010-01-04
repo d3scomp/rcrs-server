@@ -17,7 +17,6 @@ public abstract class TrafficObject {
 
     /**
      *
-     *
      */
     protected boolean checked = false;
 
@@ -25,7 +24,7 @@ public abstract class TrafficObject {
      * ID.
      * cannot be null
      */
-    private String objectId;
+    private String objectID;
 
     /**
      * The world manager that this object belong to.
@@ -42,7 +41,7 @@ public abstract class TrafficObject {
      * This constructor must not be called.
      */
     private TrafficObject() throws WorldManagerException {
-        throw new WorldManagerException("must not be called.");
+        throw new WorldManagerException("TrafficObject's constructor must not be called.");
     }
 
     /**
@@ -61,7 +60,7 @@ public abstract class TrafficObject {
      * @param id id of this object
      */
     public TrafficObject(WorldManager wm, String id) {
-        objectId = id;
+        objectID = id;
         worldManager = wm;
     }
 
@@ -87,7 +86,7 @@ public abstract class TrafficObject {
      * @return id of this object
      */
     public String getID() {
-        return objectId;
+        return objectID;
     }
 
     /**
@@ -133,4 +132,18 @@ public abstract class TrafficObject {
         return toString();
     }
 
+    public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (!(o instanceof TrafficObject)) {
+            return false;
+        }
+        TrafficObject to = (TrafficObject)o;
+        return (this.getID().equals(to.getID()));
+    }
+
+    public traffic3.manager.RTreeRectangle getBounds() {
+        return null;
+    }
 }

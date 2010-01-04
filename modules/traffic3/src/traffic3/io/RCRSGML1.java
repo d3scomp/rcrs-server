@@ -12,6 +12,7 @@ import traffic3.manager.WorldManager;
 import traffic3.manager.WorldManagerException;
 import traffic3.objects.area.TrafficArea;
 import traffic3.objects.area.TrafficAreaEdge;
+import traffic3.objects.area.TrafficAreaDirectedEdge;
 import traffic3.objects.area.TrafficAreaNode;
 //import traffic3.objects.TrafficObject;
 
@@ -303,7 +304,7 @@ public class RCRSGML1 implements Parser {
         for (TrafficAreaEdge e : worldManager.getAreaConnectorEdgeList()) {
             bw.write("<gml:Edge gml:id=\"" + e.getID() + "\">");
             bw.newLine();
-            for (TrafficAreaNode node : e.getDirectedNodes()) {
+            for (TrafficAreaNode node : e.getNodes()) {
                 if (node == null) {
                     System.err.println(node);
                     System.err.println(e.toString());
@@ -311,7 +312,7 @@ public class RCRSGML1 implements Parser {
                 bw.write("<gml:directedNode orientation=\"+\" xlink:href=\"#" + node.getID() + "\"/>");
                 bw.newLine();
             }
-            for (TrafficArea face : e.getDirectedArea()) {
+            for (TrafficArea face : e.getAreas()) {
                 if (face == null) {
                     System.err.println("Edge's directed face is " + face);
                     System.err.println("Edge is " + e.toString());
@@ -326,7 +327,7 @@ public class RCRSGML1 implements Parser {
 
             bw.write("<gml:coordinates>");
             java.awt.geom.Point2D p = null;
-            for (java.awt.geom.Line2D line : e.getLineList()) {
+            for (java.awt.geom.Line2D line : e.getLines()) {
                 if (p == null) {
                     p = line.getP1();
                     bw.write(p.getX() + "," + p.getY());
@@ -360,12 +361,15 @@ public class RCRSGML1 implements Parser {
             bw.newLine();
             bw.write("<gml:Face gml:id=\"" + area.getID() + "\">");
             bw.newLine();
-            for (TrafficAreaEdge edge : area.getConnectorEdgeList()) {
-                bw.write("<gml:directedEdge orientation=\"+\" xlink:href=\"#" + edge.getID() + "\"/>");
-                bw.newLine();
-            }
-            for (TrafficAreaEdge edge : area.getUnConnectorEdgeList()) {
-                bw.write("<gml:directedEdge orientation=\"-\" xlink:href=\"#" + edge.getID() + "\"/>");
+            for (TrafficAreaDirectedEdge dedge : area.getDirectedEdges()) {
+                TrafficAreaEdge edge = dedge.getEdge();
+                bw.write("<gml:directedEdge orientation=\"");
+                if (dedge.getDirection()) {
+                    bw.write("+");
+                } else  {
+                    bw.write("-");
+                }
+                bw.write("\" xlink:href=\"#" + edge.getID() + "\"/>");
                 bw.newLine();
             }
             bw.write("<gml:polygon>");
@@ -373,8 +377,12 @@ public class RCRSGML1 implements Parser {
             bw.write("<gml:LinearRing>");
             bw.newLine();
             bw.write("<gml:coordinates>");
-            for (TrafficAreaNode node : area.getNodeList()) {
-                bw.write(node.getX() + "," + node.getY() + " ");
+            for (TrafficAreaDirectedEdge dedge : area.getDirectedEdges()) {
+                TrafficAreaNode[] nodes = dedge.getNodes();
+                for (int i = 0; i < nodes.length - 1; i++) {
+                    TrafficAreaNode node = nodes[i];
+                    bw.write(node.getX() + "," + node.getY() + " ");
+                }
             }
             bw.write("</gml:coordinates>");
             bw.newLine();

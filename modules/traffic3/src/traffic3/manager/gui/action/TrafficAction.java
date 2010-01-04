@@ -1,6 +1,7 @@
 package traffic3.manager.gui.action;
 
 import java.awt.geom.Point2D;
+import java.awt.event.ActionEvent;
 import traffic3.manager.gui.WorldManagerGUI;
 import javax.swing.AbstractAction;
 
@@ -27,6 +28,7 @@ public abstract class TrafficAction extends AbstractAction {
     public void setWorldManagerGUI(WorldManagerGUI wmgui) {
         worldManagerGUI = wmgui;
     }
+
     /**
      * this is the only way to get instance of WorldManagerGUI.
      * and using WorldManagerGUI.getWorldManager() to get instance of WorldManger.

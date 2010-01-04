@@ -39,6 +39,15 @@ public class TrafficNode extends TrafficObject {
      * set location.
      * @param x x
      * @param y y
+     */
+    public void setLocation(double x, double y) {
+        setLocation(x, y, 0);
+    }
+
+    /**
+     * set location.
+     * @param x x
+     * @param y y
      * @param z z
      */
     public void setLocation(double x, double y, double z) {
@@ -96,14 +105,5 @@ public class TrafficNode extends TrafficObject {
         double dy = y - locationY;
         double dz = z - locationZ;
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
-    }
-
-    /**
-     * set location.
-     * @param x x
-     * @param y y
-     */
-    public void setLocation(double x, double y) {
-        setLocation(x, y, 0);
     }
 }

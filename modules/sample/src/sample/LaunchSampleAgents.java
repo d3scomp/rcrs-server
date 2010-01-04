@@ -124,6 +124,16 @@ public final class LaunchSampleAgents {
         try {
             while (true) {
                 System.out.print("Connecting dummy agent " + (i++) + "...");
+                launcher.connect(new SampleCivilian());
+                System.out.println("success");
+            }
+        }
+        catch (ComponentConnectionException e) {
+            System.out.println("failed: " + e.getMessage());
+        }
+        try {
+            while (true) {
+                System.out.print("Connecting dummy agent " + (i++) + "...");
                 launcher.connect(new DummyAgent());
                 System.out.println("success");
             }

@@ -20,6 +20,8 @@ import static traffic3.log.Logger.log;
 import traffic3.objects.TrafficObject;
 import traffic3.objects.TrafficAgent;
 import traffic3.objects.area.TrafficArea;
+import traffic3.objects.area.TrafficAreaEdge;
+import traffic3.objects.area.TrafficAreaNode;
 
 /**
  * Show all the information about the world manager.
@@ -55,6 +57,9 @@ public class ShowAllAsTextAction extends TrafficAction {
 
             TrafficAgent[] agentList = getWorldManagerGUI().getWorldManager().getAgentList();
             TrafficArea[] areaList = getWorldManagerGUI().getWorldManager().getAreaList();
+            TrafficAreaEdge[] edges = getWorldManagerGUI().getWorldManager().getAreaConnectorEdgeList();
+            TrafficAreaNode[] nodes = getWorldManagerGUI().getWorldManager().getAreaNodeList();
+
             StringBuffer sb = new StringBuffer();
             sb.append("<html>");
             sb.append("<div style='font-size:120%;'>Information</div>");
@@ -62,6 +67,8 @@ public class ShowAllAsTextAction extends TrafficAction {
             sb.append("<tr><td>Objects</td><td>").append(all.length).append("</td></tr>");
             sb.append("<tr><td>Agents</td><td>").append(agentList.length).append("</td></tr>");
             sb.append("<tr><td>Areas</td><td>").append(areaList.length).append("</td></tr>");
+            sb.append("<tr><td>Edges</td><td>").append(edges.length).append("</td></tr>");
+            sb.append("<tr><td>Nodes</td><td>").append(nodes.length).append("</td></tr>");
             sb.append("<table>");
             sb.append("</html>");
             ta.setText(sb.toString());

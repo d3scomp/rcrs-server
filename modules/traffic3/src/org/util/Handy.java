@@ -14,7 +14,16 @@ import javax.swing.Action;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.AbstractAction;
+import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+import java.awt.Component;
+import java.util.List;
+import java.util.ArrayList;
 
 import static traffic3.log.Logger.alert;
 
@@ -33,33 +42,7 @@ public final class Handy {
      * @return string value of the value (12,345)
      */
     public static String toNaturalString(int value) {
-        boolean minus = (value <= 0);
-        if (minus) {
-            value = -value;
-        }
-        String buf = String.valueOf(value);
-        StringBuffer result = new StringBuffer();
-        if (minus) {
-            result.append("-");
-        }
-        int length = buf.length();
-        int part = length % NATURAL_NUMBER_COMMA;
-        int p = 0;
-        if (part != 0) {
-            result.append(buf.substring(p, p + part));
-            p += part;
-        }
-        if (p < length) {
-            result.append(",");
-        }
-        while (p < length) {
-            result.append(buf.substring(p, p + NATURAL_NUMBER_COMMA));
-            p += NATURAL_NUMBER_COMMA;
-            if (p < length) {
-                result.append(",");
-            }
-        }
-        return result.toString();
+        return java.text.NumberFormat.getInstance().format(value);
     }
 
 
@@ -175,4 +158,111 @@ public final class Handy {
         return result == JOptionPane.YES_OPTION;
     }
 
+    public static void show(Component parent, String title, Object... contents) {
+        JPanel contentpane = new JPanel();
+        contentpane.setLayout(new javax.swing.BoxLayout(contentpane, javax.swing.BoxLayout.Y_AXIS));
+        for (Object o : contents) {
+            if (o instanceof JComponent) {
+                contentpane.add((JComponent)o);
+            }
+            else {
+                javax.swing.JTextPane ta = new javax.swing.JTextPane();
+                ta.setContentType("text/html");
+                ta.setEditable(false);
+                if (o instanceof Exception) {
+                    Exception exc = (Exception)o;
+                    String detail = getStackTraceText(exc);
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("<html>");
+                    sb.append("<div style='color:red;'>").append(exc.toString()).append("</div>");
+                    sb.append("<div style='margin:0 0 0 20px;font-size:7px;color:red;'>");
+                    sb.append(detail).append("</div>");
+                    sb.append("</html>");
+                    ta.setText(sb.toString());
+                }
+                else {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("<html>");
+                    sb.append("<div style='font-size:8px;'>");
+                    sb.append(o.toString());
+                    sb.append("</div>");
+                    sb.append("</html>");
+                    ta.setText(sb.toString());
+                }
+                contentpane.add(new javax.swing.JScrollPane(ta));
+            }
+        }
+        JButton closeButton = new JButton("close");
+        JPanel controlpane = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        controlpane.add(closeButton);
+        controlpane.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setPreferredSize(new java.awt.Dimension(500, 300));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        if (title != null) {
+            JLabel label = new JLabel(title);
+            label.setFont(label.getFont().deriveFont((float)30));
+            panel.add(label, BorderLayout.NORTH);
+        }
+        panel.add(contentpane, BorderLayout.CENTER);
+        panel.add(controlpane, BorderLayout.SOUTH);
+        final JFrame frame = showFrame(parent, panel);
+        closeButton.addActionListener(new ActionListener(){
+                public void actionPerformed(ActionEvent e) {
+                    frame.dispose();
+                    frame.setVisible(false);
+                }
+            });
+    }
+
+    public static String getStackTraceText(Exception exc) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        exc.printStackTrace(new java.io.PrintWriter(sw));
+        return sw.toString();
+    }
+
+    public static InputStream getResourceAsStream(String path) throws IOException {
+        //        URL url = getClass().getClassLoader().getResource("org/util/capture/ImageOutputTool.class");
+        StringBuffer log = new StringBuffer();
+        File f = new File(path);
+        if (f.exists()) {
+            return new FileInputStream(f);
+        }
+        log.append("cannot find: " + f.getAbsolutePath()).append("\n");
+        URL url = ClassLoader.getSystemClassLoader().getResource(path);
+        if (url != null) {
+            return url.openStream();
+        }
+        log.append("cannot find: " + url.toString()).append("\n");
+        url = ClassLoader.getSystemClassLoader().getResource("org/util/Handy.class");
+        String rootFileName = url.toString();
+        final String jarFileStartsWith = "jar:file:";
+        final int start = jarFileStartsWith.length();
+        final int end = rootFileName.indexOf("!");
+        if (rootFileName.startsWith(jarFileStartsWith) && end != -1) {
+            String jarfile = rootFileName.substring(start, end);
+            File tfile = new File(jarfile);
+            File file = new File(tfile.getParent(), path);
+            System.err.println(file.getAbsolutePath());
+            if (file.exists()) {
+                return new FileInputStream(file);
+            }
+            log.append("cannot find: " + file.getAbsolutePath()).append("\n");
+        }
+        throw new IOException("cannot find resource: " + path + "\n log:" + log);
+    }
+
+    public static JFrame showFrame(JComponent comp) {
+        return showFrame(null, comp);
+    }
+
+    public static JFrame showFrame(Component parent, JComponent comp) {
+        JFrame frame = new JFrame();
+        frame.setContentPane(comp);
+        frame.pack();
+        frame.setLocationRelativeTo(parent);
+        frame.setVisible(true);
+        return frame;
+    }
 }

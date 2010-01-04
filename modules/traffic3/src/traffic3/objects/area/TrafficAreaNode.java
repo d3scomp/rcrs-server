@@ -33,22 +33,25 @@ public class TrafficAreaNode extends TrafficNode {
      * @throws Exception exception
      */
     public void setProperties(TagElement gmlElement) throws WorldManagerException {
-        // System.out.println("gml:"+gmlElement);
-        String coordinatesText = gmlElement.getTagChild("gml:pointProperty").getTagChild("gml:Point").getChildValue("gml:coordinates");
+        TagElement property = gmlElement.getTagChild("gml:pointProperty");
+        String coordinatesText = property.getTagChild("gml:Point").getChildValue("gml:coordinates");
         String[] coordinates = coordinatesText.split(",");
         double x = Double.parseDouble(coordinates[0]);
         double y = Double.parseDouble(coordinates[1]);
-        double z;
+        double z = 0;
         if (coordinates.length >= 3) {
             z = Double.parseDouble(coordinates[2]);
-        }
-        else {
-            z = 0;
         }
         setLocation(x, y, z);
     }
 
     public String toString() {
-        return "TrafficAreaNode[id:" + getID() + ";x:" + getX() + ";y:" + getY() + ";z:" + getZ() + ";]";
+        StringBuffer sb = new StringBuffer("TrafficAreaNode[");
+        sb.append("id:").append(getID()).append(";");
+        sb.append("x:").append(getX()).append(";");
+        sb.append("y:").append(getY()).append(";");
+        sb.append("z:").append(getZ()).append(";");
+        sb.append("]");
+        return sb.toString();
     }
 }
