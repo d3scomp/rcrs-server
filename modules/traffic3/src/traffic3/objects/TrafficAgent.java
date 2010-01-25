@@ -109,6 +109,8 @@ public class TrafficAgent extends TrafficObject {
      * The destination that this agent wants to go.
      */
     private List<TrafficAreaNode> destinationList;
+
+    private TrafficAgent destinationAgent;
     
     /**
      * now destination.
@@ -475,7 +477,19 @@ public class TrafficAgent extends TrafficObject {
         }
         this.finalDestination = dl[dl.length-1];
         this.nowDestination = null;
+        this.destinationAgent = null;
         //TrafficArea goal = getManager().findArea(destination.getX(), destination.getY());
+        plan();
+    }
+    
+    /**
+     * set destination agent.
+     * @param destination destination
+     */
+    public void setDestination(TrafficAgent agent) {
+        this.finalDestination = null;
+        this.nowDestination = null;
+        this.destinationAgent = agent;
         plan();
     }
     
@@ -546,6 +560,23 @@ public class TrafficAgent extends TrafficObject {
     private double[] calcDestinationForce(double[] dest) {
         double destx = 0;
         double desty = 0;
+
+        if (destinationAgent != null) {
+            if (this.nowArea == destinationAgent.nowArea) {
+                try {
+                    if (nowDestination == null) {
+                        nowDestination = getManager().createAreaNode(destinationAgent.getX(), destinationAgent.getY(), 0);
+                    }
+                    else {
+                        nowDestination.setLocation(destinationAgent.getX(), destinationAgent.getY(), 0);
+                    }
+                }
+                catch (WorldManagerException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         if (this.nowDestination != null) {
             double dx = this.nowDestination.getX() - location[0];
             double dy = this.nowDestination.getY() - location[1];
@@ -641,7 +672,7 @@ public class TrafficAgent extends TrafficObject {
         
 	float distance = 3000;
         
-	List list = new ArrayList<TrafficObject>();
+	List<TrafficObject> list = new ArrayList<TrafficObject>();
 	getManager().listNearObjects((float)location[0], (float)location[1], distance, list);
 	TrafficAgent[] agentList = new TrafficAgent[list.size()];
 	//System.out.println(agentList.length);
@@ -815,6 +846,10 @@ public class TrafficAgent extends TrafficObject {
     }
     
     private void planDestination() throws WorldManagerException {
+        if (destinationAgent != null) {
+            finalDestination = getManager().createAreaNode(destinationAgent.getX(), destinationAgent.getY(), 0);
+        }
+
         if (this.finalDestination == null) {
             return;
         }
@@ -828,7 +863,7 @@ public class TrafficAgent extends TrafficObject {
         }
         
         if (start.equals(goal)) {
-            if (destinationList.size() > 0) {
+            if (destinationList != null && destinationList.size() > 0) {
                 this.nowDestination = destinationList.remove(destinationList.size() - 1);
                 planDestination();
                 return;
@@ -972,7 +1007,7 @@ public class TrafficAgent extends TrafficObject {
      */
     public void checkObject() throws WorldManagerException { checked = true; }
     
-    traffic3.manager.RTreeRectangle bounds = new traffic3.manager.RTreeRectangle(this, 0, 0, 0, 0);
+    traffic3.manager.RTreeRectangle bounds = new traffic3.manager.RTreeRectangle<TrafficAgent>(this, 0, 0, 0, 0);
     public traffic3.manager.RTreeRectangle getBounds() {
 	return bounds;
     }

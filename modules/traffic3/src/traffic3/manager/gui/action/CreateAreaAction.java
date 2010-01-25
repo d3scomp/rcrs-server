@@ -37,8 +37,8 @@ public class CreateAreaAction extends TrafficAction {
             WorldManagerGUI wmgui = getWorldManagerGUI();
             WorldManager wm = wmgui.getWorldManager();
             List<TrafficAreaNode> nodeList = new ArrayList<TrafficAreaNode>();
-            Map<String, TrafficObject> targetMap = wmgui.getTargetList();
-            for (TrafficObject o : targetMap.values()) {
+            //Map<String, TrafficObject> targetMap = wmgui.getTargetList();
+            for (TrafficObject o : wmgui.getOrderedTargets()) {
                 if (o instanceof TrafficAreaNode) {
                     TrafficAreaNode node = (TrafficAreaNode)o;
                     nodeList.add(node);

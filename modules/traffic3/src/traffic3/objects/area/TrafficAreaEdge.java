@@ -92,6 +92,12 @@ public class TrafficAreaEdge extends TrafficObject {
     public void setNodes(TrafficAreaNode... ns) {
         String[] nids = new String[ns.length];
         for (int i = 0; i < ns.length; i++) {
+            ns[i].addChangeListener(new javax.swing.event.ChangeListener() {
+                    public void stateChanged(javax.swing.event.ChangeEvent e) {
+                        fireChanged();
+                        createCache();
+                    }
+                });
             nids[i] = ns[i].getID();
         }
         nodeIDs = nids;
@@ -173,23 +179,41 @@ public class TrafficAreaEdge extends TrafficObject {
                 if (ns[i] == null) {
                     throw new WorldManagerException("Error: Node cannot be found: " + nodeIDs + ": " + toString());
                 }
-                ns[i].addChangeListener(new javax.swing.event.ChangeListener() {
-                        public void stateChanged(javax.swing.event.ChangeEvent e) {
-                            fireChanged();
-                            createCache();
-                        }
-                    });
             }
             setNodes(ns);
         }
-        if (areas == null) {
+        if (areas == null && areaIDs != null) {
             areas = new TrafficArea[areaIDs.length];
             for (int i = 0; i < areaIDs.length; i++) {
                 areas[i] = (TrafficArea)getManager().getTrafficObject(areaIDs[i]);
+                if (areas[i] == null) {
+                    throw new WorldManagerException("Error: Edges area cannot be found: id:" + areaIDs[i] );
+                }
             }
         }
         checked = true;
         createCache();
+    }
+
+    public int indexOf(TrafficAreaNode n) {
+        for (int i = 0; i < nodes.length; i++) {
+            if (nodes[i].equals(n)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public boolean has(TrafficAreaNode... ns) {
+        boolean match = true;
+        for (int i = 0; i < ns.length && match; i++) {
+            boolean submatch = false;
+            for (int j = 0; j < nodes.length && !submatch; j++) {
+                submatch = ns[i].equals(nodes[j]);
+            }
+            match = submatch;
+        }
+        return match;
     }
 
     /**
@@ -251,6 +275,14 @@ public class TrafficAreaEdge extends TrafficObject {
      */
     public void setAreaIDs(String... ids) {
         areaIDs = ids;
+    }
+
+    public void setAreas(TrafficArea... as) {
+        String[] ids = new String[as.length];
+        for (int i = 0; i < as.length; i++) {
+            ids[i] = as[i].getID();
+        }
+        areas = as;
     }
 
     /**
@@ -362,17 +394,26 @@ public class TrafficAreaEdge extends TrafficObject {
             }
         }
         sb.append("};");
-        sb.append("areas:{");
+        sb.append("areas:");
         if (areas == null) {
             sb.append("null");
         }
-        else {
-            sb.append(areas[0].getID());
-            for (int i = 1; i < areas.length; i++) {
-                sb.append(",").append(areas[i].getID());
-            }
+        else if (areas.length == 0) {
+            sb.append("{}");
         }
-        sb.append("};");
+        else {
+            sb.append("{");
+            for (int i = 0; i < areas.length; i++) {
+                if (areas[i] == null) {
+                    sb.append(",").append("null");
+                }
+                else {
+                    sb.append(",").append(areas[i].getID());
+                }
+            }
+            sb.append("}");
+        }
+        sb.append(";");
         return sb.toString();
     }
 

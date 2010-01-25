@@ -21,7 +21,7 @@ public class DeleteSelectionAction extends TrafficAction {
      * Constructor.
      */
     public DeleteSelectionAction() {
-        super("delete selection");
+        super("Delete selection");
     }
 
     /**
@@ -44,6 +44,7 @@ public class DeleteSelectionAction extends TrafficAction {
                     catch (WorldManagerException exc) {
                         exc.printStackTrace();
                     }
+                    wmgui.createImageInOtherThread();
                 }
             }, "set destination").start();
     }

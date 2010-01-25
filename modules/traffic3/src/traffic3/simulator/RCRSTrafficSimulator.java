@@ -1,6 +1,7 @@
 package traffic3.simulator;
 
-import java.util.*;
+//import java.util.*;
+import java.util.Properties;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -85,21 +86,34 @@ public class RCRSTrafficSimulator {
     private List<Blockade> blockadeListBuf;
 
 
+    /*
+    public RCRSTrafficSimulator(WorldManager wm, ) {
+        Registry.getCurrentRegistry().registerMessageFactory(StandardMessageFactory.INSTANCE);
+        Registry.getCurrentRegistry().registerEntityFactory(StandardEntityFactory.INSTANCE);
+        Registry.getCurrentRegistry().registerPropertyFactory(StandardPropertyFactory.INSTANCE);
+        worldManager = wm;
+        stepTime = Double.parseDouble(property.getProperty("rcrs.traffic3.microStep", 100));
+        log("stepTime: " + stepTime + "[ms]");
+        port = Integer.parseInt(property.getProperty("rcrs.traffic3.port", 7000));
+        log("port: " + port);
+    }
+    */
+
     /**
      * Constructor.
      * @param wm world manager
      * @param cm config manager
      * @param dt dt
      */
-    public RCRSTrafficSimulator(WorldManager wm, XMLConfigManager cm,  double dt) {
+    public RCRSTrafficSimulator(WorldManager wm, XMLConfigManager cm) {
         Registry.getCurrentRegistry().registerMessageFactory(StandardMessageFactory.INSTANCE);
         Registry.getCurrentRegistry().registerEntityFactory(StandardEntityFactory.INSTANCE);
         Registry.getCurrentRegistry().registerPropertyFactory(StandardPropertyFactory.INSTANCE);
 
         worldManager = wm;
         configManager = cm;
-        stepTime = dt;
-        port = Integer.parseInt(configManager.getValue("launch/mode_rcrs/port", String.valueOf(DEFAULT_PORT)));
+        stepTime = cm.getDouble("rcrs/traffic3/microStep", 100);
+        port = Integer.parseInt(configManager.getValue("rcrs/traffic3/port", String.valueOf(DEFAULT_PORT)));
         log("port: " + port);
     }
 
@@ -114,9 +128,12 @@ public class RCRSTrafficSimulator {
         agentListBuf = new ArrayList<Human>();
         blockadeListBuf = new ArrayList<Blockade>();
 
+        log("try to connect to the Kernel...");
         TCPConnection connection = new TCPConnection(port);
         connection.addConnectionListener(new ConnectionManager());
         connection.startup();
+        log("connected to the Kernel");
+        log("send SKConnect");
         connection.sendMessage(new SKConnect(requestId, simulatorId, traffic3.Main.getVersion()));
     }
 
@@ -251,18 +268,27 @@ public class RCRSTrafficSimulator {
                 java.util.List<EntityID> list = akmove.getPath();
                 EntityID destinationId = list.get(list.size() - 1);
                 //Entity destination = entityidEntityMap.get(destinationId);
-                TrafficArea trafficArea = areaTrafficareaMap.get(destinationId);
-                assert trafficArea != null : "cannot find traffic area: " + destinationId;
+                Entity entity = entityidEntityMap.get(destinationId);
                 Human human = (Human)entityidEntityMap.get(akmove.getAgentID());
                 TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
-                double cx = trafficArea.getCenterX();
-                double cy = trafficArea.getCenterY();
-                double cz = 0;
-                try {
-                    agent.setDestination(worldManager.createAreaNode(cx, cy, cz));
+                if (entity instanceof Area) {
+                    TrafficArea trafficArea = areaTrafficareaMap.get(destinationId);
+                    double cx = trafficArea.getCenterX();
+                    double cy = trafficArea.getCenterY();
+                    double cz = 0;
+                    try {
+                        agent.setDestination(worldManager.createAreaNode(cx, cy, cz));
+                    }
+                    catch (WorldManagerException exc) {
+                        alert(exc, "error");
+                    }
                 }
-                catch (WorldManagerException exc) {
-                    alert(exc, "error");
+                else if (entity instanceof Human) {
+                    TrafficAgent destinationAgent = humanTrafficAgentMap.get(destinationId);
+                    agent.setDestination(destinationAgent);
+                }
+                else {
+                    System.err.println("warning: unknown entity: " + entity);
                 }
             }
             else if (command instanceof AKClear) {
@@ -401,7 +427,7 @@ public class RCRSTrafficSimulator {
         lastTime = stepStart;
         //int length = (int)(1000*60/stepTime);
         final int minute = 60;
-        final int test = 10;
+        final int test = 1;
         int length = (int)(1000 * minute / stepTime) * test;
 
         for (int i = 0; i < length; i++) {

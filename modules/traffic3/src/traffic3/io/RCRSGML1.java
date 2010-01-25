@@ -7,6 +7,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import traffic3.manager.WorldManager;
 import traffic3.manager.WorldManagerException;
@@ -252,6 +254,12 @@ public class RCRSGML1 implements Parser {
      * @throws Exception exceptoin
      */
     public void output(WorldManager worldManager, OutputStream out) throws IOException {
+        Map<String, String> map = new HashMap<String, String>();
+        UniqueID nodeID = new UniqueID("node", map);
+        UniqueID edgeID = new UniqueID("edge", map);
+        UniqueID areaID = new UniqueID("area", map);
+
+        String description = "no name";
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
         bw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         bw.newLine();
@@ -273,7 +281,7 @@ public class RCRSGML1 implements Parser {
         bw.newLine();
         bw.write("<rcrs:Version>" + getVersion() + "</rcrs:Version>");
         bw.newLine();
-        bw.write("<rcrs:Description>" + "no name" + "</rcrs:Description>");
+        bw.write("<rcrs:Description>" + description + "</rcrs:Description>");
         bw.newLine();
         bw.write("<rcrs:Area>");
         bw.newLine();
@@ -281,7 +289,7 @@ public class RCRSGML1 implements Parser {
         bw.write("<rcrs:NodeList>");
         bw.newLine();
         for (TrafficAreaNode n : worldManager.getAreaNodeList()) {
-            bw.write("<gml:Node gml:id=\"" + n.getID() + "\">");
+            bw.write("<gml:Node gml:id=\"" + nodeID.map(n.getID()) + "\">");
             bw.newLine();
             bw.write("<gml:pointProperty>");
             bw.newLine();
@@ -302,14 +310,14 @@ public class RCRSGML1 implements Parser {
         bw.write("<rcrs:EdgeList>");
         bw.newLine();
         for (TrafficAreaEdge e : worldManager.getAreaConnectorEdgeList()) {
-            bw.write("<gml:Edge gml:id=\"" + e.getID() + "\">");
+            bw.write("<gml:Edge gml:id=\"" + edgeID.map(e.getID()) + "\">");
             bw.newLine();
             for (TrafficAreaNode node : e.getNodes()) {
                 if (node == null) {
                     System.err.println(node);
                     System.err.println(e.toString());
                 }
-                bw.write("<gml:directedNode orientation=\"+\" xlink:href=\"#" + node.getID() + "\"/>");
+                bw.write("<gml:directedNode orientation=\"+\" xlink:href=\"#" + nodeID.map(node.getID()) + "\"/>");
                 bw.newLine();
             }
             for (TrafficArea face : e.getAreas()) {
@@ -317,7 +325,7 @@ public class RCRSGML1 implements Parser {
                     System.err.println("Edge's directed face is " + face);
                     System.err.println("Edge is " + e.toString());
                 }
-                bw.write("<gml:directedFace orientation=\"+\" xlink:href=\"#" + face.getID() + "\"/>");
+                bw.write("<gml:directedFace orientation=\"+\" xlink:href=\"#" + areaID.map(face.getID()) + "\"/>");
                 bw.newLine();
             }
             bw.write("<gml:centerLineOf>");
@@ -359,7 +367,7 @@ public class RCRSGML1 implements Parser {
             bw.newLine();
             bw.write("<rcrs:BuildingProperty></rcrs:BuildingProperty>");
             bw.newLine();
-            bw.write("<gml:Face gml:id=\"" + area.getID() + "\">");
+            bw.write("<gml:Face gml:id=\"" + areaID.map(area.getID()) + "\">");
             bw.newLine();
             for (TrafficAreaDirectedEdge dedge : area.getDirectedEdges()) {
                 TrafficAreaEdge edge = dedge.getEdge();
@@ -369,7 +377,7 @@ public class RCRSGML1 implements Parser {
                 } else  {
                     bw.write("-");
                 }
-                bw.write("\" xlink:href=\"#" + edge.getID() + "\"/>");
+                bw.write("\" xlink:href=\"#" + edgeID.map(edge.getID()) + "\"/>");
                 bw.newLine();
             }
             bw.write("<gml:polygon>");
@@ -411,5 +419,26 @@ public class RCRSGML1 implements Parser {
         bw.newLine();
         bw.flush();
         bw.close();
+    }
+
+    private class UniqueID {
+        String pre = null;
+        Map<String, String> map = null;
+        int c = 1;
+        UniqueID(String p, Map<String, String> m) {
+            pre = p;
+            map = m;
+        }
+        public String next() {
+            return pre + (c++);
+        }
+        public String map(String id) {
+            String m = map.get(id);
+            if (m == null) {
+                m = next();
+                map.put(id, m);
+            }
+            return m;
+        }
     }
 }

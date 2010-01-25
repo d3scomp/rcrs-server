@@ -55,10 +55,11 @@ public class TrafficArea extends TrafficObject {
     public TrafficArea(WorldManager worldManager, String id, TrafficAreaNode[] nodes) {
         super(worldManager, id);
         setNodes(nodes);
-        edgeIDs = new String[]{};
+        //edgeIDs = new String[]{};
     }
 
     /**
+     * <pre>
      * Constructor.
      *
      *          /       /
@@ -83,6 +84,7 @@ public class TrafficArea extends TrafficObject {
      *           p1      p2      p3      p4
      *            |------||------||------||------|
      * nexts  {      a1,    null,    a2,     a3  }
+     * </pre>
      *
      * @param worldManager world manager
      * @param id id of this object (it must be unique in world manager WorldManager.getUniqueID("type"))
@@ -111,11 +113,6 @@ public class TrafficArea extends TrafficObject {
 
             String tmp = nexts[0];
             List<String> edgeIDList = new ArrayList<String>();
-            if ("rcrs(113)".equals(getID())) {
-                for (int i=0; i<nexts.length;i++) {
-                    System.err.println((i+1)+":"+nexts[i]+":"+nodeList.get(i).getID());
-                }
-            }
             for (int index = 0; index < nexts.length; ) {
                 String next = nexts[index];
                 List<TrafficAreaNode> list = new ArrayList<TrafficAreaNode>();
@@ -125,21 +122,12 @@ public class TrafficArea extends TrafficObject {
                     //System.out.println(index + ":" + i + ":" + nexts.length + "[" + next + "|" + newNext + "]");
                     list.add(nodeList.get((index + i) % nexts.length));
                     if (index + i > nexts.length + 1) {
-                        if ("rcrs(113)".equals(getID())) {
-                            System.err.println(index+":"+i+":"+"a"+":"+next+":"+newNext);
-                        }
                         index += i;
                         loop = false;
                     }
                     else if ((next == newNext) || (next != null && next.equals(newNext)) || (newNext != null && newNext.equals(next))) {
-                        if ("rcrs(113)".equals(getID())) {
-                            System.err.println(index+":"+i+":"+"b"+":"+next+":"+newNext);
-                        }
                     }
                     else {
-                        if ("rcrs(113)".equals(getID())) {
-                            System.err.println(index+":"+i+":"+"c"+":"+next+":"+newNext);
-                        }
                         index += i;
                         loop = false;
                     }
@@ -150,11 +138,12 @@ public class TrafficArea extends TrafficObject {
                 TrafficAreaNode[] nodes = list.toArray(new TrafficAreaNode[0]);
                 //System.out.println(nodeList+"||"+nodes);
                 TrafficAreaEdge edge = new TrafficAreaEdge(worldManager, eid, nodes);
-                if ("rcrs(-1)".equals(next)) {
+                if (next == null || "rcrs(-1)".equals(next)) {
                     edge.setAreaIDs(getID());
                 }
                 else {
                     edge.setAreaIDs(getID(), next);
+                    //System.out.println(edge + " == [" + getID() + " , " + next + "]");
                 }
                 worldManager.appendWithoutCheck(edge);
                 edgeIDList.add(edge.getID());
@@ -312,17 +301,30 @@ public class TrafficArea extends TrafficObject {
     }
 
     public void setNodes(TrafficAreaNode... ns) {
+        TrafficAreaNode[] nstmp = new TrafficAreaNode[ns.length + 1];
+        for (int i = 0; i <= ns.length; i++) {
+            nstmp[i] = ns[i % ns.length];
+        }
+        ns = nstmp;
         // <?>
         List<TrafficAreaNode> nodeList = new ArrayList<TrafficAreaNode>();
         TrafficAreaEdge edge = new TrafficAreaEdge(getManager(), getManager().getUniqueID("_"), ns);
-        setDirectedEdges(new TrafficAreaDirectedEdge(getManager(), getManager().getUniqueID("_"), edge, true));
-        //directedEdges = null;
+        edge.setAreas(this);
+        try {
+            getManager().appendWithoutCheck(edge);
+            setDirectedEdges(new TrafficAreaDirectedEdge(getManager(), getManager().getUniqueID("_"), edge, true));
+        }
+        catch (Exception e) {
+            log(e);
+        }
         createCache();
     }
 
     public void setDirectedEdges(TrafficAreaDirectedEdge... des) {
         directedEdges = des;
+        List<String> list = new ArrayList<String>();
         for (int i = 0; i < des.length; i++) {
+            list.add(des[i].getEdge().getID());
             des[i].addChangeListener(new javax.swing.event.ChangeListener() {
                     public void stateChanged(javax.swing.event.ChangeEvent e) {
                         createCache();
@@ -333,6 +335,7 @@ public class TrafficArea extends TrafficObject {
             //directedEdgeList.addChangeListener();
             //directedEdgeList.add(des[i]);
         }
+        edgeIDs = list.toArray(new String[0]);
         createCache();
     }
 
