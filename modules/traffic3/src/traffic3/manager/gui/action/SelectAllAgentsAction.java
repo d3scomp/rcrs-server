@@ -18,7 +18,7 @@ public class SelectAllAgentsAction extends TrafficAction {
      */
     public SelectAllAgentsAction() {
         super("Select All Agents");
-
+        putValue("AcceleratorKey", KeyStroke.getKeyStroke(KeyEvent.VK_A, java.awt.event.InputEvent.CTRL_DOWN_MASK));
     }
 
     /**

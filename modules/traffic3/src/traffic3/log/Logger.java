@@ -60,7 +60,6 @@ public final class Logger {
      * @throws Exception exception
      */
     public static void initialize(BufferedWriter w) throws LoggerException {
-
         writer = w;
         if (initialized) {
             throw new LoggerException("already initialized");
@@ -68,15 +67,15 @@ public final class Logger {
         if (writer == null) {
             throw new LoggerException("cannot initialize traffic3.log.Logger");
         }
+        date = new Date();
+        dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG);
+        initialized = true;
         if (logFile == null) {
             log("logger is initialized: no log file.");
         }
         else {
             log("logger is initialized: " + logFile.getAbsolutePath());
         }
-        date = new Date();
-        dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG);
-        initialized = true;
     }
 
     /**
@@ -87,12 +86,6 @@ public final class Logger {
     public static void log(Object message, int type) {
         if (initialized) {
             date.setTime(System.currentTimeMillis());
-            if (type == JOptionPane.INFORMATION_MESSAGE) {
-                System.out.println(message);
-            }
-            else {
-                System.err.println(message);
-            }
 
             try {
                 StringBuffer sb = new StringBuffer();

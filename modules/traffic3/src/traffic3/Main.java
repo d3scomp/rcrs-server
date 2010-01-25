@@ -316,7 +316,8 @@ public final class Main {
         }
 
         if (isRCRSMode) {
-            final traffic3.simulator.RCRSTrafficSimulator rcrsSimulator = new traffic3.simulator.RCRSTrafficSimulator(worldManager[0], configManager, 100);
+            configManager.getDouble("/rcrs/traffic3/microStep", 100);
+            final traffic3.simulator.RCRSTrafficSimulator rcrsSimulator = new traffic3.simulator.RCRSTrafficSimulator(worldManager[0], configManager);
             new Thread(new Runnable() { public void run() {
                 try {
                     rcrsSimulator.start();

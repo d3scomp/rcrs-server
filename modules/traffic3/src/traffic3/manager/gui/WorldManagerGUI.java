@@ -213,7 +213,7 @@ public class WorldManagerGUI extends JComponent {
     private static final int DRAW_SIMULATION_TIME_Y = 20;
     private static final int DRAW_REAL_TIME_X = 230;
     private static final int DRAW_REAL_TIME_Y = 20;
-    private static final int DRAW_AGENT_RADIUS = 2;
+    private static final int DRAW_AGENT_RADIUS = 4;
     private static final double DRAW_AGENT_F_SCALE = 1000000.0;
     private static final double DRAW_AGENT_V_SCALE = 1000.0;
 
@@ -275,7 +275,8 @@ public class WorldManagerGUI extends JComponent {
     /**
      *
      */
-    private Map<String, TrafficObject> targetList = new HashMap<String, TrafficObject>();
+    final private Map<String, TrafficObject> targetList = new HashMap<String, TrafficObject>();
+    final private List<TrafficObject> orderedTargetList = new ArrayList<TrafficObject>();
 
     //private List<TrafficObject> destination_list_ = new ArrayList<TrafficObject>();
 
@@ -465,7 +466,6 @@ public class WorldManagerGUI extends JComponent {
 
     private XMLConfigManager configManager;
 
-
     /**
      * Constructor.
      * @param worldManager WorldManager
@@ -482,6 +482,8 @@ public class WorldManagerGUI extends JComponent {
                 }
                 @Override
                 public void removed(WorldManagerEvent e) {
+                    targetList.clear();
+                    orderedTargetList.clear();
                     createImageInOtherThread();
                 }
                 @Override
@@ -521,11 +523,15 @@ public class WorldManagerGUI extends JComponent {
         TagElement guiConfigPopup = configManager.getTag(path);
         if (guiConfigPopup.getTagChildren() == null) {
             try {
+                //java.io.InputStream in = this.getClass().getResourceAsStream("default-popup.xml");
                 java.io.InputStream in = org.util.Handy.getResourceAsStream("data/resources/default-popup.xml");
                 TagElement[] defaultTags = XMLIO.read(in).getTagChildren();
                 guiConfigPopup.setChildren(defaultTags);
                 configManager.outputSetting();
                 guiConfigPopup = configManager.getTag("gui/popup");
+            }
+            catch (NullPointerException e) {
+                alert(e, "error");
             }
             catch (XMLParseException e) {
                 alert(e, "error");
@@ -541,20 +547,17 @@ public class WorldManagerGUI extends JComponent {
      *
      */
     public void createGUI() {
-
         TagElement guiConfigPopup = getConfigTag("gui/popup");
         Action createImageAction = new AbstractAction("create image action") {
                 public void actionPerformed(ActionEvent e) {
                     createImageInOtherThread();
                 }
             };
-
         ValueListener vlistener = new ValueListener() {
                 public void valueChanged(Value v) {
                     createImageInOtherThread();
                 }
             };
-
         antialiasingValue = new BooleanValue("antiariasing", false);
         showAreaValue = new BooleanValue("showArea", true);
         showAreaEdgeValue = new BooleanValue("showAreaEdge", false);
@@ -657,10 +660,12 @@ public class WorldManagerGUI extends JComponent {
                     case 'n': isInputNetworkMode.setSelected(true); break;
                     case 'p': isPutAgentMode.setSelected(true); break;
                     case 'l': simulatingValue.setValue(!simulatingValue.getValue()); break;
-                    default: System.out.println(e.getKeyCode());
+                    case 127: deleteSelection(); break;
+                    default: System.out.println("?: " + e.getKeyCode());
                     }
                 }
             });
+        setPreferredSize(new Dimension(500, 500));
         setFocusable(true);
     }
 
@@ -697,6 +702,9 @@ public class WorldManagerGUI extends JComponent {
         private List<TrafficAction> popupList = new ArrayList<TrafficAction>();
 
         OrgMouseListener(TagElement c) {
+            if (c == null) {
+                return;
+            }
             config = c;
             for (TagElement te : config.getTagChildren("menu-item")) {
                 String actionClassName = null;
@@ -735,14 +743,22 @@ public class WorldManagerGUI extends JComponent {
                         try {
                             TrafficAreaNode tan = worldManager.createAreaNode(sx2mx(e.getX()), sy2my(e.getY()), 0);
                             if (selectedAgentGroupList.size() == 0) {
-                                TrafficAgent[] agent = worldManager.getAgentList();
-                                for (int i = 0; i < agent.length; i++) {
-                                    agent[i].setDestination(tan);
+                                for (TrafficObject o : targetList.values()) {
+                                    if (o instanceof TrafficAgent) {
+                                        TrafficAgent agent = (TrafficAgent)o;
+                                        agent.setDestination(tan);
+                                    }
                                 }
+                                /*
+                                  TrafficAgent[] agent = worldManager.getAgentList();
+                                  for (int i = 0; i < agent.length; i++) {
+                                  agent[i].setDestination(tan);
+                                  }
+                                */
                             }
                             else {
-                                String[] seectedAgentGroupNameList = selectedAgentGroupList.toArray(new String[0]);
-                                for (int j = 0; j < seectedAgentGroupNameList.length; j++) {
+                                String[] selectedAgentGroupNameList = selectedAgentGroupList.toArray(new String[0]);
+                                for (int j = 0; j < selectedAgentGroupNameList.length; j++) {
                                     List<TrafficAgent> agentList = agentGroupList.get(selectedAgentGroupList.get(j));
                                     for (TrafficAgent agent : agentList) {
                                         agent.setDestination(tan);
@@ -789,13 +805,22 @@ public class WorldManagerGUI extends JComponent {
         }
 
         public void mouseReleased(MouseEvent e) {
-            if (mousePoint != null) {
+            if (mouseRectangle != null) {
+                double mX1 = sx2mx(mouseRectangle.getMinX());
+                double mY1 = sy2my(mouseRectangle.getMinY());
+                double mX2 = sx2mx(mouseRectangle.getMaxX());
+                double mY2 = sy2my(mouseRectangle.getMaxY());
+                double mMinX = Math.min(mX1, mX2);
+                double mMinY = Math.min(mY1, mY2);
+                double mMaxX = Math.max(mX1, mX2);
+                double mMaxY = Math.max(mY1, mY2);
+                listAllHitsToTarget(mMinX, mMinY, mMaxX, mMaxY, e.isShiftDown());
+            }
+            else if (mousePoint != null) {
                 if (mousePoint.getX() == e.getX() && mousePoint.getY() == e.getY()) {
-                    isSometihgSelected = listAllHitsToTarget(sx2mx(e.getX()), sy2my(e.getY()), e.isShiftDown());
+                    listAllHitsToTarget(sx2mx(e.getX()), sy2my(e.getY()), e.isShiftDown());
                 }
             }
-
-
             isSometihgSelected = false;
             mouseDragging = false;
             pressedMousePressedButtonIndex = -1;
@@ -953,16 +978,20 @@ public class WorldManagerGUI extends JComponent {
         if (imageOutputTool != null) {
             final int w = getWidth();
             final int h = getHeight();
+            /*
             if (recodeBufImage == null || recodeBufImage.getWidth() != w || recodeBufImage.getHeight() != h) {
                 recodeBufImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
             }
-            Graphics vg = recodeBufImage.getGraphics();
+            */
+            recodeBufImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D vg = (Graphics2D)recodeBufImage.getGraphics();
             int vw = recodeBufImage.getWidth();
             int vh = recodeBufImage.getHeight();
             //vg.drawImage(offImage, 0, 0, null);
             //vg.drawImage(agentLayerImageBuf, 0, 0, null);
-            draw((Graphics2D)vg, vw, vh);
-            drawAgentLayer((Graphics2D)vg);
+            
+            draw(vg, vw, vh);
+            drawAgentLayer(vg);
             try {
                 imageOutputTool.add(recodeBufImage, simulationTime);
             }
@@ -986,25 +1015,26 @@ public class WorldManagerGUI extends JComponent {
         boolean isAdded = false;
         if (!isShiftDown) {
             targetList.clear();
+            orderedTargetList.clear();
         }
-
         TrafficAgent[] agentList = worldManager.getAgentList();
         for (int i = 0; i < agentList.length; i++) {
             TrafficAgent agent = agentList[i];
             double dx = agent.getX() - mx;
             double dy = agent.getY() - my;
-            if (agent.getRadius() * agent.getRadius() > dx * dx + dy * dy) {
+            double d = Math.max(agent.getRadius(), DRAW_AGENT_RADIUS/viewZoom);
+            if (d*d > dx * dx + dy * dy) {
                 String id = agent.getID();
                 if (isShiftDown && targetList.get(id) != null) {
                     targetList.remove(id);
                 }
                 else {
                     targetList.put(id, agent);
+                    orderedTargetList.add(agent);
                 }
                 isAdded = true;
             }
         }
-
 
         if (!isAdded && showAreaNodeValue.getValue().booleanValue()) {
             TrafficAreaNode node = worldManager.getNearlestAreaNode(mx, my, 0);
@@ -1018,6 +1048,7 @@ public class WorldManagerGUI extends JComponent {
                     }
                     else {
                         targetList.put(id, node);
+                        orderedTargetList.add(node);
                     }
                     isAdded = true;
                 }
@@ -1033,6 +1064,7 @@ public class WorldManagerGUI extends JComponent {
                     }
                     else {
                         targetList.put(id, edge);
+                        orderedTargetList.add(edge);
                     }
                     isAdded = true;
                 }
@@ -1048,6 +1080,7 @@ public class WorldManagerGUI extends JComponent {
                     }
                     else {
                         targetList.put(id, area);
+                        orderedTargetList.add(area);
                     }
                     isAdded = true;
                 }
@@ -1066,6 +1099,44 @@ public class WorldManagerGUI extends JComponent {
         //getShowTargetsAction().setEnabled(targetList.size()!=0);
         return isAdded;
     }
+
+    private boolean listAllHitsToTarget(double mMinX, double mMinY, double mMaxX, double mMaxY, boolean isShiftDown) {
+        boolean isAdded = false;
+        if (!isShiftDown) {
+            targetList.clear();
+            orderedTargetList.clear();
+        }
+        TrafficAgent[] agentList = worldManager.getAgentList();
+        for (int i = 0; i < agentList.length; i++) {
+            TrafficAgent agent = agentList[i];
+            double x = agent.getX();
+            double y = agent.getY();
+            if (mMinX < x && x < mMaxX && mMinY < y && y < mMaxY) {
+                String id = agent.getID();
+                if (isShiftDown && targetList.get(id) != null) {
+                    targetList.remove(id);
+                }
+                else {
+                    targetList.put(id, agent);
+                    orderedTargetList.add(agent);
+                }
+                isAdded = true;
+            }
+        }
+
+        if (targetList.size() == 0) {
+            log("clear target");
+        }
+        else {
+            StringBuffer sb = new StringBuffer("setTarget[");
+            sb.append(targetList.toString());
+            sb.append("]");
+            log(sb);
+        }
+        //getShowTargetsAction().setEnabled(targetList.size()!=0);
+        return isAdded;
+    }
+
 
     private void zoom(double dzoom, double x, double y) {
         viewOffsetX = (viewOffsetX - x) * dzoom + x;
@@ -1209,7 +1280,7 @@ public class WorldManagerGUI extends JComponent {
                         menu.add(ValueEditor.createEditor(value));
                     }
                     catch (NullPointerException e) {
-                        //                        StringBuffer sbb = new StringBuffer();
+                        //StringBuffer sbb = new StringBuffer();
                         //for (String k : RENDERING_SETTINGS.keySet()) {
                         //    sbb.append(k).append(",");
                         //}
@@ -1267,16 +1338,34 @@ public class WorldManagerGUI extends JComponent {
             }
         }
         JMenuBar mb = createMenuBar(guiConfigMenu);
-
+        
+        /*
         JMenu editMenu = new JMenu("Edit-old");
         editMenu.setMnemonic(KeyEvent.VK_E);
         editMenu.add(isSelectMode);
         editMenu.add(isInputAreaMode);
         editMenu.add(isInputNetworkMode);
         editMenu.add(isPutAgentMode);
-
         mb.add(editMenu);
+        */
         return mb;
+    }
+
+    public void deleteSelection() {
+        new Thread(new Runnable() {
+                public void run() {
+                    TrafficObject[] targets = createCopyOfTargetList();
+                    for (int i = 0; i < targets.length; i++) {
+                        try {
+                            worldManager.remove(targets[i]);
+                        }
+                        catch(WorldManagerException e) {
+                            log(e, "error");
+                        }
+                    }
+                    createImageInOtherThread();
+                }
+            }, "delete selection").start();
     }
 
     /**
@@ -1636,6 +1725,7 @@ System.out.println("create image start");
 
     private void drawAgentLayer(Graphics2D ag) {
         ag.setColor(Color.green);
+        ag.setStroke(new BasicStroke(0f));
         boolean showAreaNodeID = showAreaNodeIDValue.getValue().booleanValue();
         TrafficAgent[] agentList = worldManager.getAgentList();
 
@@ -2015,6 +2105,10 @@ System.out.println("create image start");
      */
     public Map<String, TrafficObject> getTargetList() {
         return targetList;
+    }
+
+    public TrafficObject[] getOrderedTargets() {
+        return orderedTargetList.toArray(new TrafficObject[0]);
     }
 
     /**

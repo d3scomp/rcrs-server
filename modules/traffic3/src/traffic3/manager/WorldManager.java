@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
@@ -17,6 +18,7 @@ import traffic3.objects.TrafficBlockade;
 import traffic3.objects.TrafficObject;
 import traffic3.objects.area.TrafficArea;
 import traffic3.objects.area.TrafficAreaNode;
+import traffic3.objects.area.TrafficAreaDirectedEdge;
 import traffic3.objects.area.TrafficAreaEdge;
 import traffic3.simulator.SimulatorException;
 import traffic3.io.ParserNotFoundException;
@@ -71,6 +73,7 @@ public class WorldManager {
         int MinNodeEntries = 1;
         properties.setProperty("MaxNodeEntries", String.valueOf(MaxNodeEntries));
         properties.setProperty("MinNodeEntries", String.valueOf(MinNodeEntries));
+        rTree = new com.infomatiq.jsi.rtree.RTree();
         rTree.init(properties);
         mapIDTrafficObject.clear();
         mapIDTrafficArea.clear();
@@ -140,12 +143,14 @@ public class WorldManager {
         else if (tobject instanceof TrafficAgent) {
             TrafficAgent agent = (TrafficAgent)tobject;
             synchronized (mapIDTrafficAgent) {
-                mapIDTrafficAgent.put(id, agent);
-            }
-            synchronized(rTreeBoundMap) {
-                traffic3.manager.RTreeRectangle r = agent.getBounds();
-                rTreeBoundMap.put(r.getID(), r);
-                rTree.add(r, r.getID());
+                //synchronized (rTreeBoundMap) {
+                    synchronized (rTree) {
+                        mapIDTrafficAgent.put(id, agent);
+                        traffic3.manager.RTreeRectangle r = agent.getBounds();
+                        rTreeBoundMap.put(r.getID(), r);
+                        rTree.add(r, r.getID());
+                    }
+                    //}
             }
         }
         else if (tobject instanceof TrafficBlockade) {
@@ -171,22 +176,31 @@ public class WorldManager {
         mapIDTrafficObject.remove(id);
         if (tobject instanceof TrafficAgent) {
             synchronized (mapIDTrafficAgent) {
-                TrafficAgent agent = (TrafficAgent)tobject;
-                TrafficArea area = agent.getArea();
-                if (area != null) {
-                    area.removeAgent(agent);
+                synchronized (rTree) {
+                    TrafficAgent agent = (TrafficAgent)tobject;
+                    TrafficArea area = agent.getArea();
+                    if (area != null) {
+                        area.removeAgent(agent);
+                    }
+                    mapIDTrafficAgent.remove(id);
+                    
+                    traffic3.manager.RTreeRectangle r = agent.getBounds();
+                    rTreeBoundMap.remove(r.getID());
+                    rTree.delete(r, r.getID());
+                    System.err.println("warning: this operation is not safe.");
                 }
-                mapIDTrafficAgent.remove(id);
-
-                traffic3.manager.RTreeRectangle r = agent.getBounds();
-                rTreeBoundMap.remove(r.getID());
-                rTree.delete(r, r.getID());
-                System.err.println("warning: this operation is not safe.");
             }
             fireAgentUpdated(this, new TrafficObject[]{tobject});
+            fireRemoved(this, new TrafficObject[]{tobject});
         }
         else {
             if (tobject instanceof TrafficArea) {
+                TrafficArea area = (TrafficArea)tobject;
+                for (TrafficAreaDirectedEdge dedge : area.getDirectedEdges()) {
+                    List<TrafficArea> areaList = new ArrayList<TrafficArea>(Arrays.asList(dedge.getAreas()));
+                    areaList.remove(area);
+                    dedge.getEdge().setAreas(areaList.toArray(new TrafficArea[0]));
+                }
                 mapIDTrafficArea.remove(id);
                 System.err.println("warning: this operation is not safe.");
             }
@@ -590,9 +604,11 @@ public class WorldManager {
 
     public void move(traffic3.manager.RTreeRectangle r, float x1, float y1, float x2, float y2) {
         if (rTreeBoundMap.get(r.getID()) == null) return;
-        rTree.delete(r, r.getID());
-        r.set(x1, y1, x2, y2);
-        rTree.add(r, r.getID());
+        synchronized (rTree) {
+            rTree.delete(r, r.getID());
+            r.set(x1, y1, x2, y2);
+            rTree.add(r, r.getID());
+        }
     }
 
     public void listNearObjects(float x, float y, float distance, final List<TrafficObject> list) {
@@ -607,7 +623,9 @@ public class WorldManager {
                 }
             };
         //rTree.intersects(r, setTargetProcedure);
-        rTree.contains(r, setTargetProcedure);
+        synchronized (rTree) {
+            rTree.contains(r, setTargetProcedure);
+        }
     }
 
     public void listNearObjects(float x, float y, float distance, final TrafficObject[] buf) {
@@ -623,7 +641,9 @@ public class WorldManager {
                 }
             };
         //rTree.intersects(r, setTargetProcedure);
-        rTree.contains(r, setTargetProcedure);
+        synchronized (rTree) {
+            rTree.contains(r, setTargetProcedure);
+        }
     }
 
 

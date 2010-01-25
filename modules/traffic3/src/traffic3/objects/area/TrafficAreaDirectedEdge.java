@@ -129,7 +129,12 @@ public class TrafficAreaDirectedEdge extends TrafficObject {
         }
         else {
             for (TrafficArea area : edge.getAreas()) {
-                sb.append(area.getID()).append(",");
+                if (area == null) {
+                    sb.append("null,");;
+                }
+                else {
+                    sb.append(area.getID()).append(",");
+                }
             }
         }
         sb.append("};");

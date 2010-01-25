@@ -17,11 +17,9 @@ public class SelectAllAction extends TrafficAction {
      * Constructor.
      */
     public SelectAllAction() {
-        super("Select All");
+        super("Select All Areas");
         putValue("MnemonicKey", KeyEvent.VK_M);
         putValue("ShorDescription", "Select all");
-        putValue("AcceleratorKey", KeyStroke.getKeyStroke(KeyEvent.VK_A, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-
     }
 
     /**

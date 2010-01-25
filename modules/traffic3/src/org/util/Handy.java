@@ -234,7 +234,7 @@ public final class Handy {
         if (url != null) {
             return url.openStream();
         }
-        log.append("cannot find: " + url.toString()).append("\n");
+        log.append("cannot find: " + path).append("\n");
         url = ClassLoader.getSystemClassLoader().getResource("org/util/Handy.class");
         String rootFileName = url.toString();
         final String jarFileStartsWith = "jar:file:";

@@ -16,9 +16,18 @@ public class LaunchException extends Exception {
 
     /**
      * Constructor.
-     * @param m exception
+     * @param m message
+     * @param c cause
      */
-    public LaunchException(Exception m) {
-        super(m);
+    public LaunchException(String m, Throwable c) {
+        super(m, c);
+    }
+
+    /**
+     * Constructor.
+     * @param c cause
+     */
+    public LaunchException(Throwable c) {
+        super(c);
     }
 }

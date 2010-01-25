@@ -8,6 +8,8 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import traffic3.manager.WorldManager;
 import traffic3.manager.WorldManagerException;
@@ -23,6 +25,8 @@ import org.util.xml.parse.XMLParseException;
  *
  */
 public class RCRSAgent1 implements Parser {
+
+    private int agentCounter = 0;
 
     /**
      * get version.
@@ -130,10 +134,14 @@ public class RCRSAgent1 implements Parser {
                     Element result = null;
                     try {
                         if ("agent".equals(tag.getKey())) {
+                            String id = tag.getAttributeValue("id");
+                            if (id == null) {
+                                id = "agent" + (++agentCounter);
+                            }
                             String type = tag.getAttributeValue("type");
                             final double radius = 200;
                             final double vLimit = 0.7;
-                            TrafficAgent agent = new TrafficAgent(wm, radius, vLimit);
+                            TrafficAgent agent = new TrafficAgent(wm, id, radius, vLimit);
                             agent.setType(type);
                             TagElement location = tag.getTagChild("location");
                             double x = Double.parseDouble(location.getChildValue("x"));
@@ -227,13 +235,16 @@ public class RCRSAgent1 implements Parser {
      * @throws Exception exception
      */
     public void output(WorldManager wm, OutputStream out) throws IOException {
+        Map<String, String> map = new HashMap<String, String>();
+        UniqueID agentID = new UniqueID("agent", map);
+
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
         bw.write("<agent_list xmlns:rcrs=\"http://sakura.meijo-u.ac.jp/..\">");
         bw.newLine();
         bw.write("   <rcrs:Version>" + getVersion() + "</rcrs:Version>");
         bw.newLine();
         for (TrafficAgent agent : wm.getAgentList()) {
-            bw.write("   <agent type=\"" + agent.getType() + "\">");
+            bw.write("   <agent id=\""+agentID.map(agent.getID())+"\" type=\"" + agent.getType() + "\">");
             bw.newLine();
             bw.write("      <location type=\"CoordinateAndArea\">");
             bw.newLine();
@@ -252,5 +263,26 @@ public class RCRSAgent1 implements Parser {
         bw.newLine();
         bw.flush();
         bw.close();
+    }
+
+    private class UniqueID {
+        String pre = null;
+        Map<String, String> map = null;
+        int c = 1;
+        UniqueID(String p, Map<String, String> m) {
+            pre = p;
+            map = m;
+        }
+        public String next() {
+            return pre + (c++);
+        }
+        public String map(String id) {
+            String m = map.get(id);
+            if (m == null) {
+                m = next();
+                map.put(id, m);
+            }
+            return m;
+        }
     }
 }

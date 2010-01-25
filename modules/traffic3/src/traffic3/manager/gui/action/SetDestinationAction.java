@@ -6,6 +6,7 @@ import java.awt.geom.Point2D;
 import static traffic3.log.Logger.log;
 import traffic3.manager.gui.WorldManagerGUI;
 import traffic3.objects.TrafficAgent;
+import traffic3.objects.TrafficObject;
 import traffic3.objects.area.TrafficAreaNode;
 import traffic3.manager.WorldManagerException;
 
@@ -34,8 +35,11 @@ public class SetDestinationAction extends TrafficAction {
                     WorldManagerGUI wmgui = getWorldManagerGUI();
                     try {
                         TrafficAreaNode node = wmgui.getWorldManager().createAreaNode(point.getX(), point.getY(), 0);
-                        for (TrafficAgent agent : wmgui.getWorldManager().getAgentList()) {
-                            agent.setDestination(node);
+                        for (TrafficObject o : wmgui.getTargetList().values()) {
+                            if (o instanceof TrafficAgent) {
+                                TrafficAgent agent = (TrafficAgent)o;
+                                agent.setDestination(node);
+                            }
                         }
                     }
                     catch (WorldManagerException exc) {

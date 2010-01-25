@@ -59,6 +59,7 @@ public class ShowAllAsTextAction extends TrafficAction {
             TrafficArea[] areaList = getWorldManagerGUI().getWorldManager().getAreaList();
             TrafficAreaEdge[] edges = getWorldManagerGUI().getWorldManager().getAreaConnectorEdgeList();
             TrafficAreaNode[] nodes = getWorldManagerGUI().getWorldManager().getAreaNodeList();
+            com.infomatiq.jsi.rtree.RTree rtree = getWorldManagerGUI().getWorldManager().getRTree();
 
             StringBuffer sb = new StringBuffer();
             sb.append("<html>");
@@ -69,6 +70,7 @@ public class ShowAllAsTextAction extends TrafficAction {
             sb.append("<tr><td>Areas</td><td>").append(areaList.length).append("</td></tr>");
             sb.append("<tr><td>Edges</td><td>").append(edges.length).append("</td></tr>");
             sb.append("<tr><td>Nodes</td><td>").append(nodes.length).append("</td></tr>");
+            sb.append("<tr><td>RTree</td><td>").append(rtree.size()).append("</td></tr>");
             sb.append("<table>");
             sb.append("</html>");
             ta.setText(sb.toString());
