@@ -21,6 +21,7 @@ import rescuecore2.misc.Pair;
 import rescuecore2.standard.entities.StandardWorldModel;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.Road;
+import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.StandardEntityURN;
@@ -168,6 +169,9 @@ public class StandardPerception implements Perception, GUIComponent {
                     case AMBULANCE_CENTRE:
                     case POLICE_OFFICE:
                         addBuildingProperties((Building)next, result);
+                        break; 
+                    case AREA:
+                        addAreaProperties((Area)next, result);
                         break;
                     case CIVILIAN:
                     case FIRE_BRIGADE:
@@ -214,6 +218,10 @@ public class StandardPerception implements Perception, GUIComponent {
         result.addChange(building, building.getTemperatureProperty());
         result.addChange(building, building.getFierynessProperty());
         result.addChange(building, building.getBrokennessProperty());
+    }
+
+    private void addAreaProperties(Area building, ChangeSet result) {
+        // Update TEMPERATURE, FIERYNESS and BROKENNESS
     }
 
     private void addFarBuildingProperties(Building building, ChangeSet result) {
