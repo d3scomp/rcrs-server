@@ -209,7 +209,7 @@ public class InjurySimulator extends StandardSimulator {
         }
 
         int countCivs(Building b) {
-            civsRate.setValue((double)b.getTotalArea());
+            civsRate.setValue(b.getTotalArea() * civilianRate);
             return civs.nextValue();
         }
 
