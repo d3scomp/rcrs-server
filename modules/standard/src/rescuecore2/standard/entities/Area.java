@@ -18,12 +18,7 @@ public class Area extends StandardEntity {
 
     private IntProperty x;
     private IntProperty y;
-    private BooleanProperty ignition;
-    private IntProperty fieryness;
-    private IntProperty brokenness;
     private IntProperty groundArea;
-    private IntProperty temperature;
-    private IntProperty importance;
     private IntArrayProperty apexes;
     private EntityRefListProperty entrances;
     private IntProperty area_type;
@@ -44,28 +39,19 @@ public class Area extends StandardEntity {
         super(id, urn);
 	x = new IntProperty(StandardPropertyURN.X);
 	y = new IntProperty(StandardPropertyURN.Y);
-        ignition = new BooleanProperty(StandardPropertyURN.IGNITION);
-        fieryness = new IntProperty(StandardPropertyURN.FIERYNESS);
-        brokenness = new IntProperty(StandardPropertyURN.BROKENNESS);
         groundArea = new IntProperty(StandardPropertyURN.BUILDING_AREA_GROUND);
-        temperature = new IntProperty(StandardPropertyURN.TEMPERATURE);
-        importance = new IntProperty(StandardPropertyURN.IMPORTANCE);
         apexes = new IntArrayProperty(StandardPropertyURN.BUILDING_APEXES);
         entrances = new EntityRefListProperty(StandardPropertyURN.ENTRANCES);
         area_type = new IntProperty(StandardPropertyURN.AREA_TYPE);
 	next_area = new EntityRefListProperty(StandardPropertyURN.NEXT_AREA);
 	blockade_list = new EntityRefListProperty(StandardPropertyURN.BLOCKADE_LIST);
     }
+
     public Area(Area other) {
         super(other);
 	x = new IntProperty(other.x);
 	y = new IntProperty(other.y);
-        ignition = new BooleanProperty(other.ignition);
-        fieryness = new IntProperty(other.fieryness);
-        brokenness = new IntProperty(other.brokenness);
         groundArea = new IntProperty(other.groundArea);
-        temperature = new IntProperty(other.temperature);
-        importance = new IntProperty(other.importance);
         apexes = new IntArrayProperty(other.apexes);
         entrances = new EntityRefListProperty(other.entrances);
         area_type = new IntProperty(other.area_type);
@@ -96,16 +82,6 @@ public class Area extends StandardEntity {
             return x;
         case Y:
             return y;
-        case IGNITION:
-            return ignition;
-        case FIERYNESS:
-            return fieryness;
-        case BROKENNESS:
-            return brokenness;
-        case TEMPERATURE:
-            return temperature;
-        case IMPORTANCE:
-            return importance;
         case BUILDING_APEXES:
             return apexes;
         case ENTRANCES:
@@ -126,11 +102,6 @@ public class Area extends StandardEntity {
         Set<Property> result = super.getProperties();
         result.add(x);
         result.add(y);
-        result.add(ignition);
-        result.add(fieryness);
-        result.add(brokenness);
-        result.add(temperature);
-        result.add(importance);
         result.add(apexes);
         result.add(entrances);
         result.add(area_type);
@@ -138,7 +109,6 @@ public class Area extends StandardEntity {
         result.add(blockade_list);
         return result;
     }
-
 
     /**
        Get the area kind property.
