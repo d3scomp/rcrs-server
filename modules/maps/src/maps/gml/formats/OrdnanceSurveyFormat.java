@@ -4,13 +4,11 @@ import maps.gml.GMLMap;
 import maps.gml.GMLCoordinates;
 import maps.gml.GMLBuilding;
 import maps.gml.GMLRoad;
-import maps.gml.GMLSpace;
 import maps.gml.MapFormat;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.dom4j.Text;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
 import org.dom4j.XPath;
@@ -30,6 +28,9 @@ import maps.gml.debug.GMLShapeInfo;
 
 // TODO: Handle inner boundaries
 
+/**
+   A MapFormat that can handle maps from the UK Ordnance Survey.
+ */
 public final class OrdnanceSurveyFormat implements MapFormat {
     private static final Logger LOG = LogManager.getLogger(OrdnanceSurveyFormat.class);
 
@@ -60,6 +61,8 @@ public final class OrdnanceSurveyFormat implements MapFormat {
     private static final Color BUILDING_COLOUR = new Color(0, 128, 0, 128);
     private static final Color ROAD_COLOUR = new Color(128, 128, 128, 128);
 
+    private static final int FID_PREFIX_LENGTH = 4;
+
     private ShapeDebugFrame debug;
     private List<GMLShapeInfo> background;
 
@@ -74,6 +77,9 @@ public final class OrdnanceSurveyFormat implements MapFormat {
         SHAPE_XPATH.setNamespaceURIs(URIS);
     }
 
+    /**
+       Construct a new OrdnanceSurveyFormat instance.
+    */
     public OrdnanceSurveyFormat() {
         debug = new ShapeDebugFrame();
         background = new ArrayList<GMLShapeInfo>();
@@ -111,7 +117,7 @@ public final class OrdnanceSurveyFormat implements MapFormat {
             LOG.debug("Found building element: " + next);
             Element e = (Element)next;
             String fid = e.attributeValue("fid");
-            long id = Long.parseLong(fid.substring(4)); // Strip off the 'osgb' prefix
+            long id = Long.parseLong(fid.substring(FID_PREFIX_LENGTH)); // Strip off the 'osgb' prefix
             // Find the boundary shape
             List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
             String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();
@@ -136,7 +142,7 @@ public final class OrdnanceSurveyFormat implements MapFormat {
             LOG.debug("Found road element: " + next);
             Element e = (Element)next;
             String fid = e.attributeValue("fid");
-            long id = Long.parseLong(fid.substring(4)); // Strip off the 'osgb' prefix
+            long id = Long.parseLong(fid.substring(FID_PREFIX_LENGTH)); // Strip off the 'osgb' prefix
             // Find the boundary shape
             List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
             String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();

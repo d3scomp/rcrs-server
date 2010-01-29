@@ -159,6 +159,7 @@ public class GMLFace extends GMLObject {
 
     /**
        Get the Area described by this face.
+       @return The area.
     */
     public Area getArea() {
         if (area == null) {

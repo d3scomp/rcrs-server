@@ -1,25 +1,17 @@
 package maps.convert.osm2gml;
 
-import maps.gml.GMLMap;
-import maps.gml.GMLNode;
-import maps.gml.GMLEdge;
-import maps.gml.GMLDirectedEdge;
-import maps.gml.GMLFace;
-import maps.gml.debug.GMLFaceShapeInfo;
-import maps.gml.FaceType;
 import maps.convert.ConvertStep;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.List;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import java.awt.Color;
-
 import rescuecore2.misc.geometry.Point2D;
 
+/**
+   This step creates TemporaryObjects from the OSM data.
+*/
 public class MakeTempObjectsStep extends ConvertStep {
     private TemporaryMap map;
 

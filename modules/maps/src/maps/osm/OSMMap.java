@@ -17,6 +17,9 @@ import java.util.Iterator;
 import java.io.File;
 import java.io.IOException;
 
+/**
+   An OpenStreetMap map.
+*/
 public class OSMMap {
     private final static Collection<String> ROAD_MARKERS = new HashSet<String>();
 
@@ -50,6 +53,9 @@ public class OSMMap {
     private double minLon;
     private double maxLon;
 
+    /**
+       Construct an empty map.
+    */
     public OSMMap() {
         boundsCalculated = false;
         nodes = new HashMap<Long, OSMNode>();
@@ -57,11 +63,23 @@ public class OSMMap {
         buildings = new HashMap<Long, OSMBuilding>();
     }
 
+    /**
+       Construct a map from an XML document.
+       @param doc The document to read.
+       @throws OSMException If the map is invalid.
+    */
     public OSMMap(Document doc) throws OSMException {
         this();
         read(doc);
     }
 
+    /**
+       Construct a map from an XML file.
+       @param file The file to read.
+       @throws OSMException If the map is invalid.
+       @throws DocumentException If the file contains invalid XML.
+       @throws IOException If the file cannot be read.
+    */
     public OSMMap(File file) throws OSMException, DocumentException, IOException {
         this();
         SAXReader reader = new SAXReader();
@@ -69,6 +87,14 @@ public class OSMMap {
         read(doc);
     }
 
+    /**
+       Construct a copy of an OSMMap over a bounded area.
+       @param other The map to copy.
+       @param minLat The minimum latitude of the new map.
+       @param minLon The minimum longitude of the new map.
+       @param maxLat The maximum latitude of the new map.
+       @param maxLon The maximum longitude of the new map.
+    */
     public OSMMap(OSMMap other, double minLat, double minLon, double maxLat, double maxLon) {
         this.minLat = minLat;
         this.minLon = minLon;
@@ -113,6 +139,11 @@ public class OSMMap {
         }
     }
 
+    /**
+       Read an XML document and populate this map.
+       @param doc The document to read.
+       @throws OSMException If the map is invalid.
+    */
     public void read(Document doc) throws OSMException {
         boundsCalculated = false;
         nodes = new HashMap<Long, OSMNode>();
@@ -132,6 +163,10 @@ public class OSMMap {
         }
     }
 
+    /**
+       Turn this map into XML.
+       @return A new XML document.
+    */
     public Document toXML() {
         Element root = DocumentHelper.createElement("osm");
         Element bounds = root.addElement("bounds");
@@ -165,48 +200,91 @@ public class OSMMap {
         return DocumentHelper.createDocument(root);
     }
 
+    /**
+       Get the minimum longitude in this map.
+       @return The minimum longitude.
+    */
     public double getMinLongitude() {
         calculateBounds();
         return minLon;
     }
 
+    /**
+       Get the maximum longitude in this map.
+       @return The maximum longitude.
+    */
     public double getMaxLongitude() {
         calculateBounds();
         return maxLon;
     }
 
+    /**
+       Get the centre longitude in this map.
+       @return The centre longitude.
+    */
     public double getCentreLongitude() {
         calculateBounds();
         return (maxLon + minLon) / 2;
     }
 
+    /**
+       Get the minimum latitude in this map.
+       @return The minimum latitude.
+    */
     public double getMinLatitude() {
         calculateBounds();
         return minLat;
     }
 
+    /**
+       Get the maximum latitude in this map.
+       @return The maximum latitude.
+    */
     public double getMaxLatitude() {
         calculateBounds();
         return maxLat;
     }
 
+    /**
+       Get the centre latitude in this map.
+       @return The centre latitude.
+    */
     public double getCentreLatitude() {
         calculateBounds();
         return (maxLat + minLat) / 2;
     }
 
+    /**
+       Get all nodes in the map.
+       @return All nodes.
+    */
     public Collection<OSMNode> getNodes() {
         return new HashSet<OSMNode>(nodes.values());
     }
 
+    /**
+       Remove a node.
+       @param node The node to remove.
+    */
     public void removeNode(OSMNode node) {
         nodes.remove(node.getID());
     }
 
+    /**
+       Get a node by ID.
+       @param id The ID of the node.
+       @return The node with the given ID or null.
+    */
     public OSMNode getNode(Long id) {
         return nodes.get(id);
     }
 
+    /**
+       Get the nearest node to a point.
+       @param lat The latitude of the point.
+       @param lon The longitude of the point.
+       @return The nearest node.
+    */
     public OSMNode getNearestNode(double lat, double lon) {
         double smallest = Double.MAX_VALUE;
         OSMNode best = null;
@@ -222,6 +300,11 @@ public class OSMMap {
         return best;
     }
 
+    /**
+       Replace a node and update all references.
+       @param old The node to replace.
+       @param replacement The replacement node.
+    */
     public void replaceNode(OSMNode old, OSMNode replacement) {
         for (OSMRoad r : roads.values()) {
             r.replace(old.getID(), replacement.getID());
@@ -232,18 +315,34 @@ public class OSMMap {
         removeNode(old);
     }
 
+    /**
+       Get all roads.
+       @return All roads.
+    */
     public Collection<OSMRoad> getRoads() {
         return new HashSet<OSMRoad>(roads.values());
     }
 
+    /**
+       Remove a road.
+       @param road The road to remove.
+    */
     public void removeRoad(OSMRoad road) {
         roads.remove(road.getID());
     }
 
+    /**
+       Get all buildings.
+       @return All buildings.
+    */
     public Collection<OSMBuilding> getBuildings() {
         return new HashSet<OSMBuilding>(buildings.values());
     }
 
+    /**
+       Remove a building.
+       @param building The building to remove.
+    */
     public void removeBuilding(OSMBuilding building) {
         buildings.remove(building.getID());
     }

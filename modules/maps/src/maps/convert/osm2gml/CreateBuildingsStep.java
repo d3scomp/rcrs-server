@@ -1,43 +1,17 @@
 package maps.convert.osm2gml;
 
 import maps.gml.GMLMap;
-import maps.gml.GMLNode;
-import maps.gml.debug.GMLNodeShapeInfo;
-import maps.gml.GMLEdge;
-import maps.gml.debug.GMLEdgeShapeInfo;
-import maps.gml.GMLDirectedEdge;
-import maps.gml.debug.GMLDirectedEdgeShapeInfo;
-import maps.gml.GMLFace;
-import maps.gml.debug.GMLFaceShapeInfo;
-import maps.gml.GMLObject;
-import maps.gml.FaceType;
-
-import maps.convert.osm2gml.buildings.RowHousingBuildingSpaceFiller;
-
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Deque;
-import java.util.ArrayDeque;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Random;
-
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
-
-import rescuecore2.misc.gui.ShapeDebugFrame;
 
 import maps.convert.ConvertStep;
 
+import java.util.Random;
+
+/**
+   This class populates a GMLMap with random buildings.
+*/
 public class CreateBuildingsStep extends ConvertStep {
-    private final static double SIMILAR_LENGTH_THRESHOLD = 0.1;
-    private final static double NEARLY_PARALLEL_THRESHOLD = 0.0001;
+    private static final double SIMILAR_LENGTH_THRESHOLD = 0.1;
+    private static final double NEARLY_PARALLEL_THRESHOLD = 0.0001;
 
     private GMLMap gmlMap;
     private double sizeOf1m;

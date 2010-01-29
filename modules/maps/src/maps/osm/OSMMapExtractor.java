@@ -19,17 +19,38 @@ import org.dom4j.Document;
 import org.dom4j.io.XMLWriter;
 import org.dom4j.io.OutputFormat;
 
+/**
+   This class extracts a portion of an OSMMap.
+*/
 public class OSMMapExtractor extends MouseAdapter {
+    private static final int VIEWER_SIZE = 500;
     private static final Color DRAG_COLOUR = new Color(128, 128, 128, 64);
 
-    private OSMMap map;
-    private OSMMapViewer viewer;
-    private Writer out;
     private static JComponent glass;
     private static Point press;
     private static Point drag;
     private static Point release;
 
+    private OSMMap map;
+    private OSMMapViewer viewer;
+    private Writer out;
+
+    /**
+       Construct an OSMMapExtractor.
+       @param map The map.
+       @param viewer The viewer.
+       @param out The writer to write extracted data to.
+    */
+    public OSMMapExtractor(OSMMap map, OSMMapViewer viewer, Writer out) {
+        this.map = map;
+        this.viewer = viewer;
+        this.out = out;
+    }
+
+    /**
+       Start the OSMMapExtractor.
+       @param args Command line arguments: source target.
+    */
     public static void main(String[] args) {
         try {
             OSMMap map = new OSMMap(new File(args[0]));
@@ -40,23 +61,20 @@ public class OSMMapExtractor extends MouseAdapter {
             frame.setGlassPane(glass);
             OSMMapViewer viewer = new OSMMapViewer(map);
             viewer.addMouseListener(new OSMMapExtractor(map, viewer, out));
-            viewer.setPreferredSize(new Dimension(500, 500));
+            viewer.setPreferredSize(new Dimension(VIEWER_SIZE, VIEWER_SIZE));
             frame.setContentPane(viewer);
             frame.pack();
             frame.setVisible(true);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         }
+        // CHECKSTYLE:OFF:MagicNumber
         catch (Exception e) {
             e.printStackTrace();
         }
+        // CHECKSTYLE:ON:MagicNumber
     }
 
-    public OSMMapExtractor(OSMMap map, OSMMapViewer viewer, Writer out) {
-        this.map = map;
-        this.viewer = viewer;
-        this.out = out;
-    }
-
+    @Override
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON3) {
             Point p = e.getPoint();
@@ -66,6 +84,7 @@ public class OSMMapExtractor extends MouseAdapter {
         }
     }
 
+    @Override
     public void mouseDragged(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON3) {
             Point p = e.getPoint();
@@ -75,6 +94,7 @@ public class OSMMapExtractor extends MouseAdapter {
         }
     }
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON3) {
             Point p = e.getPoint();
@@ -105,9 +125,11 @@ public class OSMMapExtractor extends MouseAdapter {
             writer.close();
             System.out.println("Wrote map");
         }
+        // CHECKSTYLE:OFF:IllegalCatch
         catch (Exception ex) {
             ex.printStackTrace();
         }
+        // CHECKSTYLE:ON:IllegalCatch
     }
 
     private static class DragGlass extends JComponent {

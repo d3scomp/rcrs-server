@@ -2,43 +2,35 @@ package maps.convert.osm2gml.buildings.row;
 
 import java.util.Set;
 import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Random;
 
-import maps.convert.osm2gml.ConvertTools;
-import maps.gml.GMLNode;
-import maps.gml.GMLEdge;
 import maps.gml.GMLDirectedEdge;
 import maps.gml.GMLFace;
 import maps.gml.GMLMap;
-import maps.gml.FaceType;
 
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.Vector2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
-
+/**
+   A RowFiller that creates long, thin duplex units.
+*/
 public class ThinDuplexRowFiller implements RowFiller {
-    private final static double BUILDING_WIDTH_M = 10;
-    private final static double BUILDING_DEPTH_M = 20;
-    private final static double MIN_OFFSET_M = 2;
-    private final static double MAX_OFFSET_M = 3;
-    private final static int MIN_RUN_LENGTH = 1;
-    private final static int MAX_RUN_LENGTH = 5;
+    private static final double BUILDING_WIDTH_M = 10;
+    private static final double BUILDING_DEPTH_M = 20;
+    private static final double MIN_OFFSET_M = 2;
+    private static final double MAX_OFFSET_M = 3;
+    private static final int MIN_RUN_LENGTH = 1;
+    private static final int MAX_RUN_LENGTH = 5;
 
-    private final double BUILDING_WIDTH;
-    private final double BUILDING_DEPTH;
-    private final double MIN_OFFSET;
-    private final double MAX_OFFSET;
+    private final double buildingWidth;
+    private final double buildingDepth;
+    private final double minOffset;
+    private final double maxOffset;
 
     private final Random random;
 
     public ThinDuplexRowFiller(double sizeOf1m, Random random) {
-        BUILDING_WIDTH = BUILDING_WIDTH_M * sizeOf1m;
-        BUILDING_DEPTH = BUILDING_DEPTH_M * sizeOf1m;
-        MIN_OFFSET = MIN_OFFSET_M * sizeOf1m;
-        MAX_OFFSET = MAX_OFFSET_M * sizeOf1m;
+        buildingWidth = BUILDING_WIDTH_M * sizeOf1m;
+        buildingDepth = BUILDING_DEPTH_M * sizeOf1m;
+        minOffset = MIN_OFFSET_M * sizeOf1m;
+        maxOffset = MAX_OFFSET_M * sizeOf1m;
         this.random = random;
     }
 

@@ -1,11 +1,5 @@
 package maps.osm;
 
-import org.jscience.geography.coordinates.LatLong;
-import org.jscience.geography.coordinates.UTM;
-import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
-import javax.measure.unit.SI;
-import javax.measure.unit.NonSI;
-
 /**
    An OpenStreetMap node.
  */

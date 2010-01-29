@@ -79,15 +79,19 @@ import org.jscience.geography.coordinates.UTM;
 import org.jscience.geography.coordinates.LatLong;
 import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
 
+/**
+   This class converts maps from one format to another.
+*/
 public class Convert {
     // Nodes that are close are deemed to be co-located.
-    private final static double NEARBY_NODE_THRESHOLD = 0.000001;
+    private static final double NEARBY_NODE_THRESHOLD = 0.000001;
 
-    private final static int PROGRESS_WIDTH = 200;
-    private final static int PROGRESS_HEIGHT = 10;
-    private final static int STATUS_WIDTH = 500;
-    private final static int STATUS_HEIGHT = 10;
-    private final static int MARGIN = 4;
+    private static final int PROGRESS_WIDTH = 200;
+    private static final int PROGRESS_HEIGHT = 10;
+    private static final int VIEWER_SIZE = 500;
+    private static final int STATUS_WIDTH = 500;
+    private static final int STATUS_HEIGHT = 10;
+    private static final int MARGIN = 4;
 
     private OSMMap osmMap;
     private GMLMap gmlMap;
@@ -96,6 +100,10 @@ public class Convert {
     //    private List<ShapeDebugFrame.ShapeInfo> allOSMNodes;
     //    private List<ShapeDebugFrame.ShapeInfo> allGMLNodes;
 
+    /**
+       Run the map convertor.
+       @param args Command line arguments: osm-mapname gml-mapname.
+    */
     public static void main(String[] args) {
         if (args.length < 2) {
             System.out.println("Usage: Convert <osm-mapname> <gml-mapname>");
@@ -114,8 +122,8 @@ public class Convert {
             GMLMapViewer gmlViewer = new GMLMapViewer(gmlMap);
             JFrame frame = new JFrame("Convertor");
             JPanel main = new JPanel(new GridLayout(1, 2));
-            osmViewer.setPreferredSize(new Dimension(500, 500));
-            gmlViewer.setPreferredSize(new Dimension(500, 500));
+            osmViewer.setPreferredSize(new Dimension(VIEWER_SIZE, VIEWER_SIZE));
+            gmlViewer.setPreferredSize(new Dimension(VIEWER_SIZE, VIEWER_SIZE));
             osmViewer.setBorder(BorderFactory.createTitledBorder("OSM map"));
             gmlViewer.setBorder(BorderFactory.createTitledBorder("GML map"));
             main.add(osmViewer);
@@ -129,13 +137,18 @@ public class Convert {
                     }
                 });
         }
+        // CHECKSTYLE:OFF:IllegalCatch
         catch (Exception e) {
             e.printStackTrace();
         }
+        // CHECKSTYLE:ON:IllegalCatch
     }
 
     private static OSMMap readOSMMap(String file) throws OSMException, IOException, DocumentException {
         File f = new File(file);
         return new OSMMap(f);
+    }
+
+    private Convert() {
     }
 }

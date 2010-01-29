@@ -25,9 +25,18 @@ import java.util.ArrayList;
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
+/**
+   A GML map viewer.
+*/
 public class ViewGMLMap {
+    private static final int VIEWER_SIZE = 500;
+
     private static final Logger LOG = LogManager.getLogger(ViewGMLMap.class);
 
+    /**
+       Start the viewer.
+       @param args Command-line arguments: mapname.
+    */
     public static void main(String[] args) {
         if (args.length < 1) {
             System.out.println("Usage: ViewGMLMap <mapname>");
@@ -37,7 +46,7 @@ public class ViewGMLMap {
             GMLMap map = readGMLMap(args[0]);
             GMLMapViewer gmlViewer = new GMLMapViewer(map);
             JFrame frame = new JFrame("GML Map");
-            gmlViewer.setPreferredSize(new Dimension(500, 500));
+            gmlViewer.setPreferredSize(new Dimension(VIEWER_SIZE, VIEWER_SIZE));
             frame.setContentPane(gmlViewer);
             frame.pack();
             frame.setVisible(true);
@@ -47,9 +56,11 @@ public class ViewGMLMap {
                     }
                 });
         }
+        // CHECKSTYLE:OFF:IllegalCatch
         catch (Exception e) {
             e.printStackTrace();
         }
+        // CHECKSTYLE:ON:IllegalCatch
     }
 
     private static GMLMap readGMLMap(String file) throws GMLException, IOException, DocumentException {

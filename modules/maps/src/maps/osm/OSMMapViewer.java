@@ -5,26 +5,32 @@ import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Insets;
 import java.awt.Point;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import javax.swing.JComponent;
 
 import rescuecore2.misc.gui.ScreenTransform;
 import rescuecore2.misc.gui.PanZoomListener;
 
+/**
+   A component for viewing OSM maps.
+*/
 public class OSMMapViewer extends JComponent {
     private OSMMap map;
     private ScreenTransform transform;
     private PanZoomListener panZoom;
 
+    /**
+       Create an OSMMapViewer.
+    */
     public OSMMapViewer() {
         this(null);
     }
 
+    /**
+       Create an OSMMapViewer.
+       @param map The map to view.
+    */
     public OSMMapViewer(final OSMMap map) {
         panZoom = new PanZoomListener(this);
         setMap(map);
@@ -42,6 +48,10 @@ public class OSMMapViewer extends JComponent {
             });
     }
 
+    /**
+       Set the map.
+       @param map The new map to view.
+    */
     public void setMap(OSMMap map) {
         this.map = map;
         transform = null;
@@ -51,14 +61,25 @@ public class OSMMapViewer extends JComponent {
         panZoom.setScreenTransform(transform);
     }
 
+    /**
+       Get the latitude of a screen coordinate.
+       @param y The screen coordinate.
+       @return The latitude at that coordinate.
+    */
     public double getLatitude(int y) {
         return transform.screenToY(y);
     }
 
+    /**
+       Get the longitude of a screen coordinate.
+       @param x The screen coordinate.
+       @return The longitude at that coordinate.
+    */
     public double getLongitude(int x) {
         return transform.screenToX(x);
     }
 
+    @Override
     public void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         if (map == null) {

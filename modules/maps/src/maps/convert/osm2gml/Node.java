@@ -21,7 +21,7 @@ public class Node extends ManagedObject {
     /**
        Construct a new node.
        @param id The ID of this node.
-       @param coodinates The coordinates of this node.
+       @param coordinates The coordinates of this node.
      */
     public Node(long id, Point2D coordinates) {
         super(id);

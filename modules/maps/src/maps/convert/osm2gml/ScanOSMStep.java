@@ -13,11 +13,9 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import java.awt.Color;
-
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-
+/**
+   This step scans the OpenStreetMap data and generates information about roads, intersections and buildings.
+*/
 public class ScanOSMStep extends ConvertStep {
     private TemporaryMap map;
     private Map<OSMNode, OSMIntersectionInfo> nodeToIntersection;

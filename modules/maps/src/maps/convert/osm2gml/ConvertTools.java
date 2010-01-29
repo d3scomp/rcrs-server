@@ -49,13 +49,13 @@ import org.apache.log4j.LogManager;
 public final class ConvertTools {
     private static final Logger LOG = LogManager.getLogger(ConvertTools.class);
 
-    private final static Color BACKGROUND_BUILDING_COLOUR = new Color(0, 255, 0, 32); // Transparent lime
-    private final static Color BACKGROUND_INTERSECTION_COLOUR = new Color(192, 192, 192, 32); // Transparent silver
-    private final static Color BACKGROUND_ROAD_COLOUR = new Color(128, 128, 128, 32); // Transparent gray
-    private final static Color BACKGROUND_SPACE_COLOUR = new Color(0, 128, 0, 32); // Transparent green
+    private static final Color BACKGROUND_BUILDING_COLOUR = new Color(0, 255, 0, 32); // Transparent lime
+    private static final Color BACKGROUND_INTERSECTION_COLOUR = new Color(192, 192, 192, 32); // Transparent silver
+    private static final Color BACKGROUND_ROAD_COLOUR = new Color(128, 128, 128, 32); // Transparent gray
+    private static final Color BACKGROUND_SPACE_COLOUR = new Color(0, 128, 0, 32); // Transparent green
 
-    private final static double CLOCKWISE_SUM = -360;
-    private final static double THRESHOLD = 0.0001;
+    private static final double CLOCKWISE_SUM = -360;
+    private static final double THRESHOLD = 0.0001;
 
     private ConvertTools() {}
 
@@ -215,18 +215,38 @@ public final class ConvertTools {
         }
     }
 
+    /**
+       Create ShapeInfo objects for all GMLShapes in a map.
+       @param map The map to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> getAllDebugShapes(GMLMap map) {
         return createGMLShapeDebug(map.getAllShapes());
     }
 
+    /**
+       Create ShapeInfo objects for all TemporaryObjects in a map.
+       @param map The map to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> getAllDebugShapes(TemporaryMap map) {
         return createTemporaryObjectDebug(map.getAllObjects());
     }
 
+    /**
+       Create ShapeInfo objects for a set of GMLShapes.
+       @param objects The objects to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> createGMLShapeDebug(GMLShape... objects) {
         return createGMLShapeDebug(Arrays.asList(objects));
     }
 
+    /**
+       Create ShapeInfo objects for a set of GMLShapes.
+       @param objects The objects to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> createGMLShapeDebug(Collection<? extends GMLShape> objects) {
         List<ShapeDebugFrame.ShapeInfo> allShapes = new ArrayList<ShapeDebugFrame.ShapeInfo>();
         for (GMLShape next : objects) {
@@ -249,10 +269,20 @@ public final class ConvertTools {
         return allShapes;
     }
 
+    /**
+       Create ShapeInfo objects for a set of GMLObjects.
+       @param objects The objects to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> createGMLObjectDebug(GMLObject... objects) {
         return createGMLObjectDebug(Arrays.asList(objects));
     }
 
+    /**
+       Create ShapeInfo objects for a set of GMLObjects.
+       @param objects The objects to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> createGMLObjectDebug(Collection<? extends GMLObject> objects) {
         List<ShapeDebugFrame.ShapeInfo> allShapes = new ArrayList<ShapeDebugFrame.ShapeInfo>();
         for (GMLObject object : objects) {
@@ -279,6 +309,8 @@ public final class ConvertTools {
                     c = BACKGROUND_BUILDING_COLOUR;
                     name = "Buildings";
                     break;
+                default:
+                    throw new IllegalArgumentException("Unrecognised face type: " + face.getFaceType());
                 }
                 allShapes.add(new GMLFaceShapeInfo(face, name, null, c, false));
             }
@@ -286,10 +318,20 @@ public final class ConvertTools {
         return allShapes;
     }
 
+    /**
+       Create ShapeInfo objects for a set of TemporaryObjects.
+       @param objects The objects to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> createTemporaryObjectDebug(TemporaryObject... objects) {
         return createTemporaryObjectDebug(Arrays.asList(objects));
     }
 
+    /**
+       Create ShapeInfo objects for a set of TemporaryObjects.
+       @param objects The objects to debug.
+       @return A list of ShapeInfo objects.
+    */
     public static List<ShapeDebugFrame.ShapeInfo> createTemporaryObjectDebug(Collection<? extends TemporaryObject> objects) {
         List<ShapeDebugFrame.ShapeInfo> allShapes = new ArrayList<ShapeDebugFrame.ShapeInfo>();
         for (TemporaryObject next : objects) {
@@ -320,8 +362,8 @@ public final class ConvertTools {
        @return If n is within [expected - threshold, expected + threshold].
     */
     public static boolean nearlyEqual(double n, double expected, double threshold) {
-        return (n >= expected - threshold &&
-                n <= expected + threshold);
+        return (n >= expected - threshold
+                && n <= expected + threshold);
     }
 
     /**
@@ -374,7 +416,7 @@ public final class ConvertTools {
     }
 
     /**
-       Sum the angles of all turns in an OSMBuilding
+       Sum the angles of all turns in an OSMBuilding.
        @param building The building to check.
        @param map The OSMMap the building is part of.
        @return The sum of angles in the building.

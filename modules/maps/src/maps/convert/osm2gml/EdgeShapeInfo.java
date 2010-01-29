@@ -1,22 +1,13 @@
 package maps.convert.osm2gml;
 
 import java.awt.Color;
-import java.awt.Shape;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.Graphics2D;
-import java.awt.geom.Rectangle2D;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-import rescuecore2.misc.gui.ScreenTransform;
 import rescuecore2.misc.gui.ShapeDebugFrame;
-import rescuecore2.misc.gui.DrawingTools;
 
-import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Line2D;
 
 /**

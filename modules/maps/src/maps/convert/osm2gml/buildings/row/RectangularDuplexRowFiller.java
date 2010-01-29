@@ -2,62 +2,57 @@ package maps.convert.osm2gml.buildings.row;
 
 import java.util.Set;
 import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Random;
 
-import maps.convert.osm2gml.ConvertTools;
-import maps.gml.GMLNode;
-import maps.gml.GMLEdge;
 import maps.gml.GMLDirectedEdge;
 import maps.gml.GMLFace;
 import maps.gml.GMLMap;
-import maps.gml.FaceType;
 
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.Vector2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
+/**
+   A RowFiller that creates rectangular duplex units.
+*/
+public final class RectangularDuplexRowFiller implements RowFiller {
+    private static final double WIDE_LOT_WIDTH_M = 25;
+    private static final double WIDE_BUILDING_WIDTH_M = 21;
+    private static final double WIDE_BUILDING_DEPTH_M = 7;
+    private static final double WIDE_MIN_OFFSET_M = 2;
+    private static final double WIDE_MAX_OFFSET_M = 10;
 
-public class RectangularDuplexRowFiller implements RowFiller {
-    private final static double WIDE_LOT_WIDTH_M = 25;
-    private final static double WIDE_BUILDING_WIDTH_M = 21;
-    private final static double WIDE_BUILDING_DEPTH_M = 7;
-    private final static double WIDE_MIN_OFFSET_M = 2;
-    private final static double WIDE_MAX_OFFSET_M = 10;
+    private static final double LONG_LOT_WIDTH_M = 18;
+    private static final double LONG_BUILDING_WIDTH_M = 15;
+    private static final double LONG_BUILDING_DEPTH_M = 15;
+    private static final double LONG_MIN_OFFSET_M = 1;
+    private static final double LONG_MAX_OFFSET_M = 4;
 
-    private final static double LONG_LOT_WIDTH_M = 18;
-    private final static double LONG_BUILDING_WIDTH_M = 15;
-    private final static double LONG_BUILDING_DEPTH_M = 15;
-    private final static double LONG_MIN_OFFSET_M = 1;
-    private final static double LONG_MAX_OFFSET_M = 4;
+    private static final int MIN_RUN_LENGTH = 1;
+    private static final int MAX_RUN_LENGTH = 5;
 
-    private final static int MIN_RUN_LENGTH = 1;
-    private final static int MAX_RUN_LENGTH = 5;
-
-    private final double LOT_WIDTH;
-    private final double BUILDING_WIDTH;
-    private final double BUILDING_DEPTH;
-    private final double MIN_OFFSET;
-    private final double MAX_OFFSET;
+    private final double lotWidth;
+    private final double buildingWidth;
+    private final double buildingDepth;
+    private final double minOffset;
+    private final double maxOffset;
 
     private final Random random;
 
+    /**
+       Create a filler that creates wide buildings.
+       @param sizeOf1m The size of 1m in GML units.
+       @param random The random number generator to use.
+       @return A new RectangularDuplexRowFiller.
+    */
     public static RectangularDuplexRowFiller makeWideFiller(double sizeOf1m, Random random) {
         return new RectangularDuplexRowFiller(sizeOf1m, random, WIDE_LOT_WIDTH_M, WIDE_BUILDING_WIDTH_M, WIDE_BUILDING_DEPTH_M, WIDE_MIN_OFFSET_M, WIDE_MAX_OFFSET_M);
     }
 
+    /**
+       Create a filler that creates longer, narrower buildings.
+       @param sizeOf1m The size of 1m in GML units.
+       @param random The random number generator to use.
+       @return A new RectangularDuplexRowFiller.
+    */
     public static RectangularDuplexRowFiller makeLongFiller(double sizeOf1m, Random random) {
         return new RectangularDuplexRowFiller(sizeOf1m, random, LONG_LOT_WIDTH_M, LONG_BUILDING_WIDTH_M, LONG_BUILDING_DEPTH_M, LONG_MIN_OFFSET_M, LONG_MAX_OFFSET_M);
-    }
-
-    private RectangularDuplexRowFiller(double sizeOf1m, Random random, double lotWidth, double buildingWidth, double buildingDepth, double minOffset, double maxOffset) {
-        LOT_WIDTH = lotWidth * sizeOf1m;
-        BUILDING_WIDTH = buildingWidth * sizeOf1m;
-        BUILDING_DEPTH = buildingDepth * sizeOf1m;
-        MIN_OFFSET = minOffset * sizeOf1m;
-        MAX_OFFSET = maxOffset * sizeOf1m;
-        this.random = random;
     }
 
     @Override
@@ -89,6 +84,15 @@ public class RectangularDuplexRowFiller implements RowFiller {
         }
         */
         return result;
+    }
+
+    private RectangularDuplexRowFiller(double sizeOf1m, Random random, double lotWidth, double buildingWidth, double buildingDepth, double minOffset, double maxOffset) {
+        this.lotWidth = lotWidth * sizeOf1m;
+        this.buildingWidth = buildingWidth * sizeOf1m;
+        this.buildingDepth = buildingDepth * sizeOf1m;
+        this.minOffset = minOffset * sizeOf1m;
+        this.maxOffset = maxOffset * sizeOf1m;
+        this.random = random;
     }
 
     /*

@@ -5,12 +5,9 @@ import maps.osm.OSMNode;
 import maps.osm.OSMRoad;
 import maps.osm.OSMBuilding;
 import maps.osm.OSMWay;
-import maps.osm.debug.OSMWayShapeInfo;
 import maps.convert.ConvertStep;
 
-import java.util.Map;
 import java.util.List;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
@@ -18,18 +15,14 @@ import java.util.HashSet;
 import java.util.Collection;
 import java.util.Collections;
 
-import java.awt.Color;
-
-import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.Vector2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
-
-import rescuecore2.misc.gui.ShapeDebugFrame;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
+/**
+   This step cleans the OpenStreetMap data by removing duplicate nodes and way, fixing degenerate ways, and fixing building edge orderings.
+*/
 public class CleanOSMStep extends ConvertStep {
     private static final Logger LOG = LogManager.getLogger(CleanOSMStep.class);
 
@@ -193,10 +186,10 @@ public class CleanOSMStep extends ConvertStep {
     private boolean nearby(OSMNode first, OSMNode second, double threshold) {
         double dx = first.getLongitude() - second.getLongitude();
         double dy = first.getLatitude() - second.getLatitude();
-        return (dx >= - threshold &&
-                dx <= threshold &&
-                dy >= - threshold &&
-                dy <= threshold);
+        return (dx >= - threshold
+                && dx <= threshold
+                && dy >= - threshold
+                && dy <= threshold);
     }
 
     private boolean isSubList(List<Long> first, List<Long> second) {

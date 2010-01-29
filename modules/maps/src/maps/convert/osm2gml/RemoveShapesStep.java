@@ -1,32 +1,17 @@
 package maps.convert.osm2gml;
 
-import maps.gml.GMLMap;
-import maps.gml.GMLNode;
-import maps.gml.GMLEdge;
-import maps.gml.GMLDirectedEdge;
-import maps.gml.GMLFace;
-import maps.gml.FaceType;
-
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Deque;
-import java.util.ArrayDeque;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
-
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
 
 import maps.convert.ConvertStep;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
+/**
+   This step removes shapes that are duplicates or contained entirely inside another shape.
+*/
 public class RemoveShapesStep extends ConvertStep {
     private static final Logger LOG = LogManager.getLogger(RemoveShapesStep.class);
 

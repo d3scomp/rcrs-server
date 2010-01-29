@@ -3,7 +3,6 @@ package maps.gml.debug;
 import java.awt.Color;
 import java.awt.Shape;
 import java.awt.Polygon;
-import java.awt.Rectangle;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 

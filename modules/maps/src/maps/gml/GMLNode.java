@@ -19,7 +19,7 @@ public class GMLNode extends GMLObject {
     /**
        Construct a new GML node.
        @param id The ID of this node.
-       @param coodinates The coordinates of this node.
+       @param coordinates The coordinates of this node.
      */
     public GMLNode(long id, GMLCoordinates coordinates) {
         super(id);

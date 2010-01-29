@@ -2,30 +2,9 @@ package maps.gml;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Arrays;
-import java.util.StringTokenizer;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
-
-import rescuecore2.misc.collections.LazyMap;
-import rescuecore2.misc.geometry.Point2D;
-
-import org.dom4j.Document;
-import org.dom4j.Element;
-import org.dom4j.Text;
-import org.dom4j.Attribute;
-import org.dom4j.XPath;
-import org.dom4j.Namespace;
-import org.dom4j.QName;
-import org.dom4j.DocumentHelper;
-
-import maps.CoordinateConversion;
 
 /**
    A GML map.
@@ -53,84 +32,148 @@ public class GMLMap {
         boundsKnown = false;
     }
 
+    /**
+       Add a building.
+       @param b The building to add.
+    */
     public void addBuilding(GMLBuilding b) {
         buildings.put(b.getID(), b);
         allShapes.add(b);
         boundsKnown = false;
     }
 
+    /**
+       Remove a building.
+       @param b The building to remove.
+    */
     public void removeBuilding(GMLBuilding b) {
         buildings.remove(b.getID());
         allShapes.remove(b);
         boundsKnown = false;
     }
 
+    /**
+       Get a building by ID.
+       @param id The ID to look up.
+       @return The building with that ID or null if the ID is not found.
+    */
     public GMLBuilding getBuilding(long id) {
         return buildings.get(id);
     }
 
+    /**
+       Get all buildings in the map.
+       @return All buildings.
+    */
     public Set<GMLBuilding> getBuildings() {
         return new HashSet<GMLBuilding>(buildings.values());
     }
 
+    /**
+       Remove all buildings.
+    */
     public void removeAllBuildings() {
         allShapes.removeAll(buildings.values());
         buildings.clear();
         boundsKnown = false;
     }
 
+    /**
+       Add a road.
+       @param r The road to add.
+    */
     public void addRoad(GMLRoad r) {
         roads.put(r.getID(), r);
         allShapes.add(r);
         boundsKnown = false;
     }
 
+    /**
+       Remove a road.
+       @param r The road to remove.
+    */
     public void removeRoad(GMLRoad r) {
         roads.remove(r.getID());
         allShapes.remove(r);
         boundsKnown = false;
     }
 
+    /**
+       Get a road by ID.
+       @param id The ID to look up.
+       @return The road with that ID or null if the ID is not found.
+    */
     public GMLRoad getRoad(long id) {
         return roads.get(id);
     }
 
+    /**
+       Get all roads in the map.
+       @return All roads.
+    */
     public Set<GMLRoad> getRoads() {
         return new HashSet<GMLRoad>(roads.values());
     }
 
+    /**
+       Remove all roads.
+    */
     public void removeAllRoads() {
         allShapes.removeAll(roads.values());
         roads.clear();
         boundsKnown = false;
     }
 
+    /**
+       Add a space.
+       @param s The space to add.
+    */
     public void addSpace(GMLSpace s) {
         spaces.put(s.getID(), s);
         allShapes.add(s);
         boundsKnown = false;
     }
 
+    /**
+       Remove a space.
+       @param s The space to remove.
+    */
     public void removeSpace(GMLSpace s) {
         spaces.remove(s.getID());
         allShapes.remove(s);
         boundsKnown = false;
     }
 
+    /**
+       Get a space by ID.
+       @param id The ID to look up.
+       @return The space with that ID or null if the ID is not found.
+    */
     public GMLSpace getSpace(long id) {
         return spaces.get(id);
     }
 
+    /**
+       Get all spaces in the map.
+       @return All spaces.
+    */
     public Set<GMLSpace> getSpaces() {
         return new HashSet<GMLSpace>(spaces.values());
     }
 
+    /**
+       Remove all spaces.
+    */
     public void removeAllSpaces() {
         allShapes.removeAll(spaces.values());
         spaces.clear();
         boundsKnown = false;
     }
 
+    /**
+       Get all shapes in the map.
+       @return All shapes.
+    */
     public Set<GMLShape> getAllShapes() {
         return Collections.unmodifiableSet(allShapes);
     }

@@ -20,13 +20,21 @@ import java.util.Random;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+   This class converts OSMMaps to GMLMaps.
+*/
 public class Convertor {
-    private final static int PROGRESS_WIDTH = 200;
-    private final static int PROGRESS_HEIGHT = 10;
-    private final static int STATUS_WIDTH = 500;
-    private final static int STATUS_HEIGHT = 10;
-    private final static int MARGIN = 4;
+    private static final int PROGRESS_WIDTH = 200;
+    private static final int PROGRESS_HEIGHT = 10;
+    private static final int STATUS_WIDTH = 500;
+    private static final int STATUS_HEIGHT = 10;
+    private static final int MARGIN = 4;
 
+    /**
+       Convert an OSMMap to a GMLMap.
+       @param map The OSMMap to convert.
+       @return A new GMLMap.
+    */
     public GMLMap convert(OSMMap map) {
         GMLMap gmlMap = new GMLMap();
 

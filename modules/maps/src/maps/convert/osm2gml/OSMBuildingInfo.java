@@ -45,7 +45,7 @@ public class OSMBuildingInfo implements OSMShape {
         path.closePath();
         area = new Area(path.createTransformedShape(null));
     }
- 
+
     @Override
     public List<Point2D> getVertices() {
         return vertices;

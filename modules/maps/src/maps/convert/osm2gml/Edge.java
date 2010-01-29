@@ -1,8 +1,5 @@
 package maps.convert.osm2gml;
 
-import java.util.List;
-import java.util.ArrayList;
-
 import rescuecore2.misc.geometry.Line2D;
 
 /**

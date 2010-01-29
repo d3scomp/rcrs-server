@@ -7,11 +7,15 @@ import javax.swing.SwingUtilities;
 
 import rescuecore2.misc.gui.ShapeDebugFrame;
 
+/**
+   A step in the map conversion process.
+*/
 public abstract class ConvertStep {
+    /** A ShapeDebugFrame for use by subclasses. */
+    protected ShapeDebugFrame debug;
+
     private JProgressBar progress;
     private JLabel status;
-
-    protected ShapeDebugFrame debug;
 
     /**
        Construct a ConvertStep.

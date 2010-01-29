@@ -154,7 +154,7 @@ public class OSMIntersectionInfo implements OSMShape {
         Point2D secondPoint = new Point2D(secondNode.getLongitude(), secondNode.getLatitude());
         Vector2D firstVector = centrePoint.minus(firstPoint);
         Vector2D secondVector = centrePoint.minus(secondPoint);
-        Vector2D firstNormal = firstVector.getNormal().normalised().scale(-Constants.ROAD_WIDTH * sizeOf1m / 2); 
+        Vector2D firstNormal = firstVector.getNormal().normalised().scale(-Constants.ROAD_WIDTH * sizeOf1m / 2);
         Vector2D secondNormal = secondVector.getNormal().normalised().scale(Constants.ROAD_WIDTH * sizeOf1m / 2);
         Point2D start1Point = firstPoint.plus(firstNormal);
         Point2D start2Point = secondPoint.plus(secondNormal);
@@ -170,17 +170,17 @@ public class OSMIntersectionInfo implements OSMShape {
         second.setLeftEnd(intersection);
 
         /*
-        List<ShapeDebugFrame.ShapeInfo> shapes = new ArrayList<ShapeDebugFrame.ShapeInfo>();
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(firstPoint, centrePoint), "First road", Color.BLUE, false, false));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(firstPoint, firstNormal), "First road offset", Color.YELLOW, false, false));
-        shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start1Point, "Left start", Color.BLUE, true));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line1, "Left edge", Color.BLUE, true, false));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(secondPoint, centrePoint), "Second road", Color.WHITE, false, false));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(secondPoint, secondNormal), "Second road offset", Color.CYAN, false, false));
-        shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start2Point, "Right start", Color.WHITE, true));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line2, "Right edge", Color.WHITE, true, false));
-        shapes.add(new ShapeDebugFrame.Point2DShapeInfo(intersection, "Intersection", Color.ORANGE, true));
-        debug.show("Intersection", shapes);
+          List<ShapeDebugFrame.ShapeInfo> shapes = new ArrayList<ShapeDebugFrame.ShapeInfo>();
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(firstPoint, centrePoint), "First road", Color.BLUE, false, false));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(firstPoint, firstNormal), "First road offset", Color.YELLOW, false, false));
+          shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start1Point, "Left start", Color.BLUE, true));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line1, "Left edge", Color.BLUE, true, false));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(secondPoint, centrePoint), "Second road", Color.WHITE, false, false));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(secondPoint, secondNormal), "Second road offset", Color.CYAN, false, false));
+          shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start2Point, "Right start", Color.WHITE, true));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line2, "Right edge", Color.WHITE, true, false));
+          shapes.add(new ShapeDebugFrame.Point2DShapeInfo(intersection, "Intersection", Color.ORANGE, true));
+          debug.show("Intersection", shapes);
         */
 
         return intersection;
@@ -195,7 +195,7 @@ public class OSMIntersectionInfo implements OSMShape {
         OSMNode node = road.getFarNode();
         Point2D nodePoint = new Point2D(node.getLongitude(), node.getLatitude());
         Vector2D nodeVector = centrePoint.minus(nodePoint);
-        Vector2D nodeNormal = nodeVector.getNormal().normalised().scale(-Constants.ROAD_WIDTH * sizeOf1m / 2); 
+        Vector2D nodeNormal = nodeVector.getNormal().normalised().scale(-Constants.ROAD_WIDTH * sizeOf1m / 2);
         Vector2D nodeNormal2 = nodeNormal.scale(-1);
         Point2D start1Point = nodePoint.plus(nodeNormal);
         Point2D start2Point = nodePoint.plus(nodeNormal2);
@@ -207,17 +207,17 @@ public class OSMIntersectionInfo implements OSMShape {
         road.setLeftEnd(end2);
 
         /*
-        List<ShapeDebugFrame.ShapeInfo> shapes = new ArrayList<ShapeDebugFrame.ShapeInfo>();
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(nodePoint, centrePoint), "Single road", Color.BLUE, false));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(nodePoint, nodeNormal), "Offset 1", Color.YELLOW, false));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(nodePoint, nodeNormal2), "Offset 2", Color.CYAN, false));
-        shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start1Point, "Left start", Color.BLUE, true));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line1, "Left edge", Color.BLUE, true));
-        shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start2Point, "Right start", Color.WHITE, true));
-        shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line2, "Right edge", Color.WHITE, true));
-        shapes.add(new ShapeDebugFrame.Point2DShapeInfo(end1, "Endpoint 1", Color.ORANGE, true));
-        shapes.add(new ShapeDebugFrame.Point2DShapeInfo(end2, "Endpoint 2", Color.PINK, true));
-        debug.show(shapes);
+          List<ShapeDebugFrame.ShapeInfo> shapes = new ArrayList<ShapeDebugFrame.ShapeInfo>();
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(nodePoint, centrePoint), "Single road", Color.BLUE, false));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(nodePoint, nodeNormal), "Offset 1", Color.YELLOW, false));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(new Line2D(nodePoint, nodeNormal2), "Offset 2", Color.CYAN, false));
+          shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start1Point, "Left start", Color.BLUE, true));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line1, "Left edge", Color.BLUE, true));
+          shapes.add(new ShapeDebugFrame.Point2DShapeInfo(start2Point, "Right start", Color.WHITE, true));
+          shapes.add(new ShapeDebugFrame.Line2DShapeInfo(line2, "Right edge", Color.WHITE, true));
+          shapes.add(new ShapeDebugFrame.Point2DShapeInfo(end1, "Endpoint 1", Color.ORANGE, true));
+          shapes.add(new ShapeDebugFrame.Point2DShapeInfo(end2, "Endpoint 2", Color.PINK, true));
+          debug.show(shapes);
         */
     }
 
@@ -284,11 +284,11 @@ public class OSMIntersectionInfo implements OSMShape {
         }
 
         /**
-           Compute the score for a RoadAspect - the amount of clockwiseness from 12 o'clock
+           Compute the score for a RoadAspect - the amount of clockwiseness from 12 o'clock.
            @param aspect The RoadAspect.
            @return The amount of clockwiseness. This will be in the range [0..4) with 0 representing 12 o'clock, 1 representing 3 o'clock and so on.
         */
-       public double score(RoadAspect aspect) {
+        public double score(RoadAspect aspect) {
             OSMNode node = aspect.getFarNode();
             Point2D point = new Point2D(node.getLongitude(), node.getLatitude());
             Vector2D v = point.minus(centre);
@@ -301,6 +301,7 @@ public class OSMIntersectionInfo implements OSMShape {
             return convert(sin, cos);
         }
 
+        // CHECKSTYLE:OFF:MagicNumber
         private double convert(double sin, double cos) {
             if (sin >= 0 && cos >= 0) {
                 return sin;
@@ -314,7 +315,8 @@ public class OSMIntersectionInfo implements OSMShape {
             if (sin < 0 && cos >= 0) {
                 return 4 + sin;
             }
-            throw new IllegalArgumentException("This should be impossible! What's going on? sin=" + sin +", cos=" + cos);
+            throw new IllegalArgumentException("This should be impossible! What's going on? sin=" + sin + ", cos=" + cos);
         }
+        // CHECKSTYLE:ON:MagicNumber
     }
 }

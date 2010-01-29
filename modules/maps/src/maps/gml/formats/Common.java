@@ -4,7 +4,11 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
 
+/**
+   A bunch of common GML format namespaces and qnames.
+*/
 public final class Common {
+    // CHECKSTYLE:OFF:JavadocVariable
     public static final String GML_NAMESPACE_URI = "http://www.opengis.net/gml";
     public static final String XLINK_NAMESPACE_URI = "http://www.w3.org/1999/xlink";
 
@@ -28,6 +32,7 @@ public final class Common {
     public static final QName GML_LINEAR_RING_QNAME = DocumentHelper.createQName("LinearRing", GML_NAMESPACE);
 
     public static final QName XLINK_HREF_QNAME = DocumentHelper.createQName("href", XLINK_NAMESPACE);
+    // CHECKSTYLE:ON:JavadocVariable
 
     private Common() {
     }

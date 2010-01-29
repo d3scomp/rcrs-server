@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
+/**
+   A MapFormat that can handle Robocup Rescue GML maps.
+ */
 public final class RobocupFormat implements MapFormat {
     private static final String RCR_NAMESPACE_URI = "urn:roborescue:map:gml";
     private static final Namespace RCR_NAMESPACE = DocumentHelper.createNamespace("rcr", RCR_NAMESPACE_URI);
@@ -77,6 +80,9 @@ public final class RobocupFormat implements MapFormat {
         */
     }
 
+    /**
+       Construct a new RobocupFormat instance.
+    */
     public RobocupFormat() {
     }
 

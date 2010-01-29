@@ -1,32 +1,21 @@
 package maps.convert.osm2gml;
 
-import maps.gml.GMLMap;
-import maps.gml.GMLNode;
-import maps.gml.GMLEdge;
-import maps.gml.GMLDirectedEdge;
-import maps.gml.GMLFace;
-import maps.gml.FaceType;
-
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Deque;
-import java.util.ArrayDeque;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.Collections;
 
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
-
 import java.awt.Color;
 
 import maps.convert.ConvertStep;
 
+/**
+   This class merges adjacent shapes of the same type.
+*/
 public class MergeShapesStep extends ConvertStep {
     private TemporaryMap map;
 

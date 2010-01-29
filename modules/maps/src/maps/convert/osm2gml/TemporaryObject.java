@@ -15,7 +15,6 @@ import java.awt.geom.Area;
 import java.awt.Shape;
 
 import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
 
 import maps.gml.GMLCoordinates;
 import maps.gml.GMLTools;
@@ -23,6 +22,9 @@ import maps.gml.GMLTools;
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
+/**
+   Abstract base class for temporary data structures during conversion.
+*/
 public abstract class TemporaryObject {
     private static final Logger LOG = LogManager.getLogger(TemporaryObject.class);
 
@@ -30,14 +32,26 @@ public abstract class TemporaryObject {
     private Path2D path;
     private Rectangle2D bounds;
 
+    /**
+       Construct a new TemporaryObject.
+       @param edges The edges of the object in counter-clockwise order.
+    */
     protected TemporaryObject(List<DirectedEdge> edges) {
         this.edges = new ArrayList<DirectedEdge>(edges);
     }
 
+    /**
+       Get the edges of this object.
+       @return The edges.
+    */
     public List<DirectedEdge> getEdges() {
         return Collections.unmodifiableList(edges);
     }
 
+    /**
+       Turn the edges into a list of coordinates.
+       @return A list of GMLCoordinates.
+    */
     public List<GMLCoordinates> makeGMLCoordinates() {
         List<GMLCoordinates> result = new ArrayList<GMLCoordinates>();
         for (DirectedEdge next : edges) {
@@ -47,6 +61,10 @@ public abstract class TemporaryObject {
         return result;
     }
 
+    /**
+       Get the bounds of this object.
+       @return The bounds.
+    */
     public Rectangle2D getBounds() {
         if (bounds == null) {
             bounds = GMLTools.getBounds(makeGMLCoordinates());
@@ -54,6 +72,10 @@ public abstract class TemporaryObject {
         return bounds;
     }
 
+    /**
+       Get the Shape of this object.
+       @return The shape.
+    */
     public Shape getShape() {
         if (path == null) {
             path = new Path2D.Double();
@@ -133,6 +155,11 @@ public abstract class TemporaryObject {
         return a.equals(intersection);
     }
 
+    /**
+       Replace an edge with a set of replacement edges.
+       @param edge The edge to replace.
+       @param replacements The set of replacement edges. These can be in any order.
+    */
     protected void replaceEdge(Edge edge, Collection<Edge> replacements) {
         //        LOG.debug(this + " replacing edge " + edge + " with " + replacements);
         //        LOG.debug("Old edge list: " + edges);

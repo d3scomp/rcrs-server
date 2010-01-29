@@ -11,12 +11,14 @@ import java.util.ArrayList;
 import maps.osm.OSMMap;
 
 import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.collections.LazyMap;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
+/**
+   This class holds all temporary information during map conversion.
+*/
 public class TemporaryMap {
     private static final Logger LOG = LogManager.getLogger(TemporaryMap.class);
 
@@ -43,6 +45,10 @@ public class TemporaryMap {
 
     private int nextID;
 
+    /**
+       Construct a TemporaryMap.
+       @param osmMap The OpenStreetMap data this map is generated from.
+    */
     public TemporaryMap(OSMMap osmMap) {
         this.osmMap = osmMap;
         nextID = 0;
@@ -57,13 +63,13 @@ public class TemporaryMap {
             @Override
             public Set<Edge> createValue() {
                 return new HashSet<Edge>();
-            }            
+            }
         };
         objectsAtEdge = new LazyMap<Edge, Set<TemporaryObject>>() {
             @Override
             public Set<TemporaryObject> createValue() {
                 return new HashSet<TemporaryObject>();
-            }            
+            }
         };
     }
 
@@ -111,36 +117,64 @@ public class TemporaryMap {
         return Collections.unmodifiableCollection(osmBuildings);
     }
 
+    /**
+       Add a road.
+       @param road The road to add.
+    */
     public void addRoad(TemporaryRoad road) {
         tempRoads.add(road);
         addObject(road);
     }
 
+    /**
+       Remove a road.
+       @param road The road to remove.
+    */
     public void removeRoad(TemporaryRoad road) {
         tempRoads.remove(road);
         removeObject(road);
     }
 
+    /**
+       Add an intersection.
+       @param intersection The intersection to add.
+    */
     public void addIntersection(TemporaryIntersection intersection) {
         tempIntersections.add(intersection);
         addObject(intersection);
     }
 
+    /**
+       Remove an intersection.
+       @param intersection The intersection to remove.
+    */
     public void removeIntersection(TemporaryIntersection intersection) {
         tempIntersections.remove(intersection);
         removeObject(intersection);
     }
 
+    /**
+       Add a building.
+       @param building The building to add.
+    */
     public void addBuilding(TemporaryBuilding building) {
         tempBuildings.add(building);
         addObject(building);
     }
 
+    /**
+       Remove a building.
+       @param building The building to remove.
+    */
     public void removeBuilding(TemporaryBuilding building) {
         tempBuildings.remove(building);
         removeObject(building);
     }
 
+    /**
+       Add an object.
+       @param object The object to add.
+    */
     public void addTemporaryObject(TemporaryObject object) {
         if (object instanceof TemporaryRoad) {
             addRoad((TemporaryRoad)object);
@@ -153,6 +187,10 @@ public class TemporaryMap {
         }
     }
 
+    /**
+       Remove an object.
+       @param object The object to remove.
+    */
     public void removeTemporaryObject(TemporaryObject object) {
         if (object instanceof TemporaryRoad) {
             removeRoad((TemporaryRoad)object);
@@ -165,34 +203,68 @@ public class TemporaryMap {
         }
     }
 
+    /**
+       Get all roads in the map.
+       @return All roads.
+    */
     public Collection<TemporaryRoad> getRoads() {
         return new HashSet<TemporaryRoad>(tempRoads);
     }
 
+    /**
+       Get all intersections in the map.
+       @return All intersections.
+    */
     public Collection<TemporaryIntersection> getIntersections() {
         return new HashSet<TemporaryIntersection>(tempIntersections);
     }
 
+    /**
+       Get all buildings in the map.
+       @return All buildings.
+    */
     public Collection<TemporaryBuilding> getBuildings() {
         return new HashSet<TemporaryBuilding>(tempBuildings);
     }
 
+    /**
+       Get all objects in the map.
+       @return All objects.
+    */
     public Collection<TemporaryObject> getAllObjects() {
         return new HashSet<TemporaryObject>(allObjects);
     }
 
+    /**
+       Get all nodes in the map.
+       @return All nodes.
+    */
     public Collection<Node> getAllNodes() {
         return new HashSet<Node>(nodes);
     }
 
+    /**
+       Get all edges in the map.
+       @return All edges.
+    */
     public Collection<Edge> getAllEdges() {
         return new HashSet<Edge>(edges);
     }
 
+    /**
+       Get all objects attached to an Edge.
+       @param e The Edge.
+       @return All attached TemporaryObjects.
+    */
     public Set<TemporaryObject> getAttachedObjects(Edge e) {
         return new HashSet<TemporaryObject>(objectsAtEdge.get(e));
     }
-    
+
+    /**
+       Get all edges attached to a Node.
+       @param n The Node.
+       @return All attached edges.
+    */
     public Set<Edge> getAttachedEdges(Node n) {
         return new HashSet<Edge>(edgesAtNode.get(n));
     }
@@ -234,16 +306,27 @@ public class TemporaryMap {
     public boolean isNear(double x1, double y1, double x2, double y2) {
         double dx = x2 - x1;
         double dy = y2 - y1;
-        return (dx >= - threshold &&
-                dx <= threshold &&
-                dy >= - threshold &&
-                dy <= threshold);
+        return (dx >= -threshold
+                && dx <= threshold
+                && dy >= -threshold
+                && dy <= threshold);
     }
 
+    /**
+       Get a Node near a point. If a Node already exists nearby then it will be returned, otherwise a new Node will be created.
+       @param p The node coordinates.
+       @return A Node.
+    */
     public Node getNode(Point2D p) {
         return getNode(p.getX(), p.getY());
     }
 
+    /**
+       Get a Node near a point. If a Node already exists nearby then it will be returned, otherwise a new Node will be created.
+       @param x The X coordinate.
+       @param y The Y coordinate.
+       @return A Node.
+    */
     public Node getNode(double x, double y) {
         for (Node next : nodes) {
             if (isNear(x, y, next.getX(), next.getY())) {
@@ -253,6 +336,12 @@ public class TemporaryMap {
         return createNode(x, y);
     }
 
+    /**
+       Get an Edge between two nodes. This will return either a new Edge or a shared instance if one already exists.
+       @param from The from node.
+       @param to The to node.
+       @return An Edge.
+    */
     public Edge getEdge(Node from, Node to) {
         for (Edge next : edges) {
             if (next.getStart().equals(from) && next.getEnd().equals(to)
@@ -263,6 +352,12 @@ public class TemporaryMap {
         return createEdge(from, to);
     }
 
+    /**
+       Get a DirectedEdge between two nodes.
+       @param from The from node.
+       @param to The to node.
+       @return A new DirectedEdge.
+    */
     public DirectedEdge getDirectedEdge(Node from, Node to) {
         Edge e = getEdge(from, to);
         return new DirectedEdge(e, from);

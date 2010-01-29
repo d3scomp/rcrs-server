@@ -13,7 +13,7 @@ public class GMLDirectedEdge {
 
     /**
        Construct a directed GML edge.
-       @param The underlying edge.
+       @param edge The underlying edge.
        @param forward True if this directed edge is aligned with the underlying edge direction, false otherwise.
      */
     public GMLDirectedEdge(GMLEdge edge, boolean forward) {
@@ -23,8 +23,8 @@ public class GMLDirectedEdge {
 
     /**
        Construct a directed GML edge.
-       @param The underlying edge.
-       @param The start node.
+       @param edge The underlying edge.
+       @param start The start node.
      */
     public GMLDirectedEdge(GMLEdge edge, GMLNode start) {
         this.edge = edge;

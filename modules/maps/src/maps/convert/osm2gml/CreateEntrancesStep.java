@@ -1,29 +1,12 @@
 package maps.convert.osm2gml;
 
 import maps.gml.GMLMap;
-import maps.gml.GMLNode;
-import maps.gml.GMLEdge;
-import maps.gml.GMLDirectedEdge;
-import maps.gml.GMLFace;
-import maps.gml.FaceType;
-
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Deque;
-import java.util.ArrayDeque;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
 
 import maps.convert.ConvertStep;
 
+/**
+   This class computes the entrances for buildings.
+*/
 public class CreateEntrancesStep extends ConvertStep {
     private GMLMap gmlMap;
 
@@ -55,8 +38,8 @@ public class CreateEntrancesStep extends ConvertStep {
                     GMLEdge edge = directedEdge.getEdge();
                     if (isSharedWithRoad(edge)) {
                         // Make the edge passable
-                        // TODO: Make part of the edge passable
-                        // TODO: Make more edges passable if this edge is too short
+                        // TO DO: Make part of the edge passable
+                        // TO DO: Make more edges passable if this edge is too short
                         edge.setPassable(true);
                         found = true;
                         ++sharedCount;
@@ -92,7 +75,6 @@ public class CreateEntrancesStep extends ConvertStep {
         for (GMLDirectedEdge next : face.getEdges()) {
             GMLEdge buildingEdge = next.getEdge();
             // Look for the nearest road or intersection edge
-            
         }
     }
     */

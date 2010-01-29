@@ -1,9 +1,5 @@
 package maps.convert.osm2gml;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Line2D;
 
@@ -17,7 +13,7 @@ public class DirectedEdge {
 
     /**
        Construct a directed edge.
-       @param The underlying edge.
+       @param edge The underlying edge.
        @param forward True if this directed edge is aligned with the underlying edge direction, false otherwise.
      */
     public DirectedEdge(Edge edge, boolean forward) {
@@ -31,8 +27,8 @@ public class DirectedEdge {
 
     /**
        Construct a directed edge.
-       @param The underlying edge.
-       @param The start node.
+       @param edge The underlying edge.
+       @param start The start node.
      */
     public DirectedEdge(Edge edge, Node start) {
         this.edge = edge;

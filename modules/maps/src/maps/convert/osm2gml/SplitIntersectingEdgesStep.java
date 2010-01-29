@@ -1,37 +1,23 @@
 package maps.convert.osm2gml;
 
-import maps.gml.GMLMap;
-import maps.gml.GMLNode;
-import maps.gml.GMLEdge;
-import maps.gml.GMLDirectedEdge;
-import maps.gml.GMLFace;
-import maps.gml.FaceType;
-
-import java.util.Map;
 import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Deque;
 import java.util.ArrayDeque;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.Collection;
-
-import java.awt.Color;
-import java.awt.geom.Rectangle2D;
 
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.GeometryTools2D;
-
-import rescuecore2.misc.gui.ShapeDebugFrame;
 
 import maps.convert.ConvertStep;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
+/**
+   This step splits any edges that intersect.
+*/
 public class SplitIntersectingEdgesStep extends ConvertStep {
     private static final Logger LOG = LogManager.getLogger(SplitIntersectingEdgesStep.class);
 
@@ -127,7 +113,7 @@ public class SplitIntersectingEdgesStep extends ConvertStep {
         boolean shortEndLongStart = shorterEdge.getEnd() == longerEdge.getStart();
         boolean shortEndLongEnd = shorterEdge.getEnd() == longerEdge.getEnd();
         boolean startInside = !shortStartLongStart && !shortStartLongEnd && GeometryTools2D.contains(longer, shorter.getOrigin());
-        boolean endInside = !shortEndLongStart && ! shortEndLongEnd && GeometryTools2D.contains(longer, shorter.getEndPoint());
+        boolean endInside = !shortEndLongStart && !shortEndLongEnd && GeometryTools2D.contains(longer, shorter.getEndPoint());
         /*
           if (startInside || endInside) {
           ++overlapCount;
@@ -248,7 +234,7 @@ public class SplitIntersectingEdgesStep extends ConvertStep {
                        );
             */
         }
-        if (splitFirst || splitSecond) {
+        //        if (splitFirst || splitSecond) {
             /*
             LOG.debug("First line: " + first + " -> " + first.getLine());
             LOG.debug("Second line: " + second + " -> " + second.getLine());
@@ -264,7 +250,7 @@ public class SplitIntersectingEdgesStep extends ConvertStep {
             //                       new EdgeShapeInfo(newEdges, "New edges", Color.WHITE, false, true),
             //                       new ShapeDebugFrame.Point2DShapeInfo(intersection, "Intersection", Color.BLACK, true)
             //                       );
-        }
+        //        }
         return splitFirst;
     }
 

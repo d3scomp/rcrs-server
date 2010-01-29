@@ -1,27 +1,16 @@
 package maps.convert.osm2gml.buildings;
 
 import maps.gml.GMLFace;
-import maps.gml.FaceType;
 import maps.gml.GMLMap;
 import maps.gml.GMLNode;
 import maps.gml.GMLDirectedEdge;
-import maps.convert.osm2gml.ConvertTools;
 import maps.convert.osm2gml.buildings.row.RowFiller;
 import maps.convert.osm2gml.buildings.row.RectangularDuplexRowFiller;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.Comparator;
-import java.util.Collections;
-import java.util.Set;
-import java.util.HashSet;
 
 import rescuecore2.misc.gui.ShapeDebugFrame;
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.Line2D;
-import rescuecore2.misc.geometry.Vector2D;
 
 /**
    A BuildingSpaceFiller that fills a space with row housing.
@@ -90,7 +79,7 @@ public class RowHousingBuildingSpaceFiller implements BuildingSpaceFiller {
         }
     }
 
-    private final static class EdgeLengthComparator implements Comparator<GMLDirectedEdge> {
+    private static final class EdgeLengthComparator implements Comparator<GMLDirectedEdge> {
         public int compare(GMLDirectedEdge e1, GMLDirectedEdge e2) {
             GMLNode start1 = e1.getStartNode();
             GMLNode end1 = e1.getEndNode();
