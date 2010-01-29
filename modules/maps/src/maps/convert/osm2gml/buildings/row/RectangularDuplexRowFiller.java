@@ -35,6 +35,15 @@ public final class RectangularDuplexRowFiller implements RowFiller {
 
     private final Random random;
 
+    private RectangularDuplexRowFiller(double sizeOf1m, Random random, double lotWidth, double buildingWidth, double buildingDepth, double minOffset, double maxOffset) {
+        this.lotWidth = lotWidth * sizeOf1m;
+        this.buildingWidth = buildingWidth * sizeOf1m;
+        this.buildingDepth = buildingDepth * sizeOf1m;
+        this.minOffset = minOffset * sizeOf1m;
+        this.maxOffset = maxOffset * sizeOf1m;
+        this.random = random;
+    }
+
     /**
        Create a filler that creates wide buildings.
        @param sizeOf1m The size of 1m in GML units.
@@ -86,15 +95,6 @@ public final class RectangularDuplexRowFiller implements RowFiller {
         return result;
     }
 
-    private RectangularDuplexRowFiller(double sizeOf1m, Random random, double lotWidth, double buildingWidth, double buildingDepth, double minOffset, double maxOffset) {
-        this.lotWidth = lotWidth * sizeOf1m;
-        this.buildingWidth = buildingWidth * sizeOf1m;
-        this.buildingDepth = buildingDepth * sizeOf1m;
-        this.minOffset = minOffset * sizeOf1m;
-        this.maxOffset = maxOffset * sizeOf1m;
-        this.random = random;
-    }
-
     /*
     private Set<GMLFace> createBuildingInLot(Line2D edgeLine, Point2D lotTopRight, Point2D lotTopLeft, Vector2D edgeNormal, double depthOffset, GMLMap map) {
         // Create the building by moving in from the sides of the lot boundary
@@ -136,7 +136,7 @@ public final class RectangularDuplexRowFiller implements RowFiller {
         edges1.add(map.ensureDirectedEdge(topLeft, bottomLeft));
         edges1.add(map.ensureDirectedEdge(bottomLeft, bottomRight));
         edges1.add(map.ensureDirectedEdge(bottomRight, topRight));
-        // TODO: Make the entrance faces
+        // TO DO: Make the entrance faces
         Set<GMLFace> result = new HashSet<GMLFace>();
         result.add(map.createFace(edges1, FaceType.BUILDING));
         //        result.add(map.createFace(edges2, FaceType.BUILDING));

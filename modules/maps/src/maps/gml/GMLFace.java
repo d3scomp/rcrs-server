@@ -127,9 +127,6 @@ public class GMLFace extends GMLObject {
                     GMLNode end = next.getEndNode();
                     while (!start.equals(end)) {
                         GMLDirectedEdge newEdge = findNewEdge(start, replacementsSet);
-                        if (newEdge == null) {
-                            System.out.println("Replacing " + edge + " with " + replacements);
-                        }
                         replacementsSet.remove(newEdge.getEdge());
                         it.add(newEdge);
                         start = newEdge.getEndNode();

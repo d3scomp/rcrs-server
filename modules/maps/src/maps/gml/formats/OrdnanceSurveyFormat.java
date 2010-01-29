@@ -26,7 +26,7 @@ import rescuecore2.misc.gui.ShapeDebugFrame;
 import java.awt.Color;
 import maps.gml.debug.GMLShapeInfo;
 
-// TODO: Handle inner boundaries
+// TO DO: Handle inner boundaries
 
 /**
    A MapFormat that can handle maps from the UK Ordnance Survey.

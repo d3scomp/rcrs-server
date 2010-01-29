@@ -1,7 +1,6 @@
 package maps.convert.osm2gml;
 
 import maps.gml.GMLMap;
-import maps.gml.GMLFace;
 import maps.gml.GMLBuilding;
 import maps.gml.GMLRoad;
 import maps.convert.ConvertStep;

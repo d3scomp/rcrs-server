@@ -26,6 +26,11 @@ public class ThinDuplexRowFiller implements RowFiller {
 
     private final Random random;
 
+    /**
+       Construct a ThinDuplexRowFiller.
+       @param sizeOf1m The size of 1m.
+       @param random A random number generator.
+    */
     public ThinDuplexRowFiller(double sizeOf1m, Random random) {
         buildingWidth = BUILDING_WIDTH_M * sizeOf1m;
         buildingDepth = BUILDING_DEPTH_M * sizeOf1m;

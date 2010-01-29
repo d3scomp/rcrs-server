@@ -7,17 +7,11 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
 
-import java.awt.GridLayout;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.MouseWheelEvent;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.BorderFactory;
 import java.io.File;
-import java.io.IOException;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -28,10 +22,13 @@ import org.apache.log4j.LogManager;
 /**
    A GML map viewer.
 */
-public class ViewGMLMap {
+public final class ViewGMLMap {
     private static final int VIEWER_SIZE = 500;
 
     private static final Logger LOG = LogManager.getLogger(ViewGMLMap.class);
+
+    private ViewGMLMap() {
+    }
 
     /**
        Start the viewer.
@@ -63,7 +60,7 @@ public class ViewGMLMap {
         // CHECKSTYLE:ON:IllegalCatch
     }
 
-    private static GMLMap readGMLMap(String file) throws GMLException, IOException, DocumentException {
+    private static GMLMap readGMLMap(String file) throws DocumentException, GMLException {
         LOG.info("Reading GML file: " + file);
         SAXReader reader = new SAXReader();
         File f = new File(file);

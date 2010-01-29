@@ -135,7 +135,6 @@ public class SplitIntersectingEdgesStep extends ConvertStep {
             }
             else {
                 // Full overlap
-                Node longerNodeInside = GeometryTools2D.contains(shorter, longer.getOrigin()) ? longerEdge.getStart() : longerEdge.getEnd();
                 processOverlap(shorterEdge, longerEdge);
                 return true;
             }
@@ -152,7 +151,6 @@ public class SplitIntersectingEdgesStep extends ConvertStep {
             }
             else {
                 // Full overlap
-                Node longerNodeInside = GeometryTools2D.contains(shorter, longer.getOrigin()) ? longerEdge.getStart() : longerEdge.getEnd();
                 processOverlap(shorterEdge, longerEdge);
                 return true;
             }

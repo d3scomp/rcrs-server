@@ -13,9 +13,9 @@ public class CreateBuildingsStep extends ConvertStep {
     private static final double SIMILAR_LENGTH_THRESHOLD = 0.1;
     private static final double NEARLY_PARALLEL_THRESHOLD = 0.0001;
 
-    private GMLMap gmlMap;
-    private double sizeOf1m;
-    private Random random;
+    //    private GMLMap gmlMap;
+    //    private double sizeOf1m;
+    //    private Random random;
 
     /**
        Construct a CreateBuildingsStep.
@@ -24,10 +24,9 @@ public class CreateBuildingsStep extends ConvertStep {
        @param random The random number generator to use.
     */
     public CreateBuildingsStep(GMLMap gmlMap, double sizeOf1m, Random random) {
-        super();
-        this.gmlMap = gmlMap;
-        this.sizeOf1m = sizeOf1m;
-        this.random = random;
+        //        this.gmlMap = gmlMap;
+        //        this.sizeOf1m = sizeOf1m;
+        //        this.random = random;
     }
 
     @Override

@@ -12,6 +12,9 @@ import java.util.List;
 import rescuecore2.misc.gui.ScreenTransform;
 import rescuecore2.misc.gui.PanZoomListener;
 
+/**
+   A component for viewing GML maps.
+*/
 public class GMLMapViewer extends JComponent {
     // CHECKSTYLE:OFF:JavadocVariable
     public static final Color BUILDING_COLOUR = new Color(0, 255, 0, 128); // Transparent lime

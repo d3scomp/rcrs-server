@@ -89,7 +89,6 @@ public class CleanOSMStep extends ConvertStep {
     }
 
     private int fixDegenerateWays(Collection<? extends OSMWay> ways) {
-        OSMMap osm = map.getOSMMap();
         int count = 0;
         for (OSMWay way : ways) {
             // Check that no nodes are listed multiple times in sequence
@@ -123,7 +122,6 @@ public class CleanOSMStep extends ConvertStep {
     }
 
     private int fixDuplicateWays(Collection<? extends OSMWay> ways) {
-        OSMMap osm = map.getOSMMap();
         int count = 0;
         Set<OSMWay> removed = new HashSet<OSMWay>();
         for (OSMWay next : ways) {
@@ -186,9 +184,9 @@ public class CleanOSMStep extends ConvertStep {
     private boolean nearby(OSMNode first, OSMNode second, double threshold) {
         double dx = first.getLongitude() - second.getLongitude();
         double dy = first.getLatitude() - second.getLatitude();
-        return (dx >= - threshold
+        return (dx >= -threshold
                 && dx <= threshold
-                && dy >= - threshold
+                && dy >= -threshold
                 && dy <= threshold);
     }
 

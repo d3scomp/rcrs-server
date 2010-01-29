@@ -8,7 +8,7 @@ import maps.convert.ConvertStep;
    This step removes extra nodes and edges.
 */
 public class PruneStep extends ConvertStep {
-    private GMLMap gmlMap;
+    //    private GMLMap gmlMap;
 
     /**
        Construct a PruneStep.
@@ -16,7 +16,7 @@ public class PruneStep extends ConvertStep {
     */
     public PruneStep(GMLMap gmlMap) {
         super();
-        this.gmlMap = gmlMap;
+        //        this.gmlMap = gmlMap;
     }
 
     @Override

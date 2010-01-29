@@ -10,13 +10,13 @@ import maps.convert.osm2gml.buildings.row.RectangularDuplexRowFiller;
 import java.util.Random;
 import java.util.Comparator;
 
-import rescuecore2.misc.gui.ShapeDebugFrame;
+//import rescuecore2.misc.gui.ShapeDebugFrame;
 
 /**
    A BuildingSpaceFiller that fills a space with row housing.
 */
 public class RowHousingBuildingSpaceFiller implements BuildingSpaceFiller {
-    private ShapeDebugFrame debug;
+    //    private ShapeDebugFrame debug;
     private double sizeOf1m;
     private Random random;
 
@@ -24,10 +24,9 @@ public class RowHousingBuildingSpaceFiller implements BuildingSpaceFiller {
        Construct a new RowHousingBuildingSpaceFiller.
        @param sizeOf1m The size of 1m in GMLMap units.
        @param random The random number generator to use.
-       @param debug The ShapeDebugFrame to use.
     */
-    public RowHousingBuildingSpaceFiller(double sizeOf1m, Random random, ShapeDebugFrame debug) {
-        this.debug = debug;
+    public RowHousingBuildingSpaceFiller(double sizeOf1m, Random random/*, ShapeDebugFrame debug*/) {
+        //        this.debug = debug;
         this.sizeOf1m = sizeOf1m;
         this.random = random;
     }
@@ -79,7 +78,7 @@ public class RowHousingBuildingSpaceFiller implements BuildingSpaceFiller {
         }
     }
 
-    private static final class EdgeLengthComparator implements Comparator<GMLDirectedEdge> {
+    private static final class EdgeLengthComparator implements Comparator<GMLDirectedEdge>, java.io.Serializable {
         public int compare(GMLDirectedEdge e1, GMLDirectedEdge e2) {
             GMLNode start1 = e1.getStartNode();
             GMLNode end1 = e1.getEndNode();

@@ -8,7 +8,7 @@ import maps.convert.ConvertStep;
    This class computes the entrances for buildings.
 */
 public class CreateEntrancesStep extends ConvertStep {
-    private GMLMap gmlMap;
+    //    private GMLMap gmlMap;
 
     /**
        Construct a CreateEntrancesStep.
@@ -16,7 +16,7 @@ public class CreateEntrancesStep extends ConvertStep {
     */
     public CreateEntrancesStep(GMLMap gmlMap) {
         super();
-        this.gmlMap = gmlMap;
+        //        this.gmlMap = gmlMap;
     }
 
     @Override

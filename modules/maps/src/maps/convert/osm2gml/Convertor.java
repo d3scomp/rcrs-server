@@ -16,7 +16,6 @@ import java.awt.GridBagConstraints;
 import java.awt.Dimension;
 import java.awt.Insets;
 
-import java.util.Random;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -56,7 +55,7 @@ public class Convertor {
         c.insets = new Insets(MARGIN, MARGIN, MARGIN, MARGIN);
         JPanel progress = new JPanel(layout);
 
-        Random random = new Random();
+        //        Random random = new Random();
 
         TemporaryMap temp = new TemporaryMap(map);
 

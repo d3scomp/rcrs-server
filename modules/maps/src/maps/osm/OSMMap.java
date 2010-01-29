@@ -21,7 +21,7 @@ import java.io.IOException;
    An OpenStreetMap map.
 */
 public class OSMMap {
-    private final static Collection<String> ROAD_MARKERS = new HashSet<String>();
+    private static final Collection<String> ROAD_MARKERS = new HashSet<String>();
 
     static {
         ROAD_MARKERS.add("motorway");
@@ -66,7 +66,6 @@ public class OSMMap {
     /**
        Construct a map from an XML document.
        @param doc The document to read.
-       @throws OSMException If the map is invalid.
     */
     public OSMMap(Document doc) throws OSMException {
         this();
@@ -76,9 +75,6 @@ public class OSMMap {
     /**
        Construct a map from an XML file.
        @param file The file to read.
-       @throws OSMException If the map is invalid.
-       @throws DocumentException If the file contains invalid XML.
-       @throws IOException If the file cannot be read.
     */
     public OSMMap(File file) throws OSMException, DocumentException, IOException {
         this();
@@ -142,7 +138,6 @@ public class OSMMap {
     /**
        Read an XML document and populate this map.
        @param doc The document to read.
-       @throws OSMException If the map is invalid.
     */
     public void read(Document doc) throws OSMException {
         boundsCalculated = false;
@@ -400,7 +395,7 @@ public class OSMMap {
     private boolean tagSignifiesRoad(Element tag) {
         String key = tag.attributeValue("k");
         String value = tag.attributeValue("v");
-        if (!key.equals("highway")) {
+        if (!"highway".equals(key)) {
             return false;
         }
         return ROAD_MARKERS.contains(value);
@@ -409,10 +404,10 @@ public class OSMMap {
     private boolean tagSignifiesBuilding(Element tag) {
         String key = tag.attributeValue("k");
         String value = tag.attributeValue("v");
-        if (key.equals("building")) {
+        if ("building".equals(key)) {
             return "yes".equals(value);
         }
-        if (key.equals("rcr:building")) {
+        if ("rcr:building".equals(key)) {
             return "1".equals(value);
         }
         return false;

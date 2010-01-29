@@ -8,15 +8,14 @@ import maps.convert.ConvertStep;
    This step computes which edges are passable.
 */
 public class ComputePassableEdgesStep extends ConvertStep {
-    private GMLMap gmlMap;
+    //    private GMLMap gmlMap;
 
     /**
        Construct a ComputePassableEdgesStep.
        @param gmlMap The GMLMap to use.
     */
     public ComputePassableEdgesStep(GMLMap gmlMap) {
-        super();
-        this.gmlMap = gmlMap;
+        //        this.gmlMap = gmlMap;
     }
 
     @Override

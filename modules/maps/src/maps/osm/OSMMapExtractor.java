@@ -26,10 +26,10 @@ public class OSMMapExtractor extends MouseAdapter {
     private static final int VIEWER_SIZE = 500;
     private static final Color DRAG_COLOUR = new Color(128, 128, 128, 64);
 
-    private static JComponent glass;
-    private static Point press;
-    private static Point drag;
-    private static Point release;
+    private JComponent glass;
+    private Point press;
+    private Point drag;
+    private Point release;
 
     private OSMMap map;
     private OSMMapViewer viewer;
@@ -45,6 +45,7 @@ public class OSMMapExtractor extends MouseAdapter {
         this.map = map;
         this.viewer = viewer;
         this.out = out;
+        this.glass = new DragGlass();
     }
 
     /**
@@ -55,23 +56,32 @@ public class OSMMapExtractor extends MouseAdapter {
         try {
             OSMMap map = new OSMMap(new File(args[0]));
             Writer out = new FileWriter(new File(args[1]));
+            OSMMapViewer viewer = new OSMMapViewer(map);
+
+            OSMMapExtractor extractor = new OSMMapExtractor(map, viewer, out);
+            viewer.addMouseListener(extractor);
+            viewer.setPreferredSize(new Dimension(VIEWER_SIZE, VIEWER_SIZE));
 
             JFrame frame = new JFrame();
-            glass = new DragGlass();
-            frame.setGlassPane(glass);
-            OSMMapViewer viewer = new OSMMapViewer(map);
-            viewer.addMouseListener(new OSMMapExtractor(map, viewer, out));
-            viewer.setPreferredSize(new Dimension(VIEWER_SIZE, VIEWER_SIZE));
+            frame.setGlassPane(extractor.getGlass());
             frame.setContentPane(viewer);
             frame.pack();
             frame.setVisible(true);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         }
-        // CHECKSTYLE:OFF:MagicNumber
+        // CHECKSTYLE:OFF:IllegalCatch
         catch (Exception e) {
             e.printStackTrace();
         }
-        // CHECKSTYLE:ON:MagicNumber
+        // CHECKSTYLE:ON:IllegalCatch
+    }
+
+    /**
+       Get a glass component for drawing the selection overlay.
+       @return A glass component.
+    */
+    public JComponent getGlass() {
+        return glass;
     }
 
     @Override
@@ -91,6 +101,7 @@ public class OSMMapExtractor extends MouseAdapter {
             Insets insets = viewer.getInsets();
             p.translate(-insets.left, -insets.top);
             drag = new Point(p);
+            glass.repaint();
         }
     }
 
@@ -102,7 +113,6 @@ public class OSMMapExtractor extends MouseAdapter {
             p.translate(-insets.left, -insets.top);
             release = new Point(p);
             drag = null;
-            glass.repaint();
             write();
         }
     }
@@ -132,7 +142,7 @@ public class OSMMapExtractor extends MouseAdapter {
         // CHECKSTYLE:ON:IllegalCatch
     }
 
-    private static class DragGlass extends JComponent {
+    private class DragGlass extends JComponent {
         public void paintComponent(Graphics g) {
             if (drag == null) {
                 return;
