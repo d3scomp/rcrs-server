@@ -19,7 +19,7 @@ import static traffic3.log.Logger.log;
 import static traffic3.log.Logger.alert;
 
 /**
- *
+ * A TrafficAgent is a mobile object in the world.
  */
 public class TrafficAgent extends TrafficObject {
 
@@ -58,18 +58,23 @@ public class TrafficAgent extends TrafficObject {
     /**
      * force of going to destination.
      */
-    private final double[] destBuf = new double[D];
+    private final Force destinationForce = new Force();
     
     /**
      * force of avoiding other people.
      */
-    private final double[] sumopBuf = new double[D];
+    private final Force avoidForce = new Force();
     
     /**
      * force of avoiding walls.
      */
-    private final double[] sumwBuf = new double[D];
+    private final Force wallForce = new Force();
     
+    /**
+     * Overall Force.
+     */
+    private final Force totalForce = new Force();
+
     /**
      * Location.
      */
@@ -80,10 +85,6 @@ public class TrafficAgent extends TrafficObject {
      */
     private final double[] velocity = new double[D];
 
-    /**
-     * Fource.
-     */
-    private final double[] force = new double[D];
     
     /**
      * Radius.

@@ -42,6 +42,7 @@ import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.Civilian;
 import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.messages.AKMove;
 import rescuecore2.standard.messages.AKClear;
 import rescuecore2.standard.messages.AKLoad;
@@ -51,6 +52,7 @@ import rescuecore2.connection.ConnectionException;
 
 import java.util.Random;
 import org.uncommons.maths.random.GaussianGenerator;
+import org.uncommons.maths.number.NumberGenerator;
 
 /**
    The Area model traffic simulator.
@@ -79,8 +81,8 @@ public class TrafficSimulator extends StandardSimulator {
             }
         }
         worldManager.check();
-        Random agentVelocityGenerator = new GaussianGenerator(RESCUE_AGENT_VELOCITY_MEAN, RESCUE_AGENT_VELOCITY_SD, config.getRandom());
-        Random civilianVelocityGenerator = new GaussianGenerator(CIVILIAN_VELOCITY_MEAN, CIVILIAN_VELOCITY_SD, config.getRandom());
+        NumberGenerator<Double> agentVelocityGenerator = new GaussianGenerator(RESCUE_AGENT_VELOCITY_MEAN, RESCUE_AGENT_VELOCITY_SD, config.getRandom());
+        NumberGenerator<Double> civilianVelocityGenerator = new GaussianGenerator(CIVILIAN_VELOCITY_MEAN, CIVILIAN_VELOCITY_SD, config.getRandom());
         for (StandardEntity next : model) {
             if (next instanceof Human) {
                 convertHuman((Human)next, agentVelocityGenerator, civilianVelocityGenerator);
@@ -127,7 +129,7 @@ public class TrafficSimulator extends StandardSimulator {
         worldManager.appendWithoutCheck(result);
     }
 
-    private void convertHuman(Human h, Random agentVelocityRandom, Random civilianVelocityRandom) {
+    private void convertHuman(Human h, NumberGenerator<Double> agentVelocityGenerator, NumberGenerator<Double> civilianVelocityGenerator) {
         double radius = 0;
         double velocityLimit = 0;
         String type = null;
@@ -136,32 +138,32 @@ public class TrafficSimulator extends StandardSimulator {
             type = "FireBrigade";
             radius = RESCUE_AGENT_RADIUS;
             colour = FIRE_BRIGADE_COLOUR;
-            velocityLimit = agentVelocityLimit.nextDouble();
+            velocityLimit = agentVelocityGenerator.nextValue();
         }
         else if (h instanceof PoliceForce) {
             type = "PoliceForce";
             radius = RESCUE_AGENT_RADIUS;
             colour = POLICE_FORCE_COLOUR;
-            velocityLimit = agentVelocityLimit.nextDouble();
+            velocityLimit = agentVelocityGenerator.nextValue();
         }
         else if (h instanceof AmbulanceTeam) {
             type = "AmbulanceTeam";
             radius = RESCUE_AGENT_RADIUS;
             colour = AMBULANCE_TEAM_COLOUR;
-            velocityLimit = agentVelocityLimit.nextDouble();
+            velocityLimit = agentVelocityGenerator.nextValue();
         }
         else if (h instanceof Civilian) {
             type = "Civlian";
-            radius = CIVILIAN_AGENT_RADIUS;
+            radius = CIVILIAN_RADIUS;
             colour = CIVILIAN_COLOUR;
-            velocityLimit = civilianVelocityLimit.nextDouble();
+            velocityLimit = civilianVelocityGenerator.nextValue();
         }
         else {
             throw new IllegalArgumentException("Unrecognised agent type: " + h + " (" + h.getClass().getName() + ")");
         }
         String id = "rcrs(" + h.getID() + ")";
         TrafficAgent agent = new TrafficAgent(worldManager, id, radius, velocityLimit);
-        agent.setLocation(h.getX(), h.getY());
+        agent.setLocation(h.getX(), h.getY(), 0);
         agent.setType(type);
         agent.setColor(colour);
         worldManager.appendWithoutCheck(agent);
@@ -193,6 +195,7 @@ public class TrafficSimulator extends StandardSimulator {
 
 
 
+    /*
     private void receiveCommands(Connection c, KSCommands com) {
         log(com);
         rcrsTimeStep = com.getTime();
@@ -314,7 +317,7 @@ public class TrafficSimulator extends StandardSimulator {
         }
         //alert(up, "error");
     }
-
+    */
 
     /**
      * rcrs step.

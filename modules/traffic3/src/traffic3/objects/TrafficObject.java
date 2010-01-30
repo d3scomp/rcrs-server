@@ -11,7 +11,7 @@ import traffic3.manager.WorldManager;
 import traffic3.manager.WorldManagerException;
 
 /**
- *
+ * Base class for all objects in the traffic simulator.
  */
 public abstract class TrafficObject {
 

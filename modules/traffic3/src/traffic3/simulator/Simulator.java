@@ -1,14 +1,14 @@
 package traffic3.simulator;
 
 import traffic3.manager.WorldManager;
+
 import traffic3.objects.TrafficAgent;
 
 /**
- *
+ * The Simulator computes forces for agents.
  */
 public class Simulator {
-
-    private WorldManager worldManger;
+    private WorldManager worldManager;
     private double stepTimeWidth;
     private double stepTime = 0;
     private boolean simulateAsRealTime = false;
@@ -19,7 +19,7 @@ public class Simulator {
      * @param stw step time width
      */
     public Simulator(WorldManager wm, double stw) {
-        worldManger = wm;
+        worldManager = wm;
         stepTimeWidth = stw;
     }
 
@@ -27,7 +27,7 @@ public class Simulator {
      * step.
      */
     public void step() {
-        TrafficAgent[] agentList = worldManger.getAgentList();
+        TrafficAgent[] agentList = worldManager.getAgentList();
         long start = System.currentTimeMillis();
         for (int i = 0; i < agentList.length; i++) {
             TrafficAgent agent = agentList[i];

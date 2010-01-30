@@ -34,19 +34,16 @@ import traffic3.io.RCRSGML0;
 import traffic3.io.RCRSAgent1;
 
 /**
- *
+ * This class manages all objects in the world.
  */
 public class WorldManager {
+    private Map<String, TrafficObject> objects;
+    private Map<String, TrafficArea> areas;
+    private Map<String, TrafficAreaNode> nodes;
+    private Map<String, TrafficAreaEdge> edges;
+    private Map<String, TrafficAgent> agents
+    private Map<String, TrafficBlockade> blockades;
 
-    private Map<String, TrafficObject> mapIDTrafficObject = new HashMap<String, TrafficObject>();
-    private Map<String, TrafficArea> mapIDTrafficArea = new HashMap<String, TrafficArea>();
-    private Map<String, TrafficAreaNode> mapIDTrafficAreaNode = new HashMap<String, TrafficAreaNode>();
-    private Map<String, TrafficAreaEdge> mapIDTrafficAreaEdge = new HashMap<String, TrafficAreaEdge>();
-    private Map<String, TrafficAgent> mapIDTrafficAgent = new HashMap<String, TrafficAgent>();
-    private Map<String, TrafficBlockade> mapIDTrafficBlockade = new HashMap<String, TrafficBlockade>();
-    private AutoVersionSelectParser autoParser;
-    private Parser[] availableParser;
-    private int unique = 1;
     public Map<Integer, traffic3.manager.RTreeRectangle> rTreeBoundMap = new HashMap<Integer, traffic3.manager.RTreeRectangle>();
     private com.infomatiq.jsi.rtree.RTree rTree = new com.infomatiq.jsi.rtree.RTree();
 
@@ -56,11 +53,12 @@ public class WorldManager {
      * Constructor.
      */
     public WorldManager() {
-        Parser[] parserList = new Parser[]{new RCRSGML0(),
-                                            new RCRSGML1(),
-                                            new RCRSAgent1()};
-        autoParser = new AutoVersionSelectParser(parserList, true);
-        availableParser = parserList;
+        objects = new HashMap<String, TrafficObject>();
+        areas = new HashMap<String, TrafficArea>();
+        nodes = new HashMap<String, TrafficAreaNode>();
+        edges = new HashMap<String, TrafficAreaEdge>();
+        agents = new HashMap<String, TrafficAgent>();
+        blockades = new HashMap<String, TrafficBlockade>();
         clear();
     }
 
