@@ -121,11 +121,6 @@ public class Building extends Area {
         }
     }
 
-    @Override
-    public Pair<Integer, Integer> getLocation(WorldModel<? extends StandardEntity> world) {
-        return new Pair<Integer, Integer>(getCenterX(), getCenterY());
-    }
-
     /**
        Get the floors property.
        @return The floors property.
