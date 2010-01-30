@@ -192,11 +192,14 @@ public class ImportAction2 extends TrafficAction {
         sb.append("total edges:").append(total).append("\n");
         throw new RuntimeException(sb.toString());
     }
-    public void reverse(List list) {
-        Object[] buf = list.toArray();
-        list.clear();
-        for (int i = 0; i < buf.length; i++) {
-            list.add(buf[buf.length - 1 - i]);
+    public <T> void reverse(List<T> list) {
+        T tmp = null;
+        int length = list.size();
+        for (int i = 0; i < length / 2; i++) {
+            int o = length - 1 - i;
+            tmp = list.get(i);
+            list.set(i, list.get(o));
+            list.set(o, tmp);
         }
     }
 }

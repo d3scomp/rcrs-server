@@ -12,6 +12,9 @@ import traffic3.log.LoggerException;
 public class Launch {
 
     public static void main(String[] args) {
+            org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(com.infomatiq.jsi.rtree.RTree.class.getName());
+            logger.setLevel(org.apache.log4j.Level.OFF);
+
         if (args.length > 0 && args[0].endsWith("help")) {
             showUsage();
         }
@@ -99,5 +102,9 @@ public class Launch {
             }
         }
         System.out.println(sb);
+    }
+
+    public static String getVersion() {
+        return "traffic3[3.0.17]";
     }
 }

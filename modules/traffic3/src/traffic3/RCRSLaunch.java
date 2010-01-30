@@ -24,6 +24,7 @@ public class RCRSLaunch {
      */
     public static void start(Properties properties) {
         try {
+
             XMLConfigManager config = new XMLConfigManager();
             
             for (String c : properties.stringPropertyNames()) {

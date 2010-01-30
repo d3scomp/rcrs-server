@@ -23,7 +23,7 @@ public class ShowVersionAction extends TrafficAction {
      */
     public void actionPerformed(ActionEvent e) {
         log(">show version");
-        String message = "<html><div style='font-size:120%;'>" + traffic3.Main.getVersion() + "</div></html>";
+        String message = "<html><div style='font-size:120%;'>" + traffic3.Launch.getVersion() + "</div></html>";
         alert(message, "infromation");
     }
 }

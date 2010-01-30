@@ -12,6 +12,7 @@ public class Main {
 
     public static void main(String[] args) {
 
+        System.out.println("current dir: " + new File(".").getAbsolutePath());
         File configFile = ((args.length > 0) ? new File(args[0]) : DEFAULT_CONFIG_FILE);
         System.out.println("config file: " + configFile.getAbsolutePath());
 
