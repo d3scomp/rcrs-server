@@ -1,6 +1,8 @@
-package gis2.objects.gml;
+package gis2.gml.objects;
 
 import java.awt.geom.Point2D;
+
+import gis2.gml.manager.GMLWorldManager;
 
 public class GMLEdge extends GMLObject {
 
@@ -8,8 +10,8 @@ public class GMLEdge extends GMLObject {
     private GMLID[] faceIDs;
     private Point2D[] border;
 
-    public GMLEdge(GMLID id, GMLID[] ns, GMLID[] fs) {
-        super(id);
+    public GMLEdge(GMLID id, GMLWorldManager w, GMLID[] ns, GMLID[] fs) {
+        super(id, w);
         setNodeIDs(ns);
         setFaceIDs(fs);
     }

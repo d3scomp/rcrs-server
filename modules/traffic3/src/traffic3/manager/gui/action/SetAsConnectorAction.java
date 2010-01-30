@@ -123,7 +123,7 @@ public class SetAsConnectorAction extends TrafficAction {
         if (min == 0 && max == e.getNodes().length - 1) {
             wm.remove(e);
             String id = wm.getUniqueID("_");
-            List<TrafficAreaDirectedEdge> dedgeList = new ArrayList(Arrays.asList(a1.getDirectedEdges()));
+            List<TrafficAreaDirectedEdge> dedgeList = new ArrayList<TrafficAreaDirectedEdge>(Arrays.asList(a1.getDirectedEdges()));
             TrafficAreaDirectedEdge de = findDirectedEdge(dedgeList, e);
             boolean positive = de.getDirection();
             int index = dedgeList.indexOf(de);

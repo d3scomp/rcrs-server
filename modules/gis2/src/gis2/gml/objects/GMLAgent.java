@@ -1,4 +1,6 @@
-package gis2.objects.gml;
+package gis2.gml.objects;
+
+import gis2.gml.manager.GMLWorldManager;
 
 public class GMLAgent extends GMLObject {
 
@@ -7,8 +9,8 @@ public class GMLAgent extends GMLObject {
     private double x;
     private double y;
 
-    public GMLAgent(GMLID idd, String t, double xx, double yy, GMLID aid) {
-        super(idd);
+    public GMLAgent(GMLID idd, GMLWorldManager w, String t, double xx, double yy, GMLID aid) {
+        super(idd, w);
         setType(t);
         setLocation(xx, yy, aid);
     }

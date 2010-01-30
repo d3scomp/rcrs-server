@@ -1,4 +1,4 @@
-package gis2.objects.gml;
+package gis2.gml.objects;
 
 public class GMLID {
 

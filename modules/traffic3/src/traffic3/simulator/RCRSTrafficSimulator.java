@@ -38,6 +38,7 @@ import rescuecore2.messages.control.SKUpdate;
 
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Refuge;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.PoliceForce;
 import rescuecore2.standard.entities.AmbulanceTeam;
@@ -47,6 +48,7 @@ import rescuecore2.standard.entities.Blockade;
 import rescuecore2.standard.messages.AKMove;
 import rescuecore2.standard.messages.AKClear;
 import rescuecore2.standard.messages.AKLoad;
+import rescuecore2.standard.messages.AKUnload;
 import rescuecore2.standard.messages.StandardMessageFactory;
 import rescuecore2.connection.ConnectionException;
 
@@ -85,20 +87,6 @@ public class RCRSTrafficSimulator {
     private List<Human> agentListBuf;
     private List<Blockade> blockadeListBuf;
 
-
-    /*
-    public RCRSTrafficSimulator(WorldManager wm, ) {
-        Registry.getCurrentRegistry().registerMessageFactory(StandardMessageFactory.INSTANCE);
-        Registry.getCurrentRegistry().registerEntityFactory(StandardEntityFactory.INSTANCE);
-        Registry.getCurrentRegistry().registerPropertyFactory(StandardPropertyFactory.INSTANCE);
-        worldManager = wm;
-        stepTime = Double.parseDouble(property.getProperty("rcrs.traffic3.microStep", 100));
-        log("stepTime: " + stepTime + "[ms]");
-        port = Integer.parseInt(property.getProperty("rcrs.traffic3.port", 7000));
-        log("port: " + port);
-    }
-    */
-
     /**
      * Constructor.
      * @param wm world manager
@@ -134,7 +122,7 @@ public class RCRSTrafficSimulator {
         connection.startup();
         log("connected to the Kernel");
         log("send SKConnect");
-        connection.sendMessage(new SKConnect(requestId, simulatorId, traffic3.Main.getVersion()));
+        connection.sendMessage(new SKConnect(requestId, simulatorId, traffic3.Launch.getVersion()));
     }
 
     private EntityID transID(String id) {
@@ -156,6 +144,9 @@ public class RCRSTrafficSimulator {
                 TrafficArea trafficArea = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexList(), nextAreaIdTextList);
                 if (area instanceof Building) {
                     trafficArea.setType("building");
+                }
+                else if (area instanceof Refuge) {
+                    trafficArea.setType("refuge");
                 }
                 else {
                     trafficArea.setType("open space");
@@ -301,14 +292,28 @@ public class RCRSTrafficSimulator {
                 }
                 catch (WorldManagerException exc) {
                     log(exc);
-                    exc.printStackTrace();
                 }
             }
             else if (command instanceof AKLoad) {
                 AKLoad akload = (AKLoad)command;
+                Human agent = (Human)entityidEntityMap.get(akload.getAgentID());
                 Human human = (Human)entityidEntityMap.get(akload.getTarget());
-                TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
-                alert(agent);
+                try {
+                    loadAgent(agent, human);
+                }
+                catch (WorldManagerException exc) {
+                    log(exc);
+                }
+            }
+            else if (command instanceof AKUnload) {
+                AKUnload akunload = (AKUnload)command;
+                Human agent = (Human)entityidEntityMap.get(akunload.getAgentID());
+                try {
+                    unloadAgent(agent);
+                }
+                catch (WorldManagerException exc) {
+                    log(exc);
+                }
             }
         }
 
@@ -344,6 +349,21 @@ public class RCRSTrafficSimulator {
         }
     }
 
+    private Map<Human, Human> loadList = new HashMap<Human, Human>();
+    private Map<Human, TrafficAgent> loadBuf = new HashMap<Human, TrafficAgent>();
+    private void loadAgent(Human agent, Human target) throws WorldManagerException {
+        TrafficAgent tagent = humanTrafficAgentMap.get(agent.getID());
+        TrafficAgent ttarget = humanTrafficAgentMap.get(target.getID());
+        worldManager.remove(ttarget);
+        loadList.put(agent, target);
+        loadBuf.put(target, ttarget);
+    }
+
+    private void unloadAgent(Human agent) throws WorldManagerException {
+        TrafficAgent tagent = humanTrafficAgentMap.get(agent.getID());
+        TrafficAgent ttarget = loadBuf.get(loadList.get(agent));
+        worldManager.appendWithoutCheck(ttarget);
+    }
 
     private void receiveUpdate(Connection c, KSUpdate up) {
 
