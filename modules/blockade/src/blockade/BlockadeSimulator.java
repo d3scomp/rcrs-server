@@ -7,7 +7,6 @@ import rescuecore2.worldmodel.ChangeSet;
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.worldmodel.Property;
 import rescuecore2.misc.collections.LazyMap;
-import rescuecore2.misc.Pair;
 
 import rescuecore2.standard.components.StandardSimulator;
 import rescuecore2.standard.entities.StandardPropertyURN;
@@ -77,11 +76,12 @@ public class BlockadeSimulator extends StandardSimulator {
             Entity next = model.getEntity(id);
             if (next instanceof Building) {
                 Building b = (Building)next;
-                Property brokenness = u.getChangeSet().getChangedProperty(id, StandardPropertyURN.BROKENNESS.name());
+                Property brokenness = u.getChangeSet().getChangedProperty(id, StandardPropertyURN.BROKENNESS.toString());
                 if (brokenness != null) {
                     // Brokenness has changed. Add some blockedness to nearby roads
                     LOG.debug(b + " is broken. Updating nearby roads");
                     for (Road r : nearbyRoads.get(b.getID())) {
+                        // FIXME: Implement this
                         /*
                         int width = r.isWidthDefined() ? r.getWidth() : 0;
                         int block = r.isBlockDefined() ? r.getBlock() : 0;
