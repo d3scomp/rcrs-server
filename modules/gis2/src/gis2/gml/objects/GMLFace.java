@@ -7,9 +7,25 @@ import gis2.gml.manager.GMLWorldManager;
 
 public class GMLFace extends GMLObject {
 
+    public enum Code {
+        WOOD,
+        STEEL,
+        CONCRETE;
+
+        public static Code parse(String name) {
+            for (Code c : values()) {
+                if (c.name().toLowerCase().equals(name.toLowerCase())) {
+                    return c;
+                }
+            }
+            return null;
+        }
+    }
+
     private GMLDirectedEdge[] dedges;
     private String type;
     private Shape shape;
+    private Code code;
 
     public GMLFace(GMLID id, GMLWorldManager w, GMLDirectedEdge[] es) {
         super(id, w);
@@ -25,6 +41,13 @@ public class GMLFace extends GMLObject {
 
     public String getType() {
         return type;
+    }
+
+    public void setCode(Code c) {
+        code = c;
+    }
+    public Code getCode() {
+        return code;
     }
 
     public void setDirectedEdges(GMLDirectedEdge[] es) {
@@ -63,4 +86,5 @@ public class GMLFace extends GMLObject {
         }
         return "GMLFace[" + sb + "]";
     }
+
 }
