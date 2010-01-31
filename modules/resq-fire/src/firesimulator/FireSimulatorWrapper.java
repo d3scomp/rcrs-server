@@ -24,7 +24,6 @@ import firesimulator.world.Civilian;
 import firesimulator.world.FireBrigade;
 import firesimulator.world.PoliceForce;
 import firesimulator.world.AmbulanceTeam;
-import firesimulator.world.Road;
 import firesimulator.world.RescueObject;
 import firesimulator.world.MovingObject;
 import firesimulator.simulator.Simulator;
@@ -34,6 +33,7 @@ import firesimulator.util.Configuration;
 import java.util.Collection;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.SynchronousQueue;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
@@ -102,15 +102,13 @@ public class FireSimulatorWrapper extends StandardSimulator {
                         // CHECKSTYLE:OFF:MagicNumber
                         if (fieryness == 0 || fieryness == 4) {
                             // CHECKSTYLE:ON:MagicNumber
+                            LOG.debug("Igniting " + b);
                             b.ignite();
                         }
                     }
                 }
                 else if (r instanceof MovingObject && e instanceof rescuecore2.standard.entities.Human) {
                     mapHumanProperties((rescuecore2.standard.entities.Human)e, (MovingObject)r);
-                }
-                else if (r instanceof Road && e instanceof rescuecore2.standard.entities.Road) {
-                    mapRoadProperties((rescuecore2.standard.entities.Road)e, (Road)r);
                 }
                 else {
                     LOG.error("Don't know how to map " + r + " from " + e);
@@ -120,7 +118,7 @@ public class FireSimulatorWrapper extends StandardSimulator {
     }
 
     @Override
-    protected void handleCommands(KSCommands c) {
+    protected void processCommands(KSCommands c, ChangeSet changes) {
         for (Command next : c.getCommands()) {
             if (next instanceof AKExtinguish) {
                 AKExtinguish ex = (AKExtinguish)next;
@@ -134,7 +132,7 @@ public class FireSimulatorWrapper extends StandardSimulator {
             }
         }
         try {
-            kernel.commandsReceived(c.getTime());
+            changes.merge(kernel.commandsReceived(c.getTime()));
         }
         catch (InterruptedException e) {
             LOG.error("FireSimulatorWrapper.handleCommands", e);
@@ -174,11 +172,6 @@ public class FireSimulatorWrapper extends StandardSimulator {
             mapBuildingProperties((rescuecore2.standard.entities.Building)e, b);
             return b;
         }
-        if (e instanceof rescuecore2.standard.entities.Road) {
-            Road r = new Road(id);
-            mapRoadProperties((rescuecore2.standard.entities.Road)e, r);
-            return r;
-        }
         if (e instanceof rescuecore2.standard.entities.Civilian) {
             Civilian c = new Civilian(id);
             mapHumanProperties((rescuecore2.standard.entities.Civilian)e, c);
@@ -198,6 +191,9 @@ public class FireSimulatorWrapper extends StandardSimulator {
             AmbulanceTeam at = new AmbulanceTeam(id);
             mapHumanProperties((rescuecore2.standard.entities.AmbulanceTeam)e, at);
             return at;
+        }
+        if (e instanceof rescuecore2.standard.entities.Road) {
+            return null;
         }
         LOG.error("Don't know how to map this: " + e);
         return null;
@@ -239,9 +235,6 @@ public class FireSimulatorWrapper extends StandardSimulator {
         }
     }
 
-    private void mapRoadProperties(rescuecore2.standard.entities.Road oldR, Road newR) {
-    }
-
     private void mapHumanProperties(rescuecore2.standard.entities.Human oldH, MovingObject newH) {
         if (oldH.isStaminaDefined()) {
             newH.setStamina(oldH.getStamina());
@@ -279,10 +272,12 @@ public class FireSimulatorWrapper extends StandardSimulator {
     private class WrapperKernel implements Kernel {
         private CyclicBarrier commandsBarrier;
         private int time;
+        private SynchronousQueue<ChangeSet> queue;
 
         public WrapperKernel() {
             commandsBarrier = new CyclicBarrier(2);
             time = 0;
+            queue = new SynchronousQueue<ChangeSet>();
         }
 
         @Override
@@ -329,16 +324,18 @@ public class FireSimulatorWrapper extends StandardSimulator {
                     changes.addChange(oldFB, oldFB.getWaterProperty());
                 }
             }
-            send(new SKUpdate(simulatorID, time, changes));
+            queue.add(changes);
         }
 
         @Override
         public void receiveUpdate() {
         }
 
-        void commandsReceived(int newTime) throws InterruptedException, BrokenBarrierException {
+        ChangeSet commandsReceived(int newTime) throws InterruptedException, BrokenBarrierException {
             this.time = newTime;
             commandsBarrier.await();
+            ChangeSet result = queue.take();
+            return result;
         }
     }
 }
