@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 
 import rescuecore2.worldmodel.EntityID;
+import rescuecore2.worldmodel.ChangeSet;
 import rescuecore2.messages.Command;
 
 import rescuecore2.standard.entities.StandardEntity;
@@ -13,9 +14,6 @@ import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.PoliceForce;
 import rescuecore2.standard.entities.Area;
-import rescuecore2.standard.entities.Blockade;
-import rescuecore2.standard.messages.AKMove;
-import rescuecore2.standard.messages.AKClear;
 import rescuecore2.misc.Pair;
 
 import org.apache.commons.logging.LogFactory;
@@ -40,7 +38,7 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
     }
 
     @Override
-    protected void think(int time, Collection<EntityID> changed, Collection<EntityID> deleted, Collection<Command> heard) {
+    protected void think(int time, ChangeSet changed, Collection<Command> heard) {
         for (Command next : heard) {
             LOG.debug(me() + " heard " + next);
         }
@@ -96,8 +94,8 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
        @return The EntityID of the nearest blockade, or null if there are no blockades in this area.
     */
     public EntityID getNearestBlockade(Area area, int x, int y) {
-	double bestDistance = 0;
-	EntityID best = null;
+        double bestDistance = 0;
+        EntityID best = null;
         if (area.isBlockadesDefined()) {
             for (EntityID blockadeID : area.getBlockades()) {
                 StandardEntity entity = model.getEntity(blockadeID);
@@ -108,7 +106,7 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
                 double dx = location.first() - x;
                 double dy = location.second() - y;
                 double distance = Math.hypot(dx, dy);
-                if(best == null || distance < bestDistance) {
+                if (best == null || distance < bestDistance) {
                     bestDistance = distance;
                     best = entity.getID();
                 }
