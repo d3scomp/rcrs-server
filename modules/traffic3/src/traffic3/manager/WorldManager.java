@@ -37,28 +37,24 @@ import traffic3.io.RCRSAgent1;
  * This class manages all objects in the world.
  */
 public class WorldManager {
-    private Map<String, TrafficObject> objects;
-    private Map<String, TrafficArea> areas;
-    private Map<String, TrafficAreaNode> nodes;
-    private Map<String, TrafficAreaEdge> edges;
-    private Map<String, TrafficAgent> agents
-    private Map<String, TrafficBlockade> blockades;
+    private Map<String, TrafficObject> mapIDTrafficObject = new HashMap<String, TrafficObject>();
+    private Map<String, TrafficArea> mapIDTrafficArea = new HashMap<String, TrafficArea>();
+    private Map<String, TrafficAreaNode> mapIDTrafficAreaNode = new HashMap<String, TrafficAreaNode>();
+    private Map<String, TrafficAreaEdge> mapIDTrafficAreaEdge = new HashMap<String, TrafficAreaEdge>();
+    private Map<String, TrafficAgent> mapIDTrafficAgent = new HashMap<String, TrafficAgent>();
+    private Map<String, TrafficBlockade> mapIDTrafficBlockade = new HashMap<String, TrafficBlockade>();
 
     public Map<Integer, traffic3.manager.RTreeRectangle> rTreeBoundMap = new HashMap<Integer, traffic3.manager.RTreeRectangle>();
     private com.infomatiq.jsi.rtree.RTree rTree = new com.infomatiq.jsi.rtree.RTree();
 
     private List<WorldManagerListener> changeListenerList = new ArrayList<WorldManagerListener>();
 
+    private int unique = 1;
+
     /**
      * Constructor.
      */
     public WorldManager() {
-        objects = new HashMap<String, TrafficObject>();
-        areas = new HashMap<String, TrafficArea>();
-        nodes = new HashMap<String, TrafficAreaNode>();
-        edges = new HashMap<String, TrafficAreaEdge>();
-        agents = new HashMap<String, TrafficAgent>();
-        blockades = new HashMap<String, TrafficBlockade>();
         clear();
     }
 
@@ -362,54 +358,6 @@ public class WorldManager {
             result = mapIDTrafficAgent.values().toArray(new TrafficAgent[0]);
         }
         return result;
-    }
-
-    /**
-     * Import objects from file.
-     * @param file file
-     * @throws Exception exception
-     */
-    public void open(File file) throws FileNotFoundException, IOException, XMLParseException, ParserNotFoundException, WorldManagerException {
-        if (!file.exists()) {
-            throw new FileNotFoundException();
-        }
-        if (!file.getName().endsWith(".gml") && !file.getName().endsWith(".xml")) {
-            throw new IOException("File extension does not match: " + file.getName());
-        }
-        log("open file:" + file, "information");
-        //open(new FileInputStream(file));
-        autoParser.input(this, file);
-        fireInputted(this, null);
-    }
-
-    /**
-     * Import objects from url.
-     * @param url url
-     * @throws Exception exception
-     */
-    public void open(URL url) throws FileNotFoundException, IOException, XMLParseException, ParserNotFoundException, WorldManagerException {
-        log("open file:" + url, "information");
-        //open(new FileInputStream(file));
-        autoParser.input(this, url);
-        fireInputted(this, null);
-    }
-
-    /**
-     * save to file.
-     * @param file file
-     * @param parser parser
-     * @throws Exception exception
-     */
-    public void save(File file, Parser parser) throws FileNotFoundException, IOException {
-        parser.output(this, new FileOutputStream(file));
-    }
-
-    /**
-     * get parser list.
-     * @return list of available parser
-     */
-    public Parser[] getParserList() {
-        return availableParser;
     }
 
     /**

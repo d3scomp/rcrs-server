@@ -69,7 +69,6 @@ import traffic3.manager.WorldManagerEvent;
 import traffic3.manager.WorldManagerException;
 import traffic3.manager.gui.action.TrafficAction;
 
-import traffic3.simulator.RCRSTrafficSimulator;
 import traffic3.objects.TrafficObject;
 import traffic3.objects.TrafficAgent;
 import traffic3.objects.TrafficBlockade;
@@ -495,9 +494,11 @@ public class WorldManagerGUI extends JComponent {
                 }
                 @Override
                 public void agentUpdated(WorldManagerEvent e) {
+                    /*
                     if (e.getSource() instanceof RCRSTrafficSimulator) {
                         simulationTime = ((RCRSTrafficSimulator)e.getSource()).getTime();
                     }
+                    */
                     requestToUpdateImage();
                 }
                 @Override
@@ -1374,6 +1375,7 @@ public class WorldManagerGUI extends JComponent {
      * @throws URISyntaxException excpetion
      */
     public void open(final URL url) throws URISyntaxException {
+        /*
         if (url.toString().startsWith("file:")) {
             open(new File(url.toURI()));
         }
@@ -1407,6 +1409,7 @@ public class WorldManagerGUI extends JComponent {
                 }
             } }, "import from url").start();
         }
+        */
     }
 
     /**
@@ -1414,6 +1417,7 @@ public class WorldManagerGUI extends JComponent {
      * @param file file
      */
     public void open(final File file) {
+        /*
         final boolean[] finished = new boolean[1];
         new Thread(new Runnable() { public void run() {
             try {
@@ -1453,12 +1457,14 @@ public class WorldManagerGUI extends JComponent {
                 waitFor(OPEN_ANIMATION_STEP);
             }
         } }, "notify running thread").start();
+        */
     }
 
     /**
      * @return parser
      */
     private Parser selectParser()  {
+        /*
         Parser[] parserList = worldManager.getParserList();
         String message = "select export type";
         String title = "select";
@@ -1466,12 +1472,15 @@ public class WorldManagerGUI extends JComponent {
         Icon icon = null;
         Object selection = JOptionPane.showInputDialog(this, message, title, type, icon, parserList, parserList[0]);
         return (Parser)selection;
+        */
+        return null;
     }
 
     /**
      *
      */
     public void save() {
+        /*
         final boolean[] finished = new boolean[1];
         new Thread(new Runnable() { public void run() {
             try {
@@ -1498,6 +1507,7 @@ public class WorldManagerGUI extends JComponent {
                 waitFor(OPEN_ANIMATION_STEP);
             }
         } }, "notify running thread").start();
+        */
     }
 
     /**
@@ -1507,8 +1517,8 @@ public class WorldManagerGUI extends JComponent {
      * @throws IOException file not found
      */
     public void save(File file, Parser parser) throws IOException {
-        worldManager.save(file, parser);
-        alert("Successfuly outputed.");
+        //        worldManager.save(file, parser);
+        //        alert("Successfuly outputed.");
     }
 
     /**
