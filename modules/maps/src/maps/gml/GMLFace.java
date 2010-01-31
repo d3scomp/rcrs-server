@@ -18,7 +18,7 @@ public class GMLFace extends GMLObject {
     private List<GMLCoordinates> points;
     private Area area;
     private FaceType type;
-    private long originalBuildingID;
+    private int originalBuildingID;
 
     /**
        Construct a new GMLFace that calculates it's own outline shape from the directed edges.
@@ -26,7 +26,7 @@ public class GMLFace extends GMLObject {
        @param type The type of this face.
        @param edges The edges of the face.
     */
-    public GMLFace(long id, FaceType type, List<GMLDirectedEdge> edges) {
+    public GMLFace(int id, FaceType type, List<GMLDirectedEdge> edges) {
         this(id, type, edges, null);
     }
 
@@ -37,7 +37,7 @@ public class GMLFace extends GMLObject {
        @param edges The edges of the face.
        @param points The outline of the face. If this is null or empty then the outline will be calculated based on the directed edges.
     */
-    public GMLFace(long id, FaceType type, List<GMLDirectedEdge> edges, List<GMLCoordinates> points) {
+    public GMLFace(int id, FaceType type, List<GMLDirectedEdge> edges, List<GMLCoordinates> points) {
         super(id);
         this.type = type;
         this.edges = edges;
@@ -180,7 +180,7 @@ public class GMLFace extends GMLObject {
        Set the original building ID.
        @param id The original building ID.
     */
-    public void setOriginalBuildingID(long id) {
+    public void setOriginalBuildingID(int id) {
         originalBuildingID = id;
     }
 
@@ -188,7 +188,7 @@ public class GMLFace extends GMLObject {
        Get the original building ID.
        @return The original building ID.
     */
-    public long getOriginalBuildingID() {
+    public int getOriginalBuildingID() {
         return originalBuildingID;
     }
 

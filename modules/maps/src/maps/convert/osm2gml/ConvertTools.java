@@ -1,11 +1,5 @@
 package maps.convert.osm2gml;
 
-import javax.measure.unit.NonSI;
-import javax.measure.unit.SI;
-import org.jscience.geography.coordinates.UTM;
-import org.jscience.geography.coordinates.LatLong;
-import org.jscience.geography.coordinates.crs.ReferenceEllipsoid;
-
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.Vector2D;
@@ -30,6 +24,7 @@ import maps.gml.debug.GMLShapeInfo;
 import maps.osm.OSMMap;
 import maps.osm.OSMNode;
 import maps.osm.OSMBuilding;
+import maps.MapTools;
 
 import java.util.Set;
 import java.util.List;
@@ -60,25 +55,12 @@ public final class ConvertTools {
     private ConvertTools() {}
 
     /**
-       Compute the size of one metre in latitude/longitude relative to a reference point.
-       @param lat The latitude of the reference point.
-       @param lon The longitude of the reference point.
-       @return The size of one metre at the reference point.
-    */
-    public static double sizeOf1Metre(double lat, double lon) {
-        UTM centre = UTM.latLongToUtm(LatLong.valueOf(lat, lon, NonSI.DEGREE_ANGLE), ReferenceEllipsoid.WGS84);
-        UTM offset = UTM.valueOf(centre.longitudeZone(), centre.latitudeZone(), centre.eastingValue(SI.METRE), centre.northingValue(SI.METRE) + 1, SI.METRE);
-        LatLong result = UTM.utmToLatLong(offset, ReferenceEllipsoid.WGS84);
-        return Math.abs(result.latitudeValue(NonSI.DEGREE_ANGLE) - lat);
-    }
-
-    /**
        Compute the size of one metre in latitude/longitude for an OSMMap.
        @param map The map to look up.
        @return The size of one metre on the given map.
     */
     public static double sizeOf1Metre(OSMMap map) {
-        return sizeOf1Metre(map.getCentreLatitude(), map.getCentreLongitude());
+        return MapTools.sizeOf1Metre(map.getCentreLatitude(), map.getCentreLongitude());
     }
 
     /**
@@ -88,7 +70,7 @@ public final class ConvertTools {
        @return The size of the nearby-node threshold for the map in degrees.
     */
     public static double nearbyThreshold(OSMMap map, double thresholdM) {
-        return sizeOf1Metre(map.getCentreLatitude(), map.getCentreLongitude()) * thresholdM;
+        return sizeOf1Metre(map) * thresholdM;
     }
 
     /**

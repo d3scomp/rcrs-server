@@ -10,16 +10,26 @@ public class GMLRoad extends GMLShape {
        Construct a GMLRoad.
        @param id The ID of the road.
     */
-    public GMLRoad(long id) {
+    public GMLRoad(int id) {
         super(id);
     }
 
     /**
        Construct a GMLRoad.
        @param id The ID of the road.
-       @param coordinates The coordinates of the apexes of the road.
+       @param edges The edges of the road.
     */
-    public GMLRoad(long id, List<GMLCoordinates> coordinates) {
-        super(id, coordinates);
+    public GMLRoad(int id, List<GMLDirectedEdge> edges) {
+        super(id, edges);
+    }
+
+    /**
+       Construct a GMLRoad.
+       @param id The ID of the road.
+       @param edges The edges of the road.
+       @param neighbours The neighbours of each edge.
+    */
+    public GMLRoad(int id, List<GMLDirectedEdge> edges, List<Integer> neighbours) {
+        super(id, edges, neighbours);
     }
 }

@@ -9,11 +9,11 @@ public class GMLNode extends GMLObject {
     /**
        Construct a new GML node.
        @param id The ID of this node.
-       @param lon The longitude of this node.
-       @param lat The latitude of this node.
+       @param x The x coordinate of this node.
+       @param y The y coordinate of this node.
      */
-    public GMLNode(long id, double lon, double lat) {
-        this(id, new GMLCoordinates(lon, lat));
+    public GMLNode(int id, double x, double y) {
+        this(id, new GMLCoordinates(x, y));
     }
 
     /**
@@ -21,7 +21,7 @@ public class GMLNode extends GMLObject {
        @param id The ID of this node.
        @param coordinates The coordinates of this node.
      */
-    public GMLNode(long id, GMLCoordinates coordinates) {
+    public GMLNode(int id, GMLCoordinates coordinates) {
         super(id);
         this.coordinates = coordinates;
     }

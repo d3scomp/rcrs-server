@@ -67,10 +67,10 @@ public class Convertor {
         addStep(new SplitShapesStep(temp), steps, progress, layout, c);
         addStep(new RemoveShapesStep(temp), steps, progress, layout, c);
         addStep(new MergeShapesStep(temp), steps, progress, layout, c);
+        addStep(new ComputePassableEdgesStep(temp), steps, progress, layout, c);
         /*
         addStep(new CreateBuildingsStep(temp, ConvertTools.sizeOf1Metre(osmMap), random), steps, progress, layout, c);
         addStep(new CreateEntrancesStep(temp), steps, progress, layout, c);
-        addStep(new ComputePassableEdgesStep(temp), steps, progress, layout, c);
         addStep(new PruneStep(temp), steps, progress, layout, c);
         */
         addStep(new MakeObjectsStep(temp, gmlMap), steps, progress, layout, c);

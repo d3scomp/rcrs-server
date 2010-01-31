@@ -1,21 +1,21 @@
 package maps.convert.osm2gml;
 
-import maps.gml.GMLMap;
-
 import maps.convert.ConvertStep;
 
+import java.util.Collection;
+
 /**
-   This step computes which edges are passable.
+   This step computes which edges are passable and sets up neighbours accordingly.
 */
 public class ComputePassableEdgesStep extends ConvertStep {
-    //    private GMLMap gmlMap;
+    private TemporaryMap map;
 
     /**
        Construct a ComputePassableEdgesStep.
-       @param gmlMap The GMLMap to use.
+       @param map The TemporaryMap to use.
     */
-    public ComputePassableEdgesStep(GMLMap gmlMap) {
-        //        this.gmlMap = gmlMap;
+    public ComputePassableEdgesStep(TemporaryMap map) {
+        this.map = map;
     }
 
     @Override
@@ -25,31 +25,32 @@ public class ComputePassableEdgesStep extends ConvertStep {
 
     @Override
     protected void step() {
-        /*
-        setProgressLimit(gmlMap.getEdges().size());
+        setProgressLimit(map.getAllEdges().size());
         // For each edge see if it is shared by two road faces
         // If so, make it passable.
         int count = 0;
-        for (GMLEdge next : gmlMap.getEdges()) {
+        for (Edge next : map.getAllEdges()) {
             int roadCount = 0;
-            for (GMLFace face : gmlMap.getAttachedFaces(next)) {
-                switch (face.getFaceType()) {
-                case ROAD:
-                case INTERSECTION:
+            Collection<TemporaryObject> attached = map.getAttachedObjects(next);
+            for (TemporaryObject o : attached) {
+                if (o instanceof TemporaryRoad || o instanceof TemporaryIntersection) {
                     ++roadCount;
-                    break;
-                default:
-                    // Ignore
-                    break;
                 }
             }
             if (roadCount > 1) {
-                next.setPassable(true);
+                // Edge is passable. Make the neighbours.
+                for (TemporaryObject o1 : attached) {
+                    for (TemporaryObject o2 : attached) {
+                        if (o1 == o2) {
+                            continue;
+                        }
+                        o1.setNeighbour(next, o2);
+                    }
+                }
                 ++count;
             }
             bumpProgress();
         }
         setStatus("Made " + count + " edges passable");
-        */
     }
 }

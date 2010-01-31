@@ -4,13 +4,13 @@ package maps.gml;
    A GML map object.
 */
 public abstract class GMLObject {
-    private long id;
+    private int id;
 
     /**
        Construct a GML object.
        @param id The id of the object.
      */
-    protected GMLObject(long id) {
+    protected GMLObject(int id) {
         this.id = id;
     }
 
@@ -18,7 +18,7 @@ public abstract class GMLObject {
        Get this object's ID.
        @return The object ID.
     */
-    public long getID() {
+    public int getID() {
         return id;
     }
 

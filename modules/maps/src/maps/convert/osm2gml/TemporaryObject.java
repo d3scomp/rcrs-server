@@ -8,6 +8,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.Path2D;
@@ -29,6 +31,7 @@ public abstract class TemporaryObject {
     private static final Logger LOG = LogManager.getLogger(TemporaryObject.class);
 
     private List<DirectedEdge> edges;
+    private Map<DirectedEdge, TemporaryObject> neighbours;
     private Path2D path;
     private Rectangle2D bounds;
 
@@ -38,6 +41,7 @@ public abstract class TemporaryObject {
     */
     protected TemporaryObject(List<DirectedEdge> edges) {
         this.edges = new ArrayList<DirectedEdge>(edges);
+        neighbours = new HashMap<DirectedEdge, TemporaryObject>();
     }
 
     /**
@@ -46,6 +50,33 @@ public abstract class TemporaryObject {
     */
     public List<DirectedEdge> getEdges() {
         return Collections.unmodifiableList(edges);
+    }
+
+    /**
+       Get the neighbour through a particular edge.
+       @param edge The edge to look up.
+       @return The neighbour through that edge or null.
+    */
+    public TemporaryObject getNeighbour(DirectedEdge edge) {
+        return neighbours.get(edge);
+    }
+
+    /**
+       Set the neighbour through a particular edge.
+       @param edge The edge to set the neighbour of.
+       @param neighbour The new neighbour for that edge.
+    */
+    public void setNeighbour(DirectedEdge edge, TemporaryObject neighbour) {
+        neighbours.put(edge, neighbour);
+    }
+
+    /**
+       Set the neighbour through a particular edge.
+       @param edge The edge to set the neighbour of.
+       @param neighbour The new neighbour for that edge.
+    */
+    public void setNeighbour(Edge edge, TemporaryObject neighbour) {
+        neighbours.put(findDirectedEdge(edge), neighbour);
     }
 
     /**
@@ -206,5 +237,14 @@ public abstract class TemporaryObject {
             }
         }
         return null;
+    }
+
+    private DirectedEdge findDirectedEdge(Edge e) {
+        for (DirectedEdge next : edges) {
+            if (next.getEdge().equals(e)) {
+                return next;
+            }
+        }
+        throw new IllegalArgumentException("Edge " + e + " not found");
     }
 }

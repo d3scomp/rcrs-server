@@ -2,7 +2,6 @@ package maps.gml;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 
 /**
    A GMLDirectedEdge is an edge with an orientation.
@@ -68,10 +67,9 @@ public class GMLDirectedEdge {
        @return The points of the underlying edge in the right order.
     */
     public List<GMLCoordinates> getPoints() {
-        List<GMLCoordinates> result = new ArrayList<GMLCoordinates>(edge.getPoints());
-        if (!forward) {
-            Collections.reverse(result);
-        }
+        List<GMLCoordinates> result = new ArrayList<GMLCoordinates>();
+        result.add(getStartNode().getCoordinates());
+        result.add(getEndNode().getCoordinates());
         return result;
     }
 

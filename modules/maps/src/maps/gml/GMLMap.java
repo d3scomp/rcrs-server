@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
 
 /**
    A GML map.
@@ -16,20 +17,180 @@ public class GMLMap {
     private double maxY;
     private boolean boundsKnown;
 
-    private Map<Long, GMLBuilding> buildings;
-    private Map<Long, GMLRoad> roads;
-    private Map<Long, GMLSpace> spaces;
+    private Map<Integer, GMLNode> nodes;
+    private Map<Integer, GMLEdge> edges;
+    private Map<Integer, GMLBuilding> buildings;
+    private Map<Integer, GMLRoad> roads;
+    private Map<Integer, GMLSpace> spaces;
     private Set<GMLShape> allShapes;
+
+    private int nextID;
 
     /**
        Construct an empty GML map.
      */
     public GMLMap() {
-        buildings = new HashMap<Long, GMLBuilding>();
-        roads = new HashMap<Long, GMLRoad>();
-        spaces = new HashMap<Long, GMLSpace>();
+        nodes = new HashMap<Integer, GMLNode>();
+        edges = new HashMap<Integer, GMLEdge>();
+        buildings = new HashMap<Integer, GMLBuilding>();
+        roads = new HashMap<Integer, GMLRoad>();
+        spaces = new HashMap<Integer, GMLSpace>();
         allShapes = new HashSet<GMLShape>();
         boundsKnown = false;
+        nextID = 0;
+    }
+
+    /**
+       Create a new GMLNode.
+       @param x The X coordinate of the node.
+       @param y The Y coordinate of the node.
+       @return A new GMLNode with a unique ID.
+    */
+    public GMLNode createNode(double x, double y) {
+        GMLNode n = new GMLNode(nextID++, x, y);
+        addNode(n);
+        return n;
+    }
+
+    /**
+       Create a new GMLNode.
+       @param coords The coordinates of the node.
+       @return A new GMLNode with a unique ID.
+    */
+    public GMLNode createNode(GMLCoordinates coords) {
+        GMLNode n = new GMLNode(nextID++, coords);
+        addNode(n);
+        return n;
+    }
+
+    /**
+       Create a new GMLEdge between two nodes.
+       @param first The 'start' node.
+       @param second The 'end' node.
+       @return A new GMLEdge with a unique ID.
+    */
+    public GMLEdge createEdge(GMLNode first, GMLNode second) {
+        GMLEdge e = new GMLEdge(nextID++, first, second, false);
+        addEdge(e);
+        return e;
+    }
+
+    /**
+       Create new GMLBuilding.
+       @param bEdges The edges of the building.
+       @return A new GMLBuilding with a unique ID.
+    */
+    public GMLBuilding createBuilding(List<GMLDirectedEdge> bEdges) {
+        GMLBuilding b = new GMLBuilding(nextID++, bEdges);
+        addBuilding(b);
+        return b;
+    }
+
+    /**
+       Create new GMLRoad.
+       @param rEdges The edges of the road.
+       @return A new GMLRoad with a unique ID.
+    */
+    public GMLRoad createRoad(List<GMLDirectedEdge> rEdges) {
+        GMLRoad r = new GMLRoad(nextID++, rEdges);
+        addRoad(r);
+        return r;
+    }
+
+    /**
+       Create new GMLSpace.
+       @param sEdges The edges of the space.
+       @return A new GMLSpace with a unique ID.
+    */
+    public GMLSpace createSpace(List<GMLDirectedEdge> sEdges) {
+        GMLSpace s = new GMLSpace(nextID++, sEdges);
+        addSpace(s);
+        return s;
+    }
+
+    /**
+       Add a node.
+       @param n The node to add.
+    */
+    public void addNode(GMLNode n) {
+        nodes.put(n.getID(), n);
+        boundsKnown = false;
+        nextID = Math.max(nextID, n.getID() + 1);
+    }
+
+    /**
+       Remove a node.
+       @param n The node to remove.
+    */
+    public void removeNode(GMLNode n) {
+        nodes.remove(n.getID());
+        boundsKnown = false;
+    }
+
+    /**
+       Get a node by ID.
+       @param id The ID to look up.
+       @return The node with that ID or null if the ID is not found.
+    */
+    public GMLNode getNode(int id) {
+        return nodes.get(id);
+    }
+
+    /**
+       Get all nodes in the map.
+       @return All nodes.
+    */
+    public Set<GMLNode> getNodes() {
+        return new HashSet<GMLNode>(nodes.values());
+    }
+
+    /**
+       Remove all nodes.
+    */
+    public void removeAllNodes() {
+        nodes.clear();
+        boundsKnown = false;
+    }
+
+    /**
+       Add an edge.
+       @param e The edge to add.
+    */
+    public void addEdge(GMLEdge e) {
+        edges.put(e.getID(), e);
+        nextID = Math.max(nextID, e.getID() + 1);
+    }
+
+    /**
+       Remove an edge.
+       @param e The edge to remove.
+    */
+    public void removeEdge(GMLEdge e) {
+        edges.remove(e.getID());
+    }
+
+    /**
+       Get an edge by ID.
+       @param id The ID to look up.
+       @return The edge with that ID or null if the ID is not found.
+    */
+    public GMLEdge getEdge(int id) {
+        return edges.get(id);
+    }
+
+    /**
+       Get all edges in the map.
+       @return All edges.
+    */
+    public Set<GMLEdge> getEdges() {
+        return new HashSet<GMLEdge>(edges.values());
+    }
+
+    /**
+       Remove all edges.
+    */
+    public void removeAllEdges() {
+        edges.clear();
     }
 
     /**
@@ -39,7 +200,7 @@ public class GMLMap {
     public void addBuilding(GMLBuilding b) {
         buildings.put(b.getID(), b);
         allShapes.add(b);
-        boundsKnown = false;
+        nextID = Math.max(nextID, b.getID() + 1);
     }
 
     /**
@@ -49,7 +210,6 @@ public class GMLMap {
     public void removeBuilding(GMLBuilding b) {
         buildings.remove(b.getID());
         allShapes.remove(b);
-        boundsKnown = false;
     }
 
     /**
@@ -57,7 +217,7 @@ public class GMLMap {
        @param id The ID to look up.
        @return The building with that ID or null if the ID is not found.
     */
-    public GMLBuilding getBuilding(long id) {
+    public GMLBuilding getBuilding(int id) {
         return buildings.get(id);
     }
 
@@ -75,7 +235,6 @@ public class GMLMap {
     public void removeAllBuildings() {
         allShapes.removeAll(buildings.values());
         buildings.clear();
-        boundsKnown = false;
     }
 
     /**
@@ -85,7 +244,7 @@ public class GMLMap {
     public void addRoad(GMLRoad r) {
         roads.put(r.getID(), r);
         allShapes.add(r);
-        boundsKnown = false;
+        nextID = Math.max(nextID, r.getID() + 1);
     }
 
     /**
@@ -95,7 +254,6 @@ public class GMLMap {
     public void removeRoad(GMLRoad r) {
         roads.remove(r.getID());
         allShapes.remove(r);
-        boundsKnown = false;
     }
 
     /**
@@ -103,7 +261,7 @@ public class GMLMap {
        @param id The ID to look up.
        @return The road with that ID or null if the ID is not found.
     */
-    public GMLRoad getRoad(long id) {
+    public GMLRoad getRoad(int id) {
         return roads.get(id);
     }
 
@@ -121,7 +279,6 @@ public class GMLMap {
     public void removeAllRoads() {
         allShapes.removeAll(roads.values());
         roads.clear();
-        boundsKnown = false;
     }
 
     /**
@@ -131,7 +288,7 @@ public class GMLMap {
     public void addSpace(GMLSpace s) {
         spaces.put(s.getID(), s);
         allShapes.add(s);
-        boundsKnown = false;
+        nextID = Math.max(nextID, s.getID() + 1);
     }
 
     /**
@@ -141,7 +298,6 @@ public class GMLMap {
     public void removeSpace(GMLSpace s) {
         spaces.remove(s.getID());
         allShapes.remove(s);
-        boundsKnown = false;
     }
 
     /**
@@ -149,7 +305,7 @@ public class GMLMap {
        @param id The ID to look up.
        @return The space with that ID or null if the ID is not found.
     */
-    public GMLSpace getSpace(long id) {
+    public GMLSpace getSpace(int id) {
         return spaces.get(id);
     }
 
@@ -167,7 +323,6 @@ public class GMLMap {
     public void removeAllSpaces() {
         allShapes.removeAll(spaces.values());
         spaces.clear();
-        boundsKnown = false;
     }
 
     /**
@@ -222,13 +377,12 @@ public class GMLMap {
         minY = Double.POSITIVE_INFINITY;
         maxX = Double.NEGATIVE_INFINITY;
         maxY = Double.NEGATIVE_INFINITY;
-        for (GMLShape shape : allShapes) {
-            for (GMLCoordinates next : shape.getCoordinates()) {
-                minX = Math.min(minX, next.getX());
-                maxX = Math.max(maxX, next.getX());
-                minY = Math.min(minY, next.getY());
-                maxY = Math.max(maxY, next.getY());
-            }
+        for (GMLNode n : nodes.values()) {
+            GMLCoordinates c = n.getCoordinates();
+            minX = Math.min(minX, c.getX());
+            maxX = Math.max(maxX, c.getX());
+            minY = Math.min(minY, c.getY());
+            maxY = Math.max(maxY, c.getY());
         }
         boundsKnown = true;
     }

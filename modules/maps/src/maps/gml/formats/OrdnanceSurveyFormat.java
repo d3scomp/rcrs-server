@@ -1,6 +1,8 @@
 package maps.gml.formats;
 
 import maps.gml.GMLMap;
+import maps.gml.GMLNode;
+import maps.gml.GMLDirectedEdge;
 import maps.gml.GMLCoordinates;
 import maps.gml.GMLBuilding;
 import maps.gml.GMLRoad;
@@ -116,21 +118,11 @@ public final class OrdnanceSurveyFormat implements MapFormat {
         for (Object next : BUILDING_XPATH.selectNodes(doc)) {
             LOG.debug("Found building element: " + next);
             Element e = (Element)next;
-            String fid = e.attributeValue("fid");
-            long id = Long.parseLong(fid.substring(FID_PREFIX_LENGTH)); // Strip off the 'osgb' prefix
-            // Find the boundary shape
-            List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
+            //            String fid = e.attributeValue("fid");
+            //            long id = Long.parseLong(fid.substring(FID_PREFIX_LENGTH)); // Strip off the 'osgb' prefix
             String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();
-            StringTokenizer tokens = new StringTokenizer(coordinatesString, " ");
-            while (tokens.hasMoreTokens()) {
-                String token = tokens.nextToken();
-                int index = token.indexOf(",");
-                String first = token.substring(0, index).trim();
-                String second = token.substring(index + 1).trim();
-                outline.add(new GMLCoordinates(Double.parseDouble(first), Double.parseDouble(second)));
-            }
-            GMLBuilding b = new GMLBuilding(id, outline);
-            result.addBuilding(b);
+            List<GMLDirectedEdge> edges = readEdges(coordinatesString, result);
+            GMLBuilding b = result.createBuilding(edges);
             debug.show("New building", new GMLShapeInfo(b, "New building", Color.BLACK, NEW_BUILDING_COLOUR));
             background.add(new GMLShapeInfo(b, "Buildings", Color.BLACK, BUILDING_COLOUR));
         }
@@ -141,21 +133,11 @@ public final class OrdnanceSurveyFormat implements MapFormat {
         for (Object next : ROAD_XPATH.selectNodes(doc)) {
             LOG.debug("Found road element: " + next);
             Element e = (Element)next;
-            String fid = e.attributeValue("fid");
-            long id = Long.parseLong(fid.substring(FID_PREFIX_LENGTH)); // Strip off the 'osgb' prefix
-            // Find the boundary shape
-            List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
+            //            String fid = e.attributeValue("fid");
+            //            long id = Long.parseLong(fid.substring(FID_PREFIX_LENGTH)); // Strip off the 'osgb' prefix
             String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();
-            StringTokenizer tokens = new StringTokenizer(coordinatesString, " ");
-            while (tokens.hasMoreTokens()) {
-                String token = tokens.nextToken();
-                int index = token.indexOf(",");
-                String first = token.substring(0, index).trim();
-                String second = token.substring(index + 1).trim();
-                outline.add(new GMLCoordinates(Double.parseDouble(first), Double.parseDouble(second)));
-            }
-            GMLRoad road = new GMLRoad(id, outline);
-            result.addRoad(road);
+            List<GMLDirectedEdge> edges = readEdges(coordinatesString, result);
+            GMLRoad road = result.createRoad(edges);
             debug.show("New road", new GMLShapeInfo(road, "New road", Color.BLACK, NEW_ROAD_COLOUR));
             background.add(new GMLShapeInfo(road, "Roads", Color.BLACK, ROAD_COLOUR));
         }
@@ -169,19 +151,29 @@ public final class OrdnanceSurveyFormat implements MapFormat {
             Element e = (Element)next;
             String fid = e.attributeValue("fid");
             long id = Long.parseLong(fid.substring(4)); // Strip off the 'osgb' prefix
-            // Find the boundary shape
-            List<GMLCoordinates> outline = new ArrayList<GMLCoordinates>();
             String coordinatesString = ((Element)SHAPE_XPATH.evaluate(e)).getText();
-            StringTokenizer tokens = new StringTokenizer(coordinatesString, " ");
-            while (tokens.hasMoreTokens()) {
-                String token = tokens.nextToken();
-                int index = token.indexOf(",");
-                String first = token.substring(0, index).trim();
-                String second = token.substring(index + 1).trim();
-                outline.add(new GMLCoordinates(Double.parseDouble(first), Double.parseDouble(second)));
-            }
-            result.addSpace(new GMLSpace(id, outline));
+            List<GMLEdge> edges = readEdges(coordinatesString, result);
+            result.createSpace(edges);
         }
         */
+    }
+
+    private List<GMLDirectedEdge> readEdges(String coordinatesString, GMLMap map) {
+        List<GMLDirectedEdge> edges = new ArrayList<GMLDirectedEdge>();
+        StringTokenizer tokens = new StringTokenizer(coordinatesString, " ");
+        GMLCoordinates lastApex = null;
+        GMLNode fromNode = null;
+        GMLNode toNode = null;
+        while (tokens.hasMoreTokens()) {
+            String token = tokens.nextToken();
+            GMLCoordinates nextApex = new GMLCoordinates(token);
+            toNode = map.createNode(nextApex);
+            if (lastApex != null) {
+                edges.add(new GMLDirectedEdge(map.createEdge(fromNode, toNode), true));
+            }
+            lastApex = nextApex;
+            fromNode = toNode;
+        }
+        return edges;
     }
 }
