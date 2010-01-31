@@ -316,7 +316,21 @@ public class GISServer implements Runnable {
                 TagElement tag = (TagElement)element;
                 String key = tag.getKey().toLowerCase();
                 if ("rcrs:face".equals(key)) {
-                    String type = tag.getAttributeValue("type").toLowerCase();
+                    String type = null;
+                    String code = null;
+                    type = tag.getAttributeValue("type");
+                    if (type == null) {
+                        log("warning: type of a building is not defined.");
+                        type = "open space";                        
+                    }
+                    type = type.toLowerCase();
+                    code = tag.getAttributeValue("code");
+                    if (code == null) {
+                        log("warning: code of a building is not defined.");
+                        code = "wood";
+                    }
+                    code = code.toLowerCase();
+
                     //out.println(tag);
                     TagElement gtag = tag.getTagChild("gml:Face");
                     GMLID gid = new GMLID(gtag.getAttributeValue("gml:id"));
@@ -330,6 +344,7 @@ public class GISServer implements Runnable {
                     }
                     GMLFace face = new GMLFace(gid, gmlWorldManager, dedges);
                     face.setType(type);
+                    face.setCode(GMLFace.Code.parse(code));
                     log(face);
                     try {
                         gmlWorldManager.add(face);
@@ -388,6 +403,7 @@ public class GISServer implements Runnable {
         log("   create Area");
         for (GMLFace face : gmlWorldManager.toFaceArray(new GMLFace[0])) {
             String type = face.getType().toLowerCase();
+            int code = face.getCode().ordinal();
             List<GMLID> nextFaceIDList = new ArrayList<GMLID>();
             List<Point2D> nodeList = new ArrayList<Point2D>();
             for (GMLDirectedEdge dedge : face.getDirectedEdges()) {
@@ -423,17 +439,20 @@ public class GISServer implements Runnable {
             int centerY = (int)(sumY / nodeList.size());
             Area area = null;
             if ("building".equals(type)) {
-                area = new Building(mapID(face.getID()));
+                Building building = new Building(mapID(face.getID()));
+                building.setBuildingCode(code);
+                area = building;
             }
             else if ("refuge".equals(type)) {
-                area = new Refuge(mapID(face.getID()));
+                Refuge refuge = new Refuge(mapID(face.getID()));
+                refuge.setBuildingCode(code);
+                area = refuge;
             }
             else {
                 area = new Area(mapID(face.getID()));
             }
             area.setApexes(apexes, nextList);
             area.setCenter(centerX, centerY);
-            //area.setType();
             area.setBlockadeList(new ArrayList<EntityID>());
             rcrsMap.put(area.getID(), area);
         }
