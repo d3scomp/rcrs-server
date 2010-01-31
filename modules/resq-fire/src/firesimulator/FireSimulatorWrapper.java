@@ -10,7 +10,6 @@ import rescuecore2.messages.control.KSCommands;
 import rescuecore2.messages.control.SKUpdate;
 
 import rescuecore2.standard.messages.AKExtinguish;
-import rescuecore2.standard.entities.Edge;
 import rescuecore2.standard.components.StandardSimulator;
 
 import firesimulator.kernel.Kernel;
@@ -25,7 +24,6 @@ import firesimulator.world.Civilian;
 import firesimulator.world.FireBrigade;
 import firesimulator.world.PoliceForce;
 import firesimulator.world.AmbulanceTeam;
-import firesimulator.world.StreetNode;
 import firesimulator.world.Road;
 import firesimulator.world.RescueObject;
 import firesimulator.world.MovingObject;
@@ -34,7 +32,6 @@ import firesimulator.simulator.ExtinguishRequest;
 import firesimulator.util.Configuration;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -112,11 +109,6 @@ public class FireSimulatorWrapper extends StandardSimulator {
                 else if (r instanceof MovingObject && e instanceof rescuecore2.standard.entities.Human) {
                     mapHumanProperties((rescuecore2.standard.entities.Human)e, (MovingObject)r);
                 }
-                /*
-                else if (r instanceof StreetNode && e instanceof rescuecore2.standard.entities.Node) {
-                    mapNodeProperties((rescuecore2.standard.entities.Node)e, (StreetNode)r);
-                }
-                */
                 else if (r instanceof Road && e instanceof rescuecore2.standard.entities.Road) {
                     mapRoadProperties((rescuecore2.standard.entities.Road)e, (Road)r);
                 }
@@ -182,13 +174,6 @@ public class FireSimulatorWrapper extends StandardSimulator {
             mapBuildingProperties((rescuecore2.standard.entities.Building)e, b);
             return b;
         }
-        /*
-        if (e instanceof rescuecore2.standard.entities.Node) {
-            StreetNode sn = new StreetNode(id);
-            mapNodeProperties((rescuecore2.standard.entities.Node)e, sn);
-            return sn;
-        }
-        */
         if (e instanceof rescuecore2.standard.entities.Road) {
             Road r = new Road(id);
             mapRoadProperties((rescuecore2.standard.entities.Road)e, r);
@@ -234,11 +219,6 @@ public class FireSimulatorWrapper extends StandardSimulator {
         if (oldB.isBrokennessDefined()) {
             newB.setBrokenness(oldB.getBrokenness());
         }
-        /*
-        if (oldB.isEntrancesDefined()) {
-            newB.setEntrances(collectionToIDArray(oldB.getEntrances()));
-        }
-        */
         if (oldB.isBuildingCodeDefined()) {
             newB.setCode(oldB.getBuildingCode());
         }
@@ -259,44 +239,7 @@ public class FireSimulatorWrapper extends StandardSimulator {
         }
     }
 
-    /*
-    private void mapNodeProperties(rescuecore2.standard.entities.Node oldN, StreetNode newN) {
-        if (oldN.isEdgesDefined()) {
-            newN.setEdges(collectionToIDArray(oldN.getEdges()));
-        }
-        if (oldN.isXDefined()) {
-            newN.setX(oldN.getX());
-        }
-        if (oldN.isYDefined()) {
-            newN.setY(oldN.getY());
-        }
-    }
-    */
-
     private void mapRoadProperties(rescuecore2.standard.entities.Road oldR, Road newR) {
-        /*
-        if (oldR.isWidthDefined()) {
-            newR.setWidth(oldR.getWidth());
-        }
-        if (oldR.isBlockDefined()) {
-            newR.setBlock(oldR.getBlock());
-        }
-        if (oldR.isLinesToHeadDefined()) {
-            newR.setLinesToHead(oldR.getLinesToHead());
-        }
-        if (oldR.isLinesToTailDefined()) {
-            newR.setLinesToTail(oldR.getLinesToTail());
-        }
-        if (oldR.isHeadDefined()) {
-            newR.setHead(oldR.getHead().getValue());
-        }
-        if (oldR.isTailDefined()) {
-            newR.setTail(oldR.getTail().getValue());
-        }
-        if (oldR.isLengthDefined()) {
-            newR.setLength(oldR.getLength());
-        }
-        */
     }
 
     private void mapHumanProperties(rescuecore2.standard.entities.Human oldH, MovingObject newH) {
@@ -315,9 +258,6 @@ public class FireSimulatorWrapper extends StandardSimulator {
         if (oldH.isPositionDefined()) {
             newH.setPositionId(oldH.getPosition().getValue());
         }
-        //        if (oldH.isPositionExtraDefined()) {
-        //            newH.setPositionExtra(oldH.getPositionExtra());
-        //        }
         if (oldH instanceof rescuecore2.standard.entities.FireBrigade && newH instanceof FireBrigade) {
             rescuecore2.standard.entities.FireBrigade oldFB = (rescuecore2.standard.entities.FireBrigade)oldH;
             FireBrigade newFB = (FireBrigade)newH;
