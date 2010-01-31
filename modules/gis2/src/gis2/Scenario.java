@@ -78,30 +78,12 @@ public class Scenario {
        @param model The world model to alter.
     */
     public void apply(StandardWorldModel model) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("All entities before scenario: ");
-            for (StandardEntity se : model) {
-                LOG.debug(se.toString());
-            }
-        }
         for (int next : refugeIDs) {
             Building b = (Building)model.getEntity(new EntityID(next));
             Refuge r = new Refuge(b);
             model.removeEntity(b);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("All entities after removing building: ");
-                for (StandardEntity se : model) {
-                    LOG.debug(se.toString());
-                }
-            }
             model.addEntity(r);
             LOG.debug("Converted " + b + " into " + r);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("All entities after conversion: ");
-                for (StandardEntity se : model) {
-                    LOG.debug(se.toString());
-                }
-            }
         }
         int nextID = 0;
         for (StandardEntity next : model) {
@@ -123,12 +105,6 @@ public class Scenario {
             c.setPositionHistory(new int[0]);
             model.addEntity(c);
             LOG.debug("Created civilian " + c.getFullDescription());
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("All entities after scenario applied: ");
-            for (StandardEntity se : model) {
-                LOG.debug(se.toString());
-            }
         }
     }
 }

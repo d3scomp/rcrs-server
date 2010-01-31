@@ -27,6 +27,7 @@ import maps.MapTools;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -74,8 +75,8 @@ public class GMLWorldModelCreator implements WorldModelCreator {
     private void readMapData(Config config, StandardWorldModel result) throws GMLException {
         GMLMap map = readMap(config.getValue(MAP_FILE_KEY));
         // Convert lat/lon to millimeters
-        double sizeOf1m = 1.0 / MapTools.sizeOf1Metre((map.getMinX() + map.getMaxX()) / 2, (map.getMinY() + map.getMaxY()) / 2);
-        CoordinateConversion conversion = new ScaleConversion(map.getMinX(), map.getMinY(), sizeOf1m, sizeOf1m);
+        double scale = 1000.0 / MapTools.sizeOf1Metre((map.getMinX() + map.getMaxX()) / 2, (map.getMinY() + map.getMaxY()) / 2);
+        CoordinateConversion conversion = new ScaleConversion(map.getMinX(), map.getMinY(), scale, scale);
         for (GMLBuilding next : map.getBuildings()) {
             // Create a new Building entity
             EntityID id = new EntityID(next.getID());
@@ -86,7 +87,7 @@ public class GMLWorldModelCreator implements WorldModelCreator {
             b.setBrokenness(0);
             b.setBuildingCode(0);
             b.setBuildingAttributes(0);
-            //                b.setGroundArea(next.getArea());
+            b.setGroundArea((int)computeArea(next, conversion));
             //                b.setTotalArea(next.getArea());
             b.setImportance(1);
             // Area properties
@@ -138,5 +139,23 @@ public class GMLWorldModelCreator implements WorldModelCreator {
                                 id));
         }
         return result;
+    }
+
+    private double computeArea(GMLShape shape, CoordinateConversion conversion) {
+        Iterator<GMLCoordinates> it = shape.getCoordinates().iterator();
+        GMLCoordinates last = it.next();
+        double sum = 0;
+        while (it.hasNext()) {
+            GMLCoordinates next = it.next();
+            double lastX = conversion.convertX(last.getX());
+            double lastY = conversion.convertY(last.getY());
+            double nextX = conversion.convertX(next.getX());
+            double nextY = conversion.convertY(next.getY());
+            sum += (lastX * nextY) - (nextX * lastY);
+            last = next;
+        }
+        sum /= 10000;
+        LOG.debug("Area of " + shape + ": " + Math.abs(sum));
+        return Math.abs(sum);
     }
 }
