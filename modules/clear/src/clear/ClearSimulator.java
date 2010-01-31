@@ -33,7 +33,7 @@ public class ClearSimulator extends StandardSimulator {
     @Override
     protected void processCommands(KSCommands c, ChangeSet changes) {
         Map<Blockade, Integer> partiallyCleared = new HashMap<Blockade, Integer>();
-        for(Command command : c.getCommands()) {
+        for (Command command : c.getCommands()) {
             if (command instanceof AKClear) {
                 AKClear clear = (AKClear)command;
                 if (!isValid(clear)) {
