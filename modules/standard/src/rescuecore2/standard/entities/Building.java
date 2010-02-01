@@ -512,15 +512,6 @@ public class Building extends Area {
         importance.undefine();
     }
 
-
-    /**
-       Get the apexes as a list of coordinates.
-       @return A list of coordinates.
-     */
-    public List<Pair<Integer, Integer>> getApexesAsList() {
-	throw new RuntimeException("not supported");
-    }
-
     /**
        Find out if this building is on fire.
        @return True iff this buildings fieryness indicates that it is burning.
