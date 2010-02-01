@@ -104,7 +104,7 @@ public class Scenario {
             c.setTravelDistance(0);
             c.setPositionHistory(new int[0]);
             model.addEntity(c);
-            LOG.debug("Created civilian " + c.getFullDescription());
+            LOG.debug("Created civilian " + c);
         }
     }
 }

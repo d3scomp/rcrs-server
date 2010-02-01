@@ -87,8 +87,9 @@ public class GMLWorldModelCreator implements WorldModelCreator {
             b.setBrokenness(0);
             b.setBuildingCode(0);
             b.setBuildingAttributes(0);
-            b.setGroundArea((int)computeArea(next, conversion));
-            //                b.setTotalArea(next.getArea());
+            double ground = computeArea(next, conversion);
+            b.setGroundArea((int)ground);
+            b.setTotalArea((int)ground);
             b.setImportance(1);
             // Area properties
             b.setX((int)conversion.convertX(next.getCentreX()));
