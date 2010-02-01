@@ -7,7 +7,6 @@ import rescuecore2.worldmodel.ChangeSet;
 import rescuecore2.messages.Command;
 import rescuecore2.messages.control.KSUpdate;
 import rescuecore2.messages.control.KSCommands;
-import rescuecore2.messages.control.SKUpdate;
 
 import rescuecore2.standard.messages.AKExtinguish;
 import rescuecore2.standard.components.StandardSimulator;
