@@ -3,11 +3,17 @@ package traffic3.simulator;
 import java.util.List;
 import java.awt.Color;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 import traffic3.manager.WorldManager;
 import traffic3.manager.WorldManagerException;
+import traffic3.manager.gui.WorldManagerGUI;
 import traffic3.objects.area.TrafficArea;
 import traffic3.objects.TrafficAgent;
 import traffic3.objects.TrafficBlockade;
+
+import rescuecore2.GUIComponent;
 
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.worldmodel.ChangeSet;
@@ -19,12 +25,14 @@ import rescuecore2.messages.control.KSCommands;
 
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Refuge;
 import rescuecore2.standard.entities.Human;
 import rescuecore2.standard.entities.PoliceForce;
 import rescuecore2.standard.entities.AmbulanceTeam;
 import rescuecore2.standard.entities.Civilian;
 import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.Edge;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.messages.AKMove;
 import rescuecore2.standard.components.StandardSimulator;
@@ -38,11 +46,12 @@ import org.apache.commons.logging.Log;
 /**
    The Area model traffic simulator.
  */
-public class TrafficSimulator extends StandardSimulator {
+public class TrafficSimulator extends StandardSimulator implements GUIComponent {
     private static final Log LOG = LogFactory.getLog(TrafficSimulator.class);
 
-    private static final double STEP_TIME = 0.0001; // 1ms
-    private static final int MICROSTEPS = (int)(1 / STEP_TIME) * 60;
+    private static final double STEP_TIME = 0.001; // 1ms
+    //    private static final int MICROSTEPS = (int)(1 / STEP_TIME) * 60;
+    private static final int MICROSTEPS = 100;
 
     private static final int RESCUE_AGENT_RADIUS = 500;
     private static final int CIVILIAN_RADIUS = 200;
@@ -57,12 +66,29 @@ public class TrafficSimulator extends StandardSimulator {
     private static final Color CIVILIAN_COLOUR = Color.GREEN;
 
     private WorldManager worldManager;
-    private int timestep;
+
+    public TrafficSimulator() {
+        worldManager = new WorldManager();
+    }
+
+    @Override
+    public JComponent getGUIComponent() {
+        try {
+            return new WorldManagerGUI(worldManager, new org.util.xml.io.XMLConfigManager());
+        }
+        catch (java.io.IOException e) {
+            return new JLabel(e.toString());
+        }
+    }
+
+    @Override
+    public String getGUIComponentName() {
+        return "Traffic simulator";
+    }
 
     @Override
     protected void postConnect() {
         try {
-            worldManager = new WorldManager();
             for (StandardEntity next : model) {
                 if (next instanceof Area) {
                     convertAreaToTrafficArea((Area)next);
@@ -90,7 +116,6 @@ public class TrafficSimulator extends StandardSimulator {
 
     @Override
     protected void processCommands(KSCommands c, ChangeSet changes) {
-        timestep = c.getTime();
         for (Command next : c.getCommands()) {
             if (next instanceof AKMove) {
                 try {
@@ -101,7 +126,7 @@ public class TrafficSimulator extends StandardSimulator {
                 }
             }
         }
-        rcrsStep();
+        timestep();
     }
 
     @Override
@@ -110,16 +135,23 @@ public class TrafficSimulator extends StandardSimulator {
     }
 
     private void convertAreaToTrafficArea(Area area) throws WorldManagerException {
-        java.util.List<EntityID> neighbours = area.getNeighbours();
-        String[] neighbourText = new String[neighbours.size()];
-        for (int i = 0; i < neighbours.size(); i++) {
-            neighbourText[i] = "rcrs(" + neighbours.get(i).getValue() + ")";
+        List<Edge> edges = area.getEdges();
+        String[] neighbourText = new String[edges.size()];
+        for (int i = 0; i < neighbourText.length; i++) {
+            EntityID n = edges.get(i).getNeighbour();
+            if (n != null) {
+                neighbourText[i] = "rcrs(" + n + ")";
+                LOG.debug("Neighbour " + i + ": " + neighbourText[i]);
+            }
         }
         double cx = area.getX();
         double cy = area.getY();
         TrafficArea result = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexList(), neighbourText);
         if (area instanceof Building) {
             result.setType("building");
+        }
+        else if (area instanceof Refuge) {
+            result.setType("refuge");
         }
         else {
             result.setType("open space");
@@ -190,151 +222,19 @@ public class TrafficSimulator extends StandardSimulator {
         agent.setDestination(worldManager.createAreaNode(cx, cy, cz));
     }
 
-
-
-
-    /*
-      private void receiveCommands(Connection c, KSCommands com) {
-      log(com);
-      rcrsTimeStep = com.getTime();
-      for (Command command : com.getCommands()) {
-      if (command instanceof AKMove) {
-      AKMove akmove = (AKMove)command;
-      java.util.List<EntityID> list = akmove.getPath();
-      EntityID destinationId = list.get(list.size() - 1);
-      //Entity destination = entityidEntityMap.get(destinationId);
-      TrafficArea trafficArea = areaTrafficareaMap.get(destinationId);
-      assert trafficArea != null : "cannot find traffic area: " + destinationId;
-      Human human = (Human)entityidEntityMap.get(akmove.getAgentID());
-      TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
-      double cx = trafficArea.getCenterX();
-      double cy = trafficArea.getCenterY();
-      double cz = 0;
-      try {
-      agent.setDestination(worldManager.createAreaNode(cx, cy, cz));
-      }
-      catch (WorldManagerException exc) {
-      alert(exc, "error");
-      }
-      }
-      else if (command instanceof AKClear) {
-      AKClear akclear = (AKClear)command;
-      TrafficAgent agent = humanTrafficAgentMap.get(akclear.getAgentID());
-      TrafficBlockade blockade = blockadeTrafficblockadeMap.get(akclear.getTarget());
-      try {
-      TrafficAreaNode node = worldManager.createAreaNode(blockade.getCenterX(), blockade.getCenterY(), 0);
-      agent.setDestination(node);
-      }
-      catch (WorldManagerException exc) {
-      log(exc);
-      exc.printStackTrace();
-      }
-      }
-      else if (command instanceof AKLoad) {
-      AKLoad akload = (AKLoad)command;
-      Human human = (Human)entityidEntityMap.get(akload.getTarget());
-      TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
-      alert(agent);
-      }
-      }
-
-      updateList.clear();
-      if (rcrsTimeStep > 2) {
-      rcrsStep();
-      }
-
-      for (Human human : agentListBuf) {
-      TrafficAgent agent = humanTrafficAgentMap.get(human.getID());
-      EntityID id = transID(agent.getArea().getID());
-      Point2D[] pList = agent.getPositionHistory();
-      int[] rcrsPList = new int[pList.length * 2];
-      for (int i = 0; i < pList.length; i++) {
-      Point2D p = pList[i];
-      rcrsPList[i * 2] = (int)p.getX();
-      rcrsPList[i * 2 + 1] = (int)p.getY();
-      }
-      agent.clearPositionHistory();
-      human.setPosition(id, (int)agent.getX(), (int)agent.getY());
-      human.setPositionHistory(rcrsPList);
-      updateList.add(human);
-      }
-      ChangeSet changeSet = new ChangeSet();
-      changeSet.addAll(updateList);
-      try {
-      c.sendMessage(new SKUpdate(simulatorId, rcrsTimeStep, changeSet));
-      updateList.clear();
-      }
-      catch (ConnectionException e) {
-      log(e);
-      e.printStackTrace();
-      }
-      }
-
-
-      private void receiveUpdate(Connection c, KSUpdate up) {
-
-      Collection<EntityID> entityIDs = up.getChangeSet().getChangedEntities();
-      List<Entity> entities = new ArrayList<Entity>();
-      for (EntityID eid : entityIDs) {
-      entities.add(entityidEntityMap.get(eid));
-      }
-      for (Entity ent : entities) {
-      if (ent instanceof Blockade) {
-      TrafficBlockade tb = blockadeTrafficblockadeMap.get(ent.getID());
-      tb.setLineList(((Blockade)ent).getApexes());
-      }
-      else if (ent instanceof Area) {
-      Area area = (Area)ent;
-      //Area parea = (Area)entityidEntityMap.get(area.getID());
-      TrafficArea tarea = areaTrafficareaMap.get(area.getID());
-      assert tarea != null : "Error!";
-      java.util.List<EntityID> idList = area.getBlockades();
-      TrafficBlockade[] tBlockadeList = tarea.getBlockadeList();
-      if (idList.size() != 0 || tBlockadeList.length != 0) {
-      List<TrafficBlockade> blist = new ArrayList<TrafficBlockade>();
-      for (EntityID beid : idList) {
-      TrafficBlockade tblockade = blockadeTrafficblockadeMap.get(beid);
-      blist.add(tblockade);
-      }
-
-      for (TrafficBlockade blockade : tBlockadeList) {
-      if (!blist.contains(blockade)) {
-      try {
-      worldManager.remove(blockade);
-      }
-      catch (WorldManagerException exc) {
-      log(exc);
-      exc.printStackTrace();
-      }
-      }
-      }
-      tarea.setBlockadeList(blist.toArray(new TrafficBlockade[0]));
-      }
-      }
-      //alert(ent, "error");
-      }
-      //alert(up, "error");
-      }
-    */
-
-    /**
-     * rcrs step.
-     */
-    public void rcrsStep() {
+    private void timestep() {
+        LOG.debug("Running " + MICROSTEPS + " microsteps");
         for (int i = 0; i < MICROSTEPS; i++) {
-            step();
+            microstep();
+            LOG.debug("Done " + i);
         }
     }
 
-    private void step() {
-        TrafficAgent[] agentList = worldManager.getAgentList();
-        for (int i = 0; i < agentList.length; i++) {
-            TrafficAgent agent = agentList[i];
+    private void microstep() {
+        for (TrafficAgent agent : worldManager.getAgentList()) {
             agent.plan();
         }
-
-        for (int i = 0; i < agentList.length; i++) {
-            TrafficAgent agent = agentList[i];
+        for (TrafficAgent agent : worldManager.getAgentList()) {
             agent.step(STEP_TIME);
         }
 
