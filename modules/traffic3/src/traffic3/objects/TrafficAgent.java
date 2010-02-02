@@ -15,6 +15,8 @@ import traffic3.manager.WorldManager;
 import traffic3.manager.WorldManagerException;
 import traffic3.simulator.SimulatorException;
 
+import rescuecore2.standard.entities.Human;
+
 import static traffic3.log.Logger.log;
 import static traffic3.log.Logger.alert;
 
@@ -163,6 +165,7 @@ public class TrafficAgent extends TrafficObject {
 
     private int locationSaveSkipCount = 60;
 
+    private Human human;
 
     
     /**
@@ -172,8 +175,9 @@ public class TrafficAgent extends TrafficObject {
      * velocityLimit: 0.7+0.1*(Math.random()-0.5);
      * @param worldManager world manager
      */
-    public TrafficAgent(WorldManager worldManager) {
+    public TrafficAgent(WorldManager worldManager, Human human) {
 	super(worldManager);
+        this.human = human;
 	init();
     }
     
@@ -183,8 +187,9 @@ public class TrafficAgent extends TrafficObject {
      * @param radius radius
      * @param velocityLimit velicity limit
      */
-    public TrafficAgent(WorldManager worldManager, double radius, double velocityLimit) {
+    public TrafficAgent(WorldManager worldManager, double radius, double velocityLimit, Human human) {
 	super(worldManager);
+        this.human = human;
 	init(radius, velocityLimit);
     }
     
@@ -195,9 +200,14 @@ public class TrafficAgent extends TrafficObject {
      * @param radius radius
      * @param velocityLimit velicity limit
      */
-    public TrafficAgent(WorldManager worldManager, String id, double radius, double velocityLimit) {
+    public TrafficAgent(WorldManager worldManager, String id, double radius, double velocityLimit, Human human) {
 	super(worldManager, id);
+        this.human = human;
 	init(radius, velocityLimit);
+    }
+
+    public Human getHuman() {
+        return human;
     }
     
     /**
@@ -588,9 +598,9 @@ public class TrafficAgent extends TrafficObject {
                 //dz = Math.min(this.velocityLimit, 0.001 * dist) * dz;
             }
             else {
-                dx = (1.0) * dx;
-                dy = (1.0) * dy;
-                // dz = (1.0) * dz;
+                dx = this.velocityLimit * dx;
+                dy = this.velocityLimit * dy;
+                // dz = this.velocityLimit * dz;
             }
             
             //destx = 0.0001*(dx-velocity[0]);

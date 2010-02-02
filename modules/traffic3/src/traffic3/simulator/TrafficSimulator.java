@@ -3,6 +3,7 @@ package traffic3.simulator;
 import java.util.List;
 import java.awt.Color;
 import java.awt.BorderLayout;
+import java.awt.geom.Point2D;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -51,9 +52,9 @@ import org.apache.commons.logging.Log;
 public class TrafficSimulator extends StandardSimulator implements GUIComponent {
     private static final Log LOG = LogFactory.getLog(TrafficSimulator.class);
 
-    private static final double STEP_TIME = 0.001; // 1ms
+    private static final double STEP_TIME = 100; // 100ms
     //    private static final int MICROSTEPS = (int)(1 / STEP_TIME) * 60;
-    private static final int MICROSTEPS = 3;
+    private static final int MICROSTEPS = 600 * 5;
 
     private static final int RESCUE_AGENT_RADIUS = 500;
     private static final int CIVILIAN_RADIUS = 200;
@@ -68,19 +69,20 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
     private static final Color CIVILIAN_COLOUR = Color.GREEN;
 
     private WorldManager worldManager;
-    private JComponent gui;
+    private TrafficSimulatorGUI gui;
 
     public TrafficSimulator() {
         worldManager = new WorldManager();
-        try {
-            WorldManagerGUI wmg = new WorldManagerGUI(worldManager, new org.util.xml.io.XMLConfigManager());
-            gui = new JPanel(new BorderLayout());
-            gui.add(wmg.createMenuBar(), BorderLayout.NORTH);
-            gui.add(wmg, BorderLayout.CENTER);
-        }
-        catch (java.io.IOException e) {
-            gui = new JLabel(e.toString());
-        }
+        //        try {
+            //            WorldManagerGUI wmg = new WorldManagerGUI(worldManager, new org.util.xml.io.XMLConfigManager());
+            //            gui = new JPanel(new BorderLayout());
+            //            gui.add(wmg.createMenuBar(), BorderLayout.NORTH);
+            //            gui.add(wmg, BorderLayout.CENTER);
+        //        }
+        //        catch (java.io.IOException e) {
+        //            gui = new JLabel(e.toString());
+        //        }
+        gui = new TrafficSimulatorGUI(worldManager);
     }
 
     @Override
@@ -119,6 +121,7 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
         catch (WorldManagerException e) {
             LOG.error("Error starting traffic simulator", e);
         }
+        gui.initialise();
     }
 
     @Override
@@ -134,6 +137,33 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
             }
         }
         timestep();
+        for (TrafficAgent agent : worldManager.getAgentList()) {
+            // Update position and positionHistory
+            Human human = agent.getHuman();
+            Point2D[] history = agent.getPositionHistory();
+            int[] historyArray = new int[history.length * 2];
+            for (int i = 0; i < history.length; ++i) {
+                historyArray[i * 2] = (int)history[i].getX();
+                historyArray[(i * 2) + 1] = (int)history[i].getY();
+            }
+            double x = agent.getX();
+            double y = agent.getY();
+            TrafficArea location = agent.getArea();
+            if (location != null) {
+                String id = location.getID();
+                human.setPosition(new EntityID(Integer.parseInt(id.substring(5, id.indexOf(")")))));
+                LOG.debug(human + " new position: " + human.getPosition());
+                changes.addChange(human, human.getPositionProperty());
+            }
+            human.setX((int)x);
+            human.setY((int)y);
+            human.setPositionHistory(historyArray);
+            human.setTravelDistance((int)agent.getLogDistance());
+            changes.addChange(human, human.getXProperty());
+            changes.addChange(human, human.getYProperty());
+            changes.addChange(human, human.getPositionHistoryProperty());
+            changes.addChange(human, human.getTravelDistanceProperty());
+        }
     }
 
     @Override
@@ -199,7 +229,7 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
             throw new IllegalArgumentException("Unrecognised agent type: " + h + " (" + h.getClass().getName() + ")");
         }
         String id = "rcrs(" + h.getID() + ")";
-        TrafficAgent agent = new TrafficAgent(worldManager, id, radius, velocityLimit);
+        TrafficAgent agent = new TrafficAgent(worldManager, id, radius, velocityLimit, h);
         agent.setLocation(h.getX(), h.getY(), 0);
         agent.setType(type);
         agent.setColor(colour);
@@ -258,5 +288,6 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
             agent.step(STEP_TIME);
         }
         worldManager.stepFinished(this);
+        gui.refresh();
     }
 }
