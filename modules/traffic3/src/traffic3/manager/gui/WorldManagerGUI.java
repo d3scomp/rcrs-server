@@ -583,7 +583,7 @@ public class WorldManagerGUI extends JComponent {
         imageUpdateRateSlider = new JSlider(IMAGE_UPDATE_RATE_SLIDER_MIN, IMAGE_UPDATE_RATE_SLIDER_MAX, IMAGE_UPDATE_RATE_DEFAULT);
         imageUpdateRateLabel = new JLabel("30");
 
-        simulatingValue = new BooleanValue("simulating", false);
+        simulatingValue = new BooleanValue("simulating", true);
         RENDERING_SETTINGS.put(simulatingValue.getKey(), simulatingValue);
         simulatingValue.addValueListener(new ValueListener() {
                 public void valueChanged(Value v) {

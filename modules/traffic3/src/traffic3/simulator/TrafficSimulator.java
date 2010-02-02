@@ -2,9 +2,11 @@ package traffic3.simulator;
 
 import java.util.List;
 import java.awt.Color;
+import java.awt.BorderLayout;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import traffic3.manager.WorldManager;
 import traffic3.manager.WorldManagerException;
@@ -66,19 +68,24 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
     private static final Color CIVILIAN_COLOUR = Color.GREEN;
 
     private WorldManager worldManager;
+    private JComponent gui;
 
     public TrafficSimulator() {
         worldManager = new WorldManager();
+        try {
+            WorldManagerGUI wmg = new WorldManagerGUI(worldManager, new org.util.xml.io.XMLConfigManager());
+            gui = new JPanel(new BorderLayout());
+            gui.add(wmg.createMenuBar(), BorderLayout.NORTH);
+            gui.add(wmg, BorderLayout.CENTER);
+        }
+        catch (java.io.IOException e) {
+            gui = new JLabel(e.toString());
+        }
     }
 
     @Override
     public JComponent getGUIComponent() {
-        try {
-            return new WorldManagerGUI(worldManager, new org.util.xml.io.XMLConfigManager());
-        }
-        catch (java.io.IOException e) {
-            return new JLabel(e.toString());
-        }
+        return gui;
     }
 
     @Override
