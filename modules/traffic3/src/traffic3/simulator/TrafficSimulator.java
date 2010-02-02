@@ -53,7 +53,7 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
 
     private static final double STEP_TIME = 0.001; // 1ms
     //    private static final int MICROSTEPS = (int)(1 / STEP_TIME) * 60;
-    private static final int MICROSTEPS = 100;
+    private static final int MICROSTEPS = 3;
 
     private static final int RESCUE_AGENT_RADIUS = 500;
     private static final int CIVILIAN_RADIUS = 200;
@@ -227,13 +227,26 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
         double cy = trafficArea.getCenterY();
         double cz = 0;
         agent.setDestination(worldManager.createAreaNode(cx, cy, cz));
+        LOG.debug("Agent " + agent + " destination set: " + cx + ", " + cy);
     }
 
     private void timestep() {
         LOG.debug("Running " + MICROSTEPS + " microsteps");
+        for (TrafficAgent agent : worldManager.getAgentList()) {
+            LOG.debug("Agent " + agent.toLongString());
+            LOG.debug("Location: " + agent.getX() + ", " + agent.getY());
+            LOG.debug("Velocity: " + agent.getVX() + ", " + agent.getVY());
+            LOG.debug("Forces  : " + agent.getFX() + ", " + agent.getFY());
+        }
         for (int i = 0; i < MICROSTEPS; i++) {
             microstep();
             LOG.debug("Done " + i);
+            for (TrafficAgent agent : worldManager.getAgentList()) {
+                LOG.debug("Agent " + agent.toLongString());
+                LOG.debug("Location: " + agent.getX() + ", " + agent.getY());
+                LOG.debug("Velocity: " + agent.getVX() + ", " + agent.getVY());
+                LOG.debug("Forces  : " + agent.getFX() + ", " + agent.getFY());
+            }
         }
     }
 
@@ -244,7 +257,6 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
         for (TrafficAgent agent : worldManager.getAgentList()) {
             agent.step(STEP_TIME);
         }
-
         worldManager.stepFinished(this);
     }
 }
