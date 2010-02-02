@@ -176,9 +176,9 @@ public class TrafficAgent extends TrafficObject {
      * @param worldManager world manager
      */
     public TrafficAgent(WorldManager worldManager, Human human) {
-	super(worldManager);
+        super(worldManager);
         this.human = human;
-	init();
+        init();
     }
     
     /**
@@ -188,9 +188,9 @@ public class TrafficAgent extends TrafficObject {
      * @param velocityLimit velicity limit
      */
     public TrafficAgent(WorldManager worldManager, double radius, double velocityLimit, Human human) {
-	super(worldManager);
+        super(worldManager);
         this.human = human;
-	init(radius, velocityLimit);
+        init(radius, velocityLimit);
     }
     
     /**
@@ -201,9 +201,9 @@ public class TrafficAgent extends TrafficObject {
      * @param velocityLimit velicity limit
      */
     public TrafficAgent(WorldManager worldManager, String id, double radius, double velocityLimit, Human human) {
-	super(worldManager, id);
+        super(worldManager, id);
         this.human = human;
-	init(radius, velocityLimit);
+        init(radius, velocityLimit);
     }
 
     public Human getHuman() {
@@ -224,12 +224,12 @@ public class TrafficAgent extends TrafficObject {
      * initialize by default parameter.
      */
     private void init() {
-	final double mean = 0.7;
-	final double variable = 0.1;
-	final double randomMean = 0.5;
-	this.radius = RADIUS_DEFAULT; //[mm]
-	this.velocityLimit = mean + variable * (Math.random() - randomMean);
-	setColor(Color.green);
+        final double mean = 0.7;
+        final double variable = 0.1;
+        final double randomMean = 0.5;
+        this.radius = RADIUS_DEFAULT; //[mm]
+        this.velocityLimit = mean + variable * (Math.random() - randomMean);
+        setColor(Color.green);
     }
     
     /**
@@ -238,9 +238,9 @@ public class TrafficAgent extends TrafficObject {
      * @param vl velocityLimit
      */
     private void init(double r, double vl) {
-	this.radius = r;
-	this.velocityLimit = vl;
-	setColor(Color.green);
+        this.radius = r;
+        this.velocityLimit = vl;
+        setColor(Color.green);
     }
     
     /**
@@ -248,7 +248,7 @@ public class TrafficAgent extends TrafficObject {
      * @return limit of velocity.
      */
     public double getVLimit() {
-	return this.velocityLimit;
+        return this.velocityLimit;
     }
     
     /**
@@ -256,7 +256,7 @@ public class TrafficAgent extends TrafficObject {
      * @param vLimit limit of velocity.
      */
     public void setVLimit(double vLimit) {
-	this.velocityLimit = vLimit;
+        this.velocityLimit = vLimit;
     }
     
     /**
@@ -264,7 +264,7 @@ public class TrafficAgent extends TrafficObject {
      * @return color
      */
     public Color getColor() {
-	return this.renderColor;
+        return this.renderColor;
     }
     
     /**
@@ -272,14 +272,14 @@ public class TrafficAgent extends TrafficObject {
      * @param c color
      */
     public void setColor(Color c) {
-	this.renderColor = c;
+        this.renderColor = c;
     }
     
     /**
      * clear log distance. set totalDistance to 0;
      */
     public void clearLogDistance() {
-	this.totalDistance = 0;
+        this.totalDistance = 0;
     }
     
     /**
@@ -287,7 +287,7 @@ public class TrafficAgent extends TrafficObject {
      * @return distance
      */
     public double getLogDistance() {
-	return this.totalDistance;
+        return this.totalDistance;
     }
     
     /*
@@ -509,19 +509,19 @@ public class TrafficAgent extends TrafficObject {
      * plan.
      */
     public void plan() {
-	if (this.nowDestination == null) {
-	    try {
-		planDestination();
-	    }
-	    catch (WorldManagerException e) {
-		alert(e, "error");
-	    }
-	}
+        if (this.nowDestination == null) {
+            try {
+                planDestination();
+            }
+            catch (WorldManagerException e) {
+                alert(e, "error");
+            }
+        }
         //if (this.isNetworkMode) {
-        //	plan_network();
+        //      plan_network();
         //}
         //else {
-	planArea();
+        planArea();
         //}
     }
     
@@ -635,94 +635,94 @@ public class TrafficAgent extends TrafficObject {
     
     
     private double[] calcAgentsForce(double[] sumop) {
-	double sumopx = 0;
-	double sumopy = 0;
-	double sumopz = 0;
+        double sumopx = 0;
+        double sumopy = 0;
+        double sumopz = 0;
         
-	if (this.nowArea == null) {
-	    Arrays.fill(sumop, 0);
-	    return sumop;
-	}
+        if (this.nowArea == null) {
+            Arrays.fill(sumop, 0);
+            return sumop;
+        }
         
-	final double cutoffX = 10000.0;
-	final double cutoffY = 10000.0;
-	final double randomMax = 0.001;
-	final double randomMean = 0.5;
+        final double cutoffX = 10000.0;
+        final double cutoffY = 10000.0;
+        final double randomMax = 0.001;
+        final double randomMean = 0.5;
         
-	float distance = 3000;
+        float distance = 3000;
         
-	List list = new ArrayList<TrafficObject>();
-	getManager().listNearObjects((float)location[0], (float)location[1], distance, list);
-	TrafficAgent[] agentList = new TrafficAgent[list.size()];
-	//System.out.println(agentList.length);
-	for (int i=0; i<agentList.length; i++) {
-	    agentList[i] = (TrafficAgent)list.get(i);
-	}
+        List list = new ArrayList<TrafficObject>();
+        getManager().listNearObjects((float)location[0], (float)location[1], distance, list);
+        TrafficAgent[] agentList = new TrafficAgent[list.size()];
+        //System.out.println(agentList.length);
+        for (int i=0; i<agentList.length; i++) {
+            agentList[i] = (TrafficAgent)list.get(i);
+        }
         
-	/*
-	  TrafficAgent[] agentList = new TrafficAgent[100];
-	  getManager().listNearObjects((float)location[0], (float)location[1], distance, agentList);
-	*/
+        /*
+          TrafficAgent[] agentList = new TrafficAgent[100];
+          getManager().listNearObjects((float)location[0], (float)location[1], distance, agentList);
+        */
         
-	//TrafficArea[] areaList = this.nowArea.getNeighborList();
-	//for (int j = -1; j < areaList.length; j++) {
-	/*
-	  TrafficAgent[] agentList = null;
-	  if (j == -1) {
-	  agentList = this.nowArea.getAgentList();
-	  }
-	  else {
-	  agentList = areaList[j].getAgentList();
-	  }
-	*/
-	double opdx;
-	double opdy;
-	for (int i = 0; i < agentList.length; i++) {
-	    TrafficAgent op = agentList[i];
-	    if (op ==null || op == this) {
-		continue;
-	    }
-	    opdx = op.getX() - location[0];
-	    /*
-	      if (opdx < -cutoffX || cutoffX < opdx) {
-	      continue;
-	      }
-	    */
-	    opdy = op.getY() - location[1];
-	    /*
-	      if (opdy < -cutoffY || cutoffY < opdy) {
-	      continue;
-	      }
-	    */
-	    // double opdz = op.getZ() - locationZ;
-	    double r = this.radius + op.getRadius();
-	    double opdist2 = opdx * opdx + opdy * opdy;
+        //TrafficArea[] areaList = this.nowArea.getNeighborList();
+        //for (int j = -1; j < areaList.length; j++) {
+        /*
+          TrafficAgent[] agentList = null;
+          if (j == -1) {
+          agentList = this.nowArea.getAgentList();
+          }
+          else {
+          agentList = areaList[j].getAgentList();
+          }
+        */
+        double opdx;
+        double opdy;
+        for (int i = 0; i < agentList.length; i++) {
+            TrafficAgent op = agentList[i];
+            if (op ==null || op == this) {
+                continue;
+            }
+            opdx = op.getX() - location[0];
+            /*
+              if (opdx < -cutoffX || cutoffX < opdx) {
+              continue;
+              }
+            */
+            opdy = op.getY() - location[1];
+            /*
+              if (opdy < -cutoffY || cutoffY < opdy) {
+              continue;
+              }
+            */
+            // double opdz = op.getZ() - locationZ;
+            double r = this.radius + op.getRadius();
+            double opdist2 = opdx * opdx + opdy * opdy;
             
-	    if (opdist2 == 0) {
-		sumopx += randomMax * (this.valueRandomX - randomMean);
-		sumopy += randomMax * (this.valueRandomY - randomMean);
-		continue;
-	    }
-	    double opdist = Math.sqrt(opdist2);
-	    //org.util.Handy.show(null,null,opdist,this,op);
-	    double opdxn = opdx / opdist;
-	    double opdyn = opdy / opdist;
-	    // double opdzn = opdz / opdist;
-	    double opp = r - opdist;
-	    double tmp = -this.valueAgentA * Math.exp(opp / this.valueAgentB);
-	    if (Double.isInfinite(tmp)) {
-		System.out.println("calculateAgentsForce(): A result of exp is infinite: exp(" + (opp / this.valueAgentB) + ")");
-	    }
-	    else {
-		sumopx += tmp * opdxn;
-		sumopy += tmp * opdyn;
-	    }
-	    if (opp > 0) {
-		sumopx += -this.valueAgentK * (opp) * opdxn;
-		sumopy += -this.valueAgentK * (opp) * opdyn;
-		// sumopz += -this.valueAgentK * (opp) * opdzn;
-	    }
-	    //}
+            if (opdist2 == 0) {
+                sumopx += randomMax * (this.valueRandomX - randomMean);
+                sumopy += randomMax * (this.valueRandomY - randomMean);
+                continue;
+            }
+            double opdist = Math.sqrt(opdist2);
+            //org.util.Handy.show(null,null,opdist,this,op);
+            double opdxn = opdx / opdist;
+            double opdyn = opdy / opdist;
+            // double opdzn = opdz / opdist;
+            double opp = r - opdist;
+            double tmp = -this.valueAgentA * Math.exp(opp / this.valueAgentB);
+            if (Double.isInfinite(tmp)) {
+                System.out.println("calculateAgentsForce(): A result of exp is infinite: exp(" + (opp / this.valueAgentB) + ")");
+            }
+            else {
+                sumopx += tmp * opdxn;
+                sumopy += tmp * opdyn;
+            }
+            if (opp > 0) {
+                sumopx += -this.valueAgentK * (opp) * opdxn;
+                sumopy += -this.valueAgentK * (opp) * opdyn;
+                // sumopz += -this.valueAgentK * (opp) * opdzn;
+            }
+            //}
         }
         
         double d2 = sumopx * sumopx + sumopy * sumopy;
@@ -984,7 +984,7 @@ public class TrafficAgent extends TrafficObject {
     
     traffic3.manager.RTreeRectangle bounds = new traffic3.manager.RTreeRectangle(this, 0, 0, 0, 0);
     public traffic3.manager.RTreeRectangle getBounds() {
-	return bounds;
+        return bounds;
     }
     
     

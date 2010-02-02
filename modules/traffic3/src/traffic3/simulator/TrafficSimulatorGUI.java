@@ -5,28 +5,49 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Insets;
+import java.awt.Shape;
+import java.awt.Point;
+import java.awt.Stroke;
+import java.awt.BasicStroke;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.Timer;
 import javax.swing.SwingUtilities;
 
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 
 import traffic3.manager.WorldManager;
 import traffic3.objects.area.TrafficArea;
+import traffic3.objects.TrafficAgent;
 
 import rescuecore2.misc.gui.ScreenTransform;
+import rescuecore2.misc.gui.PanZoomListener;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
 
 public class TrafficSimulatorGUI extends JPanel {
     private static final Log LOG = LogFactory.getLog(TrafficSimulatorGUI.class);
+
+    private static final Color SELECTED_AREA_COLOUR = new Color(0, 0, 255, 128);
+    private static final Color AREA_OUTLINE_COLOUR = new Color(0, 0, 0);
+    private static final Color NEIGHBOUR_LINE_COLOUR = new Color(255, 255, 255);
+
+    private static final Stroke AREA_OUTLINE_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+    private static final Stroke SELECTED_AREA_OUTLINE_STROKE = new BasicStroke(6, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+    private static final Stroke NEIGHBOUR_LINE_STROKE = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
 
     private WorldManager manager;
 
@@ -37,6 +58,8 @@ public class TrafficSimulatorGUI extends JPanel {
     private WorldView view;
     private JButton cont;
     private JCheckBox wait;
+    private JCheckBox animate;
+    private Timer timer;
 
     public TrafficSimulatorGUI(WorldManager manager) {
         super(new BorderLayout());
@@ -46,6 +69,7 @@ public class TrafficSimulatorGUI extends JPanel {
         view = new WorldView();
         cont = new JButton("Continue");
         wait = new JCheckBox("Wait on refresh", waitOnRefresh);
+        animate = new JCheckBox("Animate", false);
         cont.setEnabled(false);
         cont.addActionListener(new ActionListener() {
                 @Override
@@ -64,13 +88,37 @@ public class TrafficSimulatorGUI extends JPanel {
                     waitOnRefresh = wait.isSelected();
                 }
             });
+        animate.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (animate.isSelected()) {
+                        timer.start();
+                    }
+                    else {
+                        timer.stop();
+                    }
+                    cont.setEnabled(false);
+                }
+            });
 
         JPanel buttons = new JPanel(new BorderLayout());
         buttons.add(wait, BorderLayout.WEST);
         buttons.add(cont, BorderLayout.CENTER);
+        buttons.add(animate, BorderLayout.EAST);
 
         add(view, BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
+
+        timer = new Timer(10, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    synchronized (lock) {
+                        if (latch != null) {
+                            latch.countDown();
+                        }
+                    }
+                }
+            });
     }
 
     public void initialise() {
@@ -83,7 +131,9 @@ public class TrafficSimulatorGUI extends JPanel {
             SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        cont.setEnabled(true);
+                        if (!timer.isRunning()) {
+                            cont.setEnabled(true);
+                        }
                     }
                 });
             synchronized (lock) {
@@ -104,6 +154,8 @@ public class TrafficSimulatorGUI extends JPanel {
 
     private class WorldView extends JComponent {
         private ScreenTransform transform;
+        private TrafficArea selectedArea;
+        private Map<Shape, TrafficArea> areas;
 
         public WorldView() {
         }
@@ -120,6 +172,22 @@ public class TrafficSimulatorGUI extends JPanel {
                 }
             }
             transform = new ScreenTransform(bounds.getMinX(), bounds.getMinY(), bounds.getMaxX(), bounds.getMaxY());
+            new PanZoomListener(this).setScreenTransform(transform);
+            selectedArea = null;
+            areas = new HashMap<Shape, TrafficArea>();
+            addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        Point p = e.getPoint();
+                        selectedArea = null;
+                        for (Map.Entry<Shape, TrafficArea> next : areas.entrySet()) {
+                            if (next.getKey().contains(p)) {
+                                selectedArea = next.getValue();
+                            }
+                        }
+                        repaint();
+                    }
+                });
         }
 
         @Override
@@ -136,18 +204,68 @@ public class TrafficSimulatorGUI extends JPanel {
 
         private void drawObjects(Graphics2D g) {
             drawAreas((Graphics2D)g.create());
+            drawAgents((Graphics2D)g.create());
         }
 
         private void drawAreas(Graphics2D g) {
-            g.setColor(Color.black);
+            areas.clear();
             for (TrafficArea area : manager.getAreaList()) {
+                Path2D shape = new Path2D.Double();
                 Line2D[] lines = area.getLines();
-                for (Line2D line : lines) {
-                    g.drawLine(transform.xToScreen(line.getX1()),
-                               transform.yToScreen(line.getY1()),
-                               transform.xToScreen(line.getX2()),
-                               transform.yToScreen(line.getY2()));
+                shape.moveTo(transform.xToScreen(lines[0].getX1()), transform.yToScreen(lines[0].getY1()));
+                for (Line2D line : area.getLines()) {
+                    shape.lineTo(transform.xToScreen(line.getX2()), transform.yToScreen(line.getY2()));
+                    //                    g.drawLine(transform.xToScreen(line.getX1()),
+                    //                               transform.yToScreen(line.getY1()),
+                    //                               transform.xToScreen(line.getX2()),
+                    //                               transform.yToScreen(line.getY2()));
                 }
+                if (area == selectedArea) {
+                    g.setColor(SELECTED_AREA_COLOUR);
+                    g.fill(shape);
+                    g.setStroke(SELECTED_AREA_OUTLINE_STROKE);
+                    g.setColor(AREA_OUTLINE_COLOUR);
+                    g.draw(shape);
+                    g.setStroke(NEIGHBOUR_LINE_STROKE);
+                    g.setColor(NEIGHBOUR_LINE_COLOUR);
+                    for (Line2D line : area.getNeighborLines()) {
+                        g.drawLine(transform.xToScreen(line.getX1()),
+                                   transform.yToScreen(line.getY1()),
+                                   transform.xToScreen(line.getX2()),
+                                   transform.yToScreen(line.getY2()));
+                    }
+                }
+                else {
+                    g.setStroke(AREA_OUTLINE_STROKE);
+                    g.setColor(AREA_OUTLINE_COLOUR);
+                    g.draw(shape);
+                }
+                areas.put(shape, area);
+            }
+        }
+
+        private void drawAgents(Graphics2D g) {
+            for (TrafficAgent agent : manager.getAgentList()) {
+                int x = transform.xToScreen(agent.getX());
+                int y = transform.yToScreen(agent.getY());
+                int x1 = transform.xToScreen(agent.getX() - agent.getRadius());
+                int y1 = transform.yToScreen(agent.getY() - agent.getRadius());
+                int x2 = transform.xToScreen(agent.getX() + agent.getRadius());
+                int y2 = transform.yToScreen(agent.getY() + agent.getRadius());
+                int vx = transform.xToScreen(agent.getX() + (agent.getVX() * 1000));
+                int vy = transform.yToScreen(agent.getY() + (agent.getVY() * 1000));
+                int fx = transform.xToScreen(agent.getX() + (agent.getFX() * 1000));
+                int fy = transform.yToScreen(agent.getY() + (agent.getFY() * 1000));
+                g.setColor(Color.red);
+                g.fillOval(x1, y1, x2 - x1, y1 - y2);
+                g.setColor(Color.blue);
+                g.drawLine(x, y, vx, vy);
+                g.setColor(Color.green);
+                g.drawLine(x, y, fx, fy);
+                LOG.debug("Agent " + agent + " at " + x + ", " + y + " (radius = " + agent.getRadius() + ")");
+                LOG.debug("Ellipse : " + x1 + ", " + y1 + ", " + (x2 - x1) + ", " + (y1 - y2));
+                LOG.debug("Velocity: " + agent.getVX() + ", " + agent.getVY() + " : " + x + ", " + y + " -> " + vx + ", " + vy);
+                LOG.debug("Force   : " + agent.getFX() + ", " + agent.getFY() + " : " + x + ", " + y + " -> " + fx + ", " + fy);
             }
         }
     }

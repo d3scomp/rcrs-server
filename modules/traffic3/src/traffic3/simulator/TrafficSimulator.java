@@ -152,7 +152,7 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
             if (location != null) {
                 String id = location.getID();
                 human.setPosition(new EntityID(Integer.parseInt(id.substring(5, id.indexOf(")")))));
-                LOG.debug(human + " new position: " + human.getPosition());
+                //                LOG.debug(human + " new position: " + human.getPosition());
                 changes.addChange(human, human.getPositionProperty());
             }
             human.setX((int)x);
@@ -262,21 +262,8 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
 
     private void timestep() {
         LOG.debug("Running " + MICROSTEPS + " microsteps");
-        for (TrafficAgent agent : worldManager.getAgentList()) {
-            LOG.debug("Agent " + agent.toLongString());
-            LOG.debug("Location: " + agent.getX() + ", " + agent.getY());
-            LOG.debug("Velocity: " + agent.getVX() + ", " + agent.getVY());
-            LOG.debug("Forces  : " + agent.getFX() + ", " + agent.getFY());
-        }
         for (int i = 0; i < MICROSTEPS; i++) {
             microstep();
-            LOG.debug("Done " + i);
-            for (TrafficAgent agent : worldManager.getAgentList()) {
-                LOG.debug("Agent " + agent.toLongString());
-                LOG.debug("Location: " + agent.getX() + ", " + agent.getY());
-                LOG.debug("Velocity: " + agent.getVX() + ", " + agent.getVY());
-                LOG.debug("Forces  : " + agent.getFX() + ", " + agent.getFY());
-            }
         }
     }
 

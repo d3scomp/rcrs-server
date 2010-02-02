@@ -605,11 +605,11 @@ public class TrafficArea extends TrafficObject {
         if (getLinesCACHE == null) {
             List<Line2D> lineList = new ArrayList<Line2D>();
             for (int i = 0; i < directedEdges.length; i++) {
-                if (directedEdges[i].getAreas().length < 2) {
-                    for (Line2D line : directedEdges[i].getLines()) {
-                        lineList.add(line);
-                    }
+                //                if (directedEdges[i].getAreas().length < 2) {
+                for (Line2D line : directedEdges[i].getLines()) {
+                    lineList.add(line);
                 }
+                //                }
             }
             for (TrafficBlockade blockade : getBlockadeList()) {
                 for (Line2D line : blockade.getLineList()) {
