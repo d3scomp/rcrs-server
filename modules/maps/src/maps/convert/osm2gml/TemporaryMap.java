@@ -270,7 +270,7 @@ public class TemporaryMap {
     }
 
     /**
-       Set the threshold for deciding if two points are the same. The {@link #snap(double, double)} method uses this value to check if a new point needs to be registered.
+       Set the threshold for deciding if two points are the same. The {@link #isNear(Point2D, Point2D)} method uses this value to check if a new point needs to be registered.
        @param t The new threshold.
     */
     public void setNearbyThreshold(double t) {
@@ -278,7 +278,7 @@ public class TemporaryMap {
     }
 
     /**
-       Get the threshold for deciding if two points are the same. The {@link #snap(double, double)} method uses this value to check if a new point needs to be registered.
+       Get the threshold for deciding if two points are the same. The {@link #isNear(Point2D, Point2D)} method uses this value to check if a new point needs to be registered.
        @return The nearby threshold.
     */
     public double getNearbyThreshold() {
