@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import traffic3.manager.WorldManager;
 import traffic3.objects.area.TrafficArea;
 import traffic3.objects.TrafficAgent;
+import traffic3.objects.TrafficBlockade;
 
 import rescuecore2.misc.gui.ScreenTransform;
 import rescuecore2.misc.gui.PanZoomListener;
@@ -44,10 +45,13 @@ public class TrafficSimulatorGUI extends JPanel {
     private static final Color SELECTED_AREA_COLOUR = new Color(0, 0, 255, 128);
     private static final Color AREA_OUTLINE_COLOUR = new Color(0, 0, 0);
     private static final Color NEIGHBOUR_LINE_COLOUR = new Color(255, 255, 255);
+    private static final Color BLOCKADE_OUTLINE_COLOUR = new Color(0, 0, 0);
+    private static final Color BLOCKADE_FILL_COLOUR = new Color(255, 0, 0, 128);
 
     private static final Stroke AREA_OUTLINE_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
     private static final Stroke SELECTED_AREA_OUTLINE_STROKE = new BasicStroke(6, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
     private static final Stroke NEIGHBOUR_LINE_STROKE = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+    private static final Stroke BLOCKADE_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
 
     private WorldManager manager;
 
@@ -241,6 +245,37 @@ public class TrafficSimulatorGUI extends JPanel {
                     g.draw(shape);
                 }
                 areas.put(shape, area);
+            }
+        }
+
+        private void drawBlockades(Graphics2D g) {
+            for (TrafficBlockade b : manager.getBlockadeList()) {
+                Path2D shape = b.getShape();
+                /*
+                  if (area == selectedArea) {
+                  g.setColor(SELECTED_AREA_COLOUR);
+                  g.fill(shape);
+                  g.setStroke(SELECTED_AREA_OUTLINE_STROKE);
+                  g.setColor(AREA_OUTLINE_COLOUR);
+                  g.draw(shape);
+                  g.setStroke(NEIGHBOUR_LINE_STROKE);
+                  g.setColor(NEIGHBOUR_LINE_COLOUR);
+                  for (Line2D line : area.getNeighborLines()) {
+                  g.drawLine(transform.xToScreen(line.getX1()),
+                  transform.yToScreen(line.getY1()),
+                  transform.xToScreen(line.getX2()),
+                  transform.yToScreen(line.getY2()));
+                  }
+                  }
+                  else {
+                */
+                g.setColor(BLOCKADE_FILL_COLOUR);
+                g.fill(shape);
+                g.setStroke(BLOCKADE_STROKE);
+                g.setColor(BLOCKADE_OUTLINE_COLOUR);
+                g.draw(shape);
+                //                }
+                //                areas.put(shape, area);
             }
         }
 
