@@ -3,10 +3,12 @@ package collapse;
 import rescuecore2.config.Config;
 import rescuecore2.messages.control.KSCommands;
 import rescuecore2.worldmodel.ChangeSet;
+import rescuecore2.worldmodel.EntityID;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.Vector2D;
 import rescuecore2.misc.gui.ShapeDebugFrame;
+import rescuecore2.misc.collections.LazyMap;
 
 import rescuecore2.standard.components.StandardSimulator;
 import rescuecore2.standard.entities.StandardEntity;
@@ -16,20 +18,25 @@ import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Edge;
+import rescuecore2.standard.entities.Blockade;
 
 import org.uncommons.maths.random.GaussianGenerator;
 import org.uncommons.maths.Maths;
 
 import java.util.Map;
+import java.util.HashMap;
 import java.util.EnumMap;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.PathIterator;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
@@ -110,6 +117,12 @@ public class CollapseSimulator extends StandardSimulator {
             count.put(code, next);
             total.put(code, 0);
         }
+        Map<Road, Collection<Blockade>> newBlockades = new LazyMap<Road, Collection<Blockade>>() {
+            @Override
+            public Collection<Blockade> createValue() {
+                return new ArrayList<Blockade>();
+            }
+        };
         if (time == 1) {
             // Work out what has collapsed
             for (StandardEntity next : model) {
@@ -126,7 +139,7 @@ public class CollapseSimulator extends StandardSimulator {
                     total.put(code, total.get(code) + 1);
 
                     if (damage > 0) {
-                        createBlockages(b);
+                        createBlockages(b, newBlockades);
                     }
                 }
             }
@@ -169,85 +182,128 @@ public class CollapseSimulator extends StandardSimulator {
                     LOG.info(b + " damaged by fire. New brokenness: " + minDamage);
                     b.setBrokenness(minDamage);
                     changes.addChange(b, b.getBrokennessProperty());
-                    createBlockages(b);
+                    createBlockages(b, newBlockades);
                 }
             }
+        }
+        for (Map.Entry<Road, Collection<Blockade>> entry : newBlockades.entrySet()) {
+            Road r = entry.getKey();
+            List<EntityID> existing = r.getBlockades();
+            List<EntityID> ids = new ArrayList<EntityID>();
+            if (existing != null) {
+                ids.addAll(existing);
+            }
+            for (Blockade b : entry.getValue()) {
+                ids.add(b.getID());
+            }
+            r.setBlockades(ids);
+            changes.addAll(entry.getValue());
+            changes.addChange(r, r.getBlockadesProperty());
         }
         debug.deactivate();
     }
 
-    private void createBlockages(Building b) {
+    private void createBlockages(Building b, Map<Road, Collection<Blockade>> roadBlockages) {
         double d = FLOOR_HEIGHT * b.getFloors() * (1.0 + (b.getBrokenness() / 100.0));
         // Place some blockages on surrounding roads
         List<java.awt.geom.Area> wallAreas = new ArrayList<java.awt.geom.Area>();
         List<java.awt.geom.Area> blockadeAreas = new ArrayList<java.awt.geom.Area>();
         java.awt.geom.Area buildingArea = areaToGeomArea(b);
-        // Expand the building area
-        // Project each wall out
+        // Project each wall out and build a list of wall areas
         for (Edge edge : b.getEdges()) {
-            Line2D wallLine = new Line2D(edge.getStartX(), edge.getStartY(), edge.getEndX() - edge.getStartX(), edge.getEndY() - edge.getStartY());
-            Vector2D wallDirection = wallLine.getDirection();
-            Vector2D offset = wallDirection.getNormal().normalised().scale(-d);
-            Path2D path = new Path2D.Double();
-            Point2D first = wallLine.getOrigin();
-            Point2D second = wallLine.getEndPoint();
-            Point2D third = second.plus(offset);
-            Point2D fourth = first.plus(offset);
-            path.moveTo(first.getX(), first.getY());
-            path.lineTo(second.getX(), second.getY());
-            path.lineTo(third.getX(), third.getY());
-            path.lineTo(fourth.getX(), fourth.getY());
-            java.awt.geom.Area wallArea = new java.awt.geom.Area(path);
-            wallAreas.add(wallArea);
-            // Also add circles at each corner
-            double radius = offset.getLength();
-            Ellipse2D ellipse1 = new Ellipse2D.Double(first.getX() - radius, first.getY() - radius, radius * 2, radius * 2);
-            Ellipse2D ellipse2 = new Ellipse2D.Double(second.getX() - radius, second.getY() - radius, radius * 2, radius * 2);
-            wallAreas.add(new java.awt.geom.Area(ellipse1));
-            wallAreas.add(new java.awt.geom.Area(ellipse2));
-            LOG.info("Edge from " + wallLine + " expanded to " + first + ", " + second + ", " + third + ", " + fourth);
-            debug.show("Collapsed building",
-                       new ShapeDebugFrame.AWTShapeInfo(buildingArea, "Original building area", Color.RED, true),
-                       new ShapeDebugFrame.Line2DShapeInfo(wallLine, "Wall edge", Color.WHITE, true, true),
-                       new ShapeDebugFrame.AWTShapeInfo(wallArea, "Wall area (d = " + d + ")", Color.GREEN, false),
-                       new ShapeDebugFrame.AWTShapeInfo(ellipse1, "Ellipse 1", Color.BLUE, false),
-                       new ShapeDebugFrame.AWTShapeInfo(ellipse2, "Ellipse 2", Color.ORANGE, false)
-                       );
-
+            projectWall(edge, wallAreas, d);
         }
-        // Intersect wall areas with roads
         java.awt.geom.Area fullArea = new java.awt.geom.Area();
         for (java.awt.geom.Area wallArea : wallAreas) {
             fullArea.add(wallArea);
         }
-        debug.show("Collapsed building",
-                   new ShapeDebugFrame.AWTShapeInfo(buildingArea, "Original building area", Color.RED, true),
-                   new ShapeDebugFrame.AWTShapeInfo(fullArea, "Expanded building area (d = " + d + ")", Color.BLACK, false)
-                   );
+        //        debug.show("Collapsed building",
+        //                   new ShapeDebugFrame.AWTShapeInfo(buildingArea, "Original building area", Color.RED, true),
+        //                   new ShapeDebugFrame.AWTShapeInfo(fullArea, "Expanded building area (d = " + d + ")", Color.BLACK, false)
+        //                   );
         // Find existing blockade areas
         java.awt.geom.Area existing = new java.awt.geom.Area();
         for (StandardEntity e : model.getEntitiesOfType(StandardEntityURN.BLOCKADE)) {
-            Blockade b = (Blockade)e;
-            existing.add(blockadeToArea(b));
+            Blockade blockade = (Blockade)e;
+            existing.add(blockadeToArea(blockade));
         }
-        // Intersect with roads
+        // Intersect wall areas with roads
+        Map<Road, Collection<java.awt.geom.Area>> blockadesForRoad = createRoadBlockades(fullArea, existing);
+        // Create blockades
+        int count = 0;
+        for (Collection<java.awt.geom.Area> c : blockadesForRoad.values()) {
+            count += c.size();
+        }
+        try {
+            LOG.debug("Requesting " + count + " new IDs");
+            List<EntityID> newIDs = requestNewEntityIDs(count);
+            Iterator<EntityID> it = newIDs.iterator();
+            for (Map.Entry<Road, Collection<java.awt.geom.Area>> entry : blockadesForRoad.entrySet()) {
+                Road r = entry.getKey();
+                for (java.awt.geom.Area area : entry.getValue()) {
+                    EntityID id = it.next();
+                    Collection<Blockade> c = roadBlockages.get(r);
+                    c.add(makeBlockade(id, area, r.getID()));
+                }
+            }
+        }
+        catch (InterruptedException e) {
+            LOG.error("Interrupted while requesting IDs");
+        }
+    }
+
+    private void projectWall(Edge edge, Collection<java.awt.geom.Area> areaList, double d) {
+        Line2D wallLine = new Line2D(edge.getStartX(), edge.getStartY(), edge.getEndX() - edge.getStartX(), edge.getEndY() - edge.getStartY());
+        Vector2D wallDirection = wallLine.getDirection();
+        Vector2D offset = wallDirection.getNormal().normalised().scale(-d);
+        Path2D path = new Path2D.Double();
+        Point2D first = wallLine.getOrigin();
+        Point2D second = wallLine.getEndPoint();
+        Point2D third = second.plus(offset);
+        Point2D fourth = first.plus(offset);
+        path.moveTo(first.getX(), first.getY());
+        path.lineTo(second.getX(), second.getY());
+        path.lineTo(third.getX(), third.getY());
+        path.lineTo(fourth.getX(), fourth.getY());
+        java.awt.geom.Area wallArea = new java.awt.geom.Area(path);
+        areaList.add(wallArea);
+        // Also add circles at each corner
+        double radius = offset.getLength();
+        Ellipse2D ellipse1 = new Ellipse2D.Double(first.getX() - radius, first.getY() - radius, radius * 2, radius * 2);
+        Ellipse2D ellipse2 = new Ellipse2D.Double(second.getX() - radius, second.getY() - radius, radius * 2, radius * 2);
+        areaList.add(new java.awt.geom.Area(ellipse1));
+        areaList.add(new java.awt.geom.Area(ellipse2));
+        LOG.info("Edge from " + wallLine + " expanded to " + first + ", " + second + ", " + third + ", " + fourth);
+        //        debug.show("Collapsed building",
+        //                   new ShapeDebugFrame.AWTShapeInfo(buildingArea, "Original building area", Color.RED, true),
+        //                   new ShapeDebugFrame.Line2DShapeInfo(wallLine, "Wall edge", Color.WHITE, true, true),
+        //                   new ShapeDebugFrame.AWTShapeInfo(wallArea, "Wall area (d = " + d + ")", Color.GREEN, false),
+        //                   new ShapeDebugFrame.AWTShapeInfo(ellipse1, "Ellipse 1", Color.BLUE, false),
+        //                   new ShapeDebugFrame.AWTShapeInfo(ellipse2, "Ellipse 2", Color.ORANGE, false)
+        //                   );
+    }
+
+    private Map<Road, Collection<java.awt.geom.Area>> createRoadBlockades(java.awt.geom.Area buildingArea, java.awt.geom.Area existing) {
+        Map<Road, Collection<java.awt.geom.Area>> result = new HashMap<Road, Collection<java.awt.geom.Area>>();
         for (StandardEntity e : model.getEntitiesOfType(StandardEntityURN.ROAD)) {
             Road r = (Road)e;
             java.awt.geom.Area roadArea = areaToGeomArea(r);
             java.awt.geom.Area intersection = new java.awt.geom.Area(roadArea);
-            intersection.intersect(fullArea);
+            intersection.intersect(buildingArea);
             intersection.subtract(existing);
-            for (java.awt.geom.Area area : blockadeAreas) {
-                intersection.subtract(area);
+            if (intersection.isEmpty()) {
+                continue;
             }
-            blockadeAreas.add(intersection);
+            existing.add(intersection);
+            List<java.awt.geom.Area> blockadeAreas = fix(intersection);
+            result.put(r, blockadeAreas);
             debug.show("Road blockage",
-                       new ShapeDebugFrame.AWTShapeInfo(expandedArea, "Expanded building area", Color.BLACK, false),
+                       new ShapeDebugFrame.AWTShapeInfo(buildingArea, "Building area", Color.BLACK, false),
                        new ShapeDebugFrame.AWTShapeInfo(roadArea, "Road area", Color.BLUE, false),
                        new ShapeDebugFrame.AWTShapeInfo(intersection, "Intersection", Color.GREEN, true)
                        );
         }
-        // Create blockades
+        return result;
     }
 
     private java.awt.geom.Area areaToGeomArea(rescuecore2.standard.entities.Area area) {
@@ -260,6 +316,116 @@ public class CollapseSimulator extends StandardSimulator {
             e = it.next();
             result.lineTo(e.getEndX(), e.getEndY());
         }
+        return new java.awt.geom.Area(result);
+    }
+
+    private List<java.awt.geom.Area> fix(java.awt.geom.Area area) {
+        List<java.awt.geom.Area> result = new ArrayList<java.awt.geom.Area>();
+        if (area.isSingular()) {
+            result.add(area);
+            return result;
+        }
+        PathIterator it = area.getPathIterator(null);
+        Path2D current = null;
+        double[] d = new double[6];
+        while (!it.isDone()) {
+            it.next();
+            switch (it.currentSegment(d)) {
+            case PathIterator.SEG_MOVETO:
+                if (current != null) {
+                    result.add(new java.awt.geom.Area(current));
+                }
+                current = new Path2D.Double();
+                break;
+            case PathIterator.SEG_LINETO:
+                current.lineTo(d[0], d[1]);
+                break;
+            case PathIterator.SEG_QUADTO:
+                current.quadTo(d[0], d[1], d[2], d[3]);
+                break;
+            case PathIterator.SEG_CUBICTO:
+                current.curveTo(d[0], d[1], d[2], d[3], d[4], d[5]);
+                break;
+            case PathIterator.SEG_CLOSE:
+                current.closePath();
+                break;
+            }
+        }
+        if (current != null) {
+            result.add(new java.awt.geom.Area(current));
+        }
+        return result;
+    }
+
+    private Blockade makeBlockade(EntityID id, java.awt.geom.Area area, EntityID roadID) {
+        Blockade result = new Blockade(id);
+        int[] apexes = getApexes(area);
+        result.setApexes(apexes);
+        result.setPosition(roadID);
+        LOG.debug("Created new blockade: " + result.getFullDescription());
+        return result;
+    }
+
+    private int[] getApexes(java.awt.geom.Area area) {
+        LOG.debug("getApexes");
+        List<Integer> apexes = new ArrayList<Integer>();
+        PathIterator it = area.getPathIterator(null, 100);
+        double[] d = new double[6];
+        int moveX = 0;
+        int moveY = 0;
+        while (!it.isDone()) {
+            int x = 0;
+            int y = 0;
+            switch (it.currentSegment(d)) {
+            case PathIterator.SEG_MOVETO:
+                LOG.debug("Move to");
+                x = (int)d[0];
+                y = (int)d[1];
+                moveX = x;
+                moveY = y;
+                break;
+            case PathIterator.SEG_LINETO:
+                LOG.debug("Line to");
+                x = (int)d[0];
+                y = (int)d[1];
+                break;
+            case PathIterator.SEG_QUADTO:
+                LOG.debug("Quad to");
+                x = (int)d[2];
+                y = (int)d[3];
+                break;
+            case PathIterator.SEG_CUBICTO:
+                LOG.debug("Cubic to");
+                x = (int)d[4];
+                y = (int)d[5];
+                break;
+            case PathIterator.SEG_CLOSE:
+                LOG.debug("Close");
+                x = moveX;
+                y = moveY;
+                break;
+            }
+            apexes.add(x);
+            apexes.add(y);
+            LOG.debug(x + ", " + y);
+            it.next();
+        }
+        int[] result = new int[apexes.size()];
+        int i = 0;
+        for (Integer next : apexes) {
+            result[i++] = next;
+        }
+        return result;
+    }
+
+    private java.awt.geom.Area blockadeToArea(Blockade b) {
+        Path2D result = new Path2D.Double();
+        int[] apexes = b.getApexes();
+        result.moveTo(apexes[0], apexes[1]);
+        for (int i = 2; i < apexes.length; i += 2) {
+            result.lineTo(apexes[i], apexes[i+1]);
+        }
+        result.closePath();
         return new java.awt.geom.Area(result);
     }
 
