@@ -16,7 +16,6 @@ import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.standard.entities.StandardEntityConstants;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.Road;
-import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Edge;
 import rescuecore2.standard.entities.Blockade;
 
@@ -27,13 +26,11 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.EnumMap;
 import java.util.Iterator;
-import java.util.ListIterator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import java.awt.Color;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.PathIterator;
@@ -204,11 +201,11 @@ public class CollapseSimulator extends StandardSimulator {
     }
 
     private void createBlockages(Building b, Map<Road, Collection<Blockade>> roadBlockages) {
+        // CHECKSTYLE:OFF:MagicNumber
         double d = FLOOR_HEIGHT * b.getFloors() * (1.0 + (b.getBrokenness() / 100.0));
+        // CHECKSTYLE:ON:MagicNumber
         // Place some blockages on surrounding roads
         List<java.awt.geom.Area> wallAreas = new ArrayList<java.awt.geom.Area>();
-        List<java.awt.geom.Area> blockadeAreas = new ArrayList<java.awt.geom.Area>();
-        java.awt.geom.Area buildingArea = areaToGeomArea(b);
         // Project each wall out and build a list of wall areas
         for (Edge edge : b.getEdges()) {
             projectWall(edge, wallAreas, d);
@@ -327,6 +324,7 @@ public class CollapseSimulator extends StandardSimulator {
         }
         PathIterator it = area.getPathIterator(null);
         Path2D current = null;
+        // CHECKSTYLE:OFF:MagicNumber
         double[] d = new double[6];
         while (!it.isDone()) {
             it.next();
@@ -351,6 +349,7 @@ public class CollapseSimulator extends StandardSimulator {
                 break;
             }
         }
+        // CHECKSTYLE:ON:MagicNumber
         if (current != null) {
             result.add(new java.awt.geom.Area(current));
         }
@@ -369,6 +368,7 @@ public class CollapseSimulator extends StandardSimulator {
     private int[] getApexes(java.awt.geom.Area area) {
         LOG.debug("getApexes");
         List<Integer> apexes = new ArrayList<Integer>();
+        // CHECKSTYLE:OFF:MagicNumber
         PathIterator it = area.getPathIterator(null, 100);
         double[] d = new double[6];
         int moveX = 0;
@@ -410,6 +410,7 @@ public class CollapseSimulator extends StandardSimulator {
             LOG.debug(x + ", " + y);
             it.next();
         }
+        // CHECKSTYLE:ON:MagicNumber
         int[] result = new int[apexes.size()];
         int i = 0;
         for (Integer next : apexes) {
@@ -423,7 +424,7 @@ public class CollapseSimulator extends StandardSimulator {
         int[] apexes = b.getApexes();
         result.moveTo(apexes[0], apexes[1]);
         for (int i = 2; i < apexes.length; i += 2) {
-            result.lineTo(apexes[i], apexes[i+1]);
+            result.lineTo(apexes[i], apexes[i + 1]);
         }
         result.closePath();
         return new java.awt.geom.Area(result);
