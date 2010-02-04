@@ -46,6 +46,7 @@ public class PutAgentsAction2 extends TrafficAction {
                         List<TrafficAgent> agentBuf = new ArrayList<TrafficAgent>();
                         double radius = WorldManagerGUI.AGENT_RADIUS_DEFAULT;
                         double velocity = WorldManagerGUI.AGENT_VELOCITY_DEFAULT;
+                        /*
                         for (TrafficArea area : wmgui.getWorldManager().getAreaList()) {
                             for (int i = 0; i < number; i++) {
                                 TrafficAgent agent = new TrafficAgent(wmgui.getWorldManager(), WorldManagerGUI.AGENT_RADIUS_DEFAULT, WorldManagerGUI.AGENT_VELOCITY_DEFAULT);
@@ -55,6 +56,7 @@ public class PutAgentsAction2 extends TrafficAction {
                                 wmgui.getWorldManager().appendWithoutCheck(agent);
                             }
                         }
+                        */
                        Boolean b = (Boolean)wmgui.getValue("simulating");
                         if (!b.booleanValue()) {
                             if (confirm(wmgui, "Simulation was not started.\n Do you want to start simulation now?")) {
@@ -65,9 +67,9 @@ public class PutAgentsAction2 extends TrafficAction {
                     catch (CannotStopEDTException exc) {
                         exc.printStackTrace();
                     }
-                    catch (WorldManagerException exc) {
-                        exc.printStackTrace();
-                    }
+                    //                    catch (WorldManagerException exc) {
+                    //                        exc.printStackTrace();
+                    //                    }
                 }
             }, "put agent2").start();
     }

@@ -132,7 +132,7 @@ public class RCRSAgent1 implements Parser {
                     }
                     TagElement tag = (TagElement)element;
                     Element result = null;
-                    try {
+                    //                    try {
                         if ("agent".equals(tag.getKey())) {
                             String id = tag.getAttributeValue("id");
                             if (id == null) {
@@ -141,6 +141,7 @@ public class RCRSAgent1 implements Parser {
                             String type = tag.getAttributeValue("type");
                             final double radius = 200;
                             final double vLimit = 0.7;
+                            /*
                             TrafficAgent agent = new TrafficAgent(wm, id, radius, vLimit);
                             agent.setType(type);
                             TagElement location = tag.getTagChild("location");
@@ -149,6 +150,7 @@ public class RCRSAgent1 implements Parser {
                             double z = Double.parseDouble(location.getChildValue("z", "0"));
                             agent.setLocation(x, y, z);
                             wm.appendWithoutCheck(agent);
+                            */
                         }
                         else if ("location".equals(tag.getKey())) {
                             result = element;
@@ -165,10 +167,10 @@ public class RCRSAgent1 implements Parser {
                         else {
                             System.out.println("skipped: " + tag.getKey());
                         }
-                    }
-                    catch (WorldManagerException e) {
-                        exception[0] = e;
-                    }
+                        //                    }
+                    //                    catch (WorldManagerException e) {
+                    //                        exception[0] = e;
+                    //                    }
                     return result;
                 }
                 public ParserPolicy getInnerPolicy(Element element) {
