@@ -29,9 +29,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
-
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
@@ -52,7 +49,9 @@ public class GMLWorldModelCreator implements WorldModelCreator {
     private static final String MAP_FILE_KEY = "gis.map";
     private static final String SCENARIO_FILE_KEY = "gis.scenario";
 
+    // CHECKSTYLE:OFF:MagicNumber
     private static final double AREA_SCALE_FACTOR = 1.0 / 10000.0;
+    // CHECKSTYLE:ON:MagicNumber
 
     private ShapeDebugFrame debug;
 
@@ -210,7 +209,7 @@ public class GMLWorldModelCreator implements WorldModelCreator {
         sum /= 6.0 * area;
         // CHECKSTYLE:ON:MagicNumber
         LOG.debug("X centroid of " + shape + ": " + sum);
-        return sum;        
+        return sum;
     }
 
     private double computeCentroidY(GMLShape shape, CoordinateConversion conversion, double area) {
@@ -236,6 +235,6 @@ public class GMLWorldModelCreator implements WorldModelCreator {
         sum /= 6.0 * area;
         // CHECKSTYLE:ON:MagicNumber
         LOG.debug("Y centroid of " + shape + ": " + sum);
-        return sum;        
+        return sum;
     }
 }
