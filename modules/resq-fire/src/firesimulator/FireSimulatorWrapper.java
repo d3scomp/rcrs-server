@@ -270,12 +270,10 @@ public class FireSimulatorWrapper extends StandardSimulator {
 
     private class WrapperKernel implements Kernel {
         private CyclicBarrier commandsBarrier;
-        private int time;
         private SynchronousQueue<ChangeSet> queue;
 
         public WrapperKernel() {
             commandsBarrier = new CyclicBarrier(2);
-            time = 0;
             queue = new SynchronousQueue<ChangeSet>();
         }
 
@@ -331,7 +329,6 @@ public class FireSimulatorWrapper extends StandardSimulator {
         }
 
         ChangeSet commandsReceived(int newTime) throws InterruptedException, BrokenBarrierException {
-            this.time = newTime;
             commandsBarrier.await();
             ChangeSet result = queue.take();
             return result;
