@@ -71,7 +71,7 @@ public class SampleFireBrigade extends AbstractSampleAgent<FireBrigade> {
             else {
                 System.out.println(me() + " couldn't plan a path to a refuge.");
                 path = randomWalk();
-		sendMove(time, path);
+                sendMove(time, path);
                 return;
             }
         }

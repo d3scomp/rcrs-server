@@ -54,7 +54,7 @@ public class SamplePoliceForce extends AbstractSampleAgent<PoliceForce> {
         if (path != null) {
             LOG.debug(me() + " moving: " + path);
             sendMove(time, path);
-	    return;
+            return;
         }
         LOG.debug(me() + " couldn't plan a path to a blocked road.");
         sendMove(time, randomWalk());
