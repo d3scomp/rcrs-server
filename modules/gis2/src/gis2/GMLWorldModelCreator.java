@@ -56,6 +56,8 @@ public class GMLWorldModelCreator implements WorldModelCreator {
 
     private ShapeDebugFrame debug;
 
+    private int nextID;
+
     @Override
     public String toString() {
         return "GML world model creator";
@@ -67,6 +69,10 @@ public class GMLWorldModelCreator implements WorldModelCreator {
             StandardWorldModel result = new StandardWorldModel();
             readMapData(config, result);
             readScenarioData(config, result);
+            for (Entity e : result) {
+                nextID = Math.max(nextID, e.getID().getValue());
+            }
+            ++nextID;
             return result;
         }
         catch (GMLException e) {
@@ -75,6 +81,11 @@ public class GMLWorldModelCreator implements WorldModelCreator {
         catch (DocumentException e) {
             throw new KernelException("Couldn't read scenario file", e);
         }
+    }
+
+    @Override
+    public EntityID generateID() {
+        return new EntityID(nextID++);
     }
 
     private GMLMap readMap(String fileName) throws GMLException {
