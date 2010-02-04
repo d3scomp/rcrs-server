@@ -29,9 +29,6 @@ import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.StandardPropertyURN;
 import rescuecore2.standard.entities.StandardEntityURN;
 import rescuecore2.standard.entities.StandardWorldModel;
-import rescuecore2.standard.entities.Blockade;
-import rescuecore2.standard.entities.Civilian;
-import rescuecore2.standard.entities.StandardPropertyURN;
 
 import rescuecore2.standard.StandardConstants;
 
@@ -147,6 +144,9 @@ public class StandardAgentRegistrar implements AgentRegistrar {
             case BROKENNESS:
             case TEMPERATURE:
                 next.undefine();
+                break;
+            default:
+                // Ignore
             }
         }
     }
