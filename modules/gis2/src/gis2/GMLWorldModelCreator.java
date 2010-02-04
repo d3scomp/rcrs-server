@@ -29,11 +29,16 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
 
 import java.io.File;
+
+import rescuecore2.misc.gui.ShapeDebugFrame;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
@@ -46,6 +51,10 @@ public class GMLWorldModelCreator implements WorldModelCreator {
 
     private static final String MAP_FILE_KEY = "gis.map";
     private static final String SCENARIO_FILE_KEY = "gis.scenario";
+
+    private static final double AREA_SCALE_FACTOR = 1.0 / 10000.0;
+
+    private ShapeDebugFrame debug;
 
     @Override
     public String toString() {
@@ -87,14 +96,14 @@ public class GMLWorldModelCreator implements WorldModelCreator {
             b.setBrokenness(0);
             b.setBuildingCode(0);
             b.setBuildingAttributes(0);
-            double ground = computeArea(next, conversion);
-            b.setGroundArea((int)ground);
-            b.setTotalArea((int)ground);
+            double area = computeArea(next, conversion);
+            b.setGroundArea((int)Math.abs(area * AREA_SCALE_FACTOR));
+            b.setTotalArea((int)Math.abs(area * AREA_SCALE_FACTOR));
             b.setImportance(1);
             // Area properties
-            b.setX((int)conversion.convertX(next.getCentreX()));
-            b.setY((int)conversion.convertY(next.getCentreY()));
             b.setEdges(createEdges(next, conversion));
+            b.setX((int)computeCentroidX(next, conversion, area));
+            b.setY((int)computeCentroidY(next, conversion, area));
             result.addEntity(b);
             //                LOG.debug(b.getFullDescription());
         }
@@ -121,18 +130,19 @@ public class GMLWorldModelCreator implements WorldModelCreator {
     }
 
     private List<Edge> createEdges(GMLShape s, CoordinateConversion conversion) {
+        LOG.debug("Computing edges for " + s);
         List<Edge> result = new ArrayList<Edge>();
         for (GMLDirectedEdge edge : s.getEdges()) {
             GMLCoordinates start = edge.getStartCoordinates();
             GMLCoordinates end = edge.getEndCoordinates();
             Integer neighbourID = s.getNeighbour(edge);
             EntityID id = neighbourID == null ? null : new EntityID(neighbourID);
-            //            LOG.debug("Edge: " + start + " -> " + end);
+            LOG.debug("Edge: " + start + " -> " + end);
             double sx = conversion.convertX(start.getX());
             double sy = conversion.convertY(start.getY());
             double ex = conversion.convertX(end.getX());
             double ey = conversion.convertY(end.getY());
-            //            LOG.debug("Scaled edge: " + sx + "," + sy + " -> " + ex + "," + ey);
+            LOG.debug("Scaled edge: " + sx + "," + sy + " -> " + ex + "," + ey);
             result.add(new Edge((int)sx,
                                 (int)sy,
                                 (int)ex,
@@ -145,6 +155,7 @@ public class GMLWorldModelCreator implements WorldModelCreator {
     private double computeArea(GMLShape shape, CoordinateConversion conversion) {
         Iterator<GMLCoordinates> it = shape.getCoordinates().iterator();
         GMLCoordinates last = it.next();
+        GMLCoordinates first = last;
         double sum = 0;
         while (it.hasNext()) {
             GMLCoordinates next = it.next();
@@ -155,8 +166,65 @@ public class GMLWorldModelCreator implements WorldModelCreator {
             sum += (lastX * nextY) - (nextX * lastY);
             last = next;
         }
-        sum /= 10000;
+        double lastX = conversion.convertX(last.getX());
+        double lastY = conversion.convertY(last.getY());
+        double nextX = conversion.convertX(first.getX());
+        double nextY = conversion.convertY(first.getY());
+        sum += (lastX * nextY) - (nextX * lastY);
+        sum /= 2.0;
         LOG.debug("Area of " + shape + ": " + Math.abs(sum));
-        return Math.abs(sum);
+        return sum;
+    }
+
+    private double computeCentroidX(GMLShape shape, CoordinateConversion conversion, double area) {
+        Iterator<GMLCoordinates> it = shape.getCoordinates().iterator();
+        GMLCoordinates last = it.next();
+        GMLCoordinates first = last;
+        double sum = 0;
+        while (it.hasNext()) {
+            GMLCoordinates next = it.next();
+            double lastX = conversion.convertX(last.getX());
+            double lastY = conversion.convertY(last.getY());
+            double nextX = conversion.convertX(next.getX());
+            double nextY = conversion.convertY(next.getY());
+            sum += (lastX + nextX) * ((lastX * nextY) - (nextX * lastY));
+            last = next;
+        }
+        double lastX = conversion.convertX(last.getX());
+        double lastY = conversion.convertY(last.getY());
+        double nextX = conversion.convertX(first.getX());
+        double nextY = conversion.convertY(first.getY());
+        sum += (lastX + nextX) * ((lastX * nextY) - (nextX * lastY));
+        // CHECKSTYLE:OFF:MagicNumber
+        sum /= 6.0 * area;
+        // CHECKSTYLE:ON:MagicNumber
+        LOG.debug("X centroid of " + shape + ": " + sum);
+        return sum;        
+    }
+
+    private double computeCentroidY(GMLShape shape, CoordinateConversion conversion, double area) {
+        Iterator<GMLCoordinates> it = shape.getCoordinates().iterator();
+        GMLCoordinates last = it.next();
+        GMLCoordinates first = last;
+        double sum = 0;
+        while (it.hasNext()) {
+            GMLCoordinates next = it.next();
+            double lastX = conversion.convertX(last.getX());
+            double lastY = conversion.convertY(last.getY());
+            double nextX = conversion.convertX(next.getX());
+            double nextY = conversion.convertY(next.getY());
+            sum += (lastY + nextY) * ((lastX * nextY) - (nextX * lastY));
+            last = next;
+        }
+        double lastX = conversion.convertX(last.getX());
+        double lastY = conversion.convertY(last.getY());
+        double nextX = conversion.convertX(first.getX());
+        double nextY = conversion.convertY(first.getY());
+        sum += (lastY + nextY) * ((lastX * nextY) - (nextX * lastY));
+        // CHECKSTYLE:OFF:MagicNumber
+        sum /= 6.0 * area;
+        // CHECKSTYLE:ON:MagicNumber
+        LOG.debug("Y centroid of " + shape + ": " + sum);
+        return sum;        
     }
 }
