@@ -54,10 +54,10 @@ public enum ControlMessageURN {
     SHUTDOWN("urn:rescuecore2:messages.control:shutdown"),
 
     /** New EntityID request. */
-    ENTITY_ID_REQUEST,
+    ENTITY_ID_REQUEST("urn:rescuecore2:messages.control:entity_id_request"),
 
     /** New EntityID response. */
-    ENTITY_ID_RESPONSE;
+    ENTITY_ID_RESPONSE("urn:rescuecore2:messages.control:entity_id_response");
 
     private String urn;
 

@@ -3,6 +3,7 @@ package rescuecore2.messages.control;
 import rescuecore2.worldmodel.EntityID;
 import rescuecore2.messages.Control;
 import rescuecore2.messages.AbstractMessage;
+import rescuecore2.messages.components.IntComponent;
 import rescuecore2.messages.components.EntityIDListComponent;
 
 import java.io.InputStream;
@@ -14,6 +15,8 @@ import java.util.List;
    A message from a the kernel supplying a new EntityID.
 */
 public class EntityIDResponse extends AbstractMessage implements Control {
+    private IntComponent simID;
+    private IntComponent requestID;
     private EntityIDListComponent newID;
 
     /**
@@ -28,24 +31,34 @@ public class EntityIDResponse extends AbstractMessage implements Control {
 
     /**
        Construct an EntityIDResponse message.
+       @param simID The ID of the simulator that made the request.
+       @param requestID The request ID that this is a response to.
        @param ids The new EntityIDs.
      */
-    public EntityIDResponse(EntityID... ids) {
-        this(Arrays.asList(ids));
+    public EntityIDResponse(int simID, int requestID, EntityID... ids) {
+        this(simID, requestID, Arrays.asList(ids));
     }
 
     /**
        Construct an EntityIDResponse message.
+       @param simID The ID of the simulator that made the request.
+       @param requestID The request ID that this is a response to.
        @param ids The new EntityIDs.
      */
-    public EntityIDResponse(List<EntityID> ids) {
+    public EntityIDResponse(int simID, int requestID, List<EntityID> ids) {
         this();
+        this.simID.setValue(simID);
+        this.requestID.setValue(requestID);
         this.newID.setIDs(ids);
     }
 
     private EntityIDResponse() {
         super(ControlMessageURN.ENTITY_ID_RESPONSE);
+        simID = new IntComponent("Simulator ID");
+        requestID = new IntComponent("Request number");
         newID = new EntityIDListComponent("New entity IDs");
+        addMessageComponent(simID);
+        addMessageComponent(requestID);
         addMessageComponent(newID);
     }
 
@@ -55,5 +68,21 @@ public class EntityIDResponse extends AbstractMessage implements Control {
      */
     public List<EntityID> getEntityIDs() {
         return newID.getIDs();
+    }
+
+    /**
+       Get the ID of the simulator making the request.
+       @return The simulator ID.
+    */
+    public int getSimulatorID() {
+        return simID.getValue();
+    }
+
+    /**
+       Get the ID of this request.
+       @return The request ID.
+    */
+    public int getRequestID() {
+        return requestID.getValue();
     }
 }

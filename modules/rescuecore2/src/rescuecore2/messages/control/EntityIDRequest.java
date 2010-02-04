@@ -11,6 +11,8 @@ import java.io.IOException;
    A message from a simulator requesting a new EntityID.
 */
 public class EntityIDRequest extends AbstractMessage implements Control {
+    private IntComponent simID;
+    private IntComponent requestID;
     private IntComponent count;
 
     /**
@@ -25,17 +27,41 @@ public class EntityIDRequest extends AbstractMessage implements Control {
 
     /**
        Construct an EntityIDRequest message.
+       @param simID The ID of the simulator making the request.
+       @param requestID A unique ID number for this request.
        @param number The number of IDs requested.
      */
-    public EntityIDRequest(int number) {
+    public EntityIDRequest(int simID, int requestID, int number) {
         this();
+        this.simID.setValue(simID);
+        this.requestID.setValue(requestID);
         this.count.setValue(number);
     }
 
     private EntityIDRequest() {
         super(ControlMessageURN.ENTITY_ID_REQUEST);
+        simID = new IntComponent("Simulator ID");
+        requestID = new IntComponent("Request number");
         count = new IntComponent("Number of IDs");
+        addMessageComponent(simID);
+        addMessageComponent(requestID);
         addMessageComponent(count);
+    }
+
+    /**
+       Get the ID of the simulator making the request.
+       @return The simulator ID.
+    */
+    public int getSimulatorID() {
+        return simID.getValue();
+    }
+
+    /**
+       Get the ID of this request.
+       @return The request ID.
+    */
+    public int getRequestID() {
+        return requestID.getValue();
     }
 
     /**

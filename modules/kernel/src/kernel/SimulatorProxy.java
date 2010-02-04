@@ -116,12 +116,16 @@ public class SimulatorProxy extends AbstractKernelComponent {
                 }
             }
             if (msg instanceof EntityIDRequest) {
-                int count = ((EntityIDRequest)msg).getCount();
-                List<EntityID> result = new ArrayList<EntityID>(count);
-                for (int i = 0; i < count; ++i) {
-                    result.add(idGenerator.generateID());
+                EntityIDRequest req = (EntityIDRequest)msg;
+                if (req.getSimulatorID() == id) {
+                    int requestID = req.getRequestID();
+                    int count = req.getCount();
+                    List<EntityID> result = new ArrayList<EntityID>(count);
+                    for (int i = 0; i < count; ++i) {
+                        result.add(idGenerator.generateID());
+                    }
+                    send(new EntityIDResponse(id, requestID, result));
                 }
-                send(new EntityIDResponse(result));
             }
         }
     }
