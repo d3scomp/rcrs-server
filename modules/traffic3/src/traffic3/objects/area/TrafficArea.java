@@ -140,15 +140,34 @@ public class TrafficArea extends TrafficObject {
                 TrafficAreaEdge edge = new TrafficAreaEdge(worldManager, eid, nodes);
                 if (next == null || "rcrs(-1)".equals(next)) {
                     edge.setAreaIDs(getID());
+                    worldManager.appendWithoutCheck(edge);
+                    edgeIDList.add(edge.getID());
                 }
                 else {
-                    edge.setAreaIDs(getID(), next);
+                    TrafficAreaEdge matchedEdge = null;
+                    TrafficArea narea = (TrafficArea)worldManager.getTrafficObject(next);
+                    if (narea != null) {
+                        for (String neid : narea.getEdgeIDs()) {
+                            TrafficAreaEdge nedge = (TrafficAreaEdge)worldManager.getTrafficObject(neid);
+                            if (edge.isSameShape(nedge)) {
+                                matchedEdge = nedge;
+                            }
+                        }
+                    }
+                    if (matchedEdge != null) {
+                        edgeIDList.add(matchedEdge.getID());
+                    }
+                    else {
+                        worldManager.appendWithoutCheck(edge);
+                        edgeIDList.add(edge.getID());
+                    }
+                    edge.setAreaIDs(getID(), next); 
                     //System.out.println(edge + " == [" + getID() + " , " + next + "]");
                 }
-                worldManager.appendWithoutCheck(edge);
-                edgeIDList.add(edge.getID());
             }
             edgeIDs = edgeIDList.toArray(new String[0]);
+
+            
             //directedEdges
         }
         catch (WorldManagerException e) {
@@ -318,6 +337,10 @@ public class TrafficArea extends TrafficObject {
             log(e);
         }
         createCache();
+    }
+
+    public String[] getEdgeIDs() {
+        return edgeIDs;
     }
 
     public void setDirectedEdges(TrafficAreaDirectedEdge... des) {

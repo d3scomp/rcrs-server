@@ -312,6 +312,30 @@ public class TrafficAreaEdge extends TrafficObject {
         }
     }
 
+    public boolean isSameShape(TrafficAreaEdge o) {
+        TrafficAreaNode[] myNodes = getNodes();
+        TrafficAreaNode[] oNodes = o.getNodes();
+        if (myNodes.length != oNodes.length)  {
+            return false;
+        }
+        boolean match = true;
+        for (int i = 0; i < myNodes.length; i++) {
+            if (!myNodes[i].getID().equals(oNodes[i].getID())) {
+                match = false;
+                break;
+            }
+        }
+        if (match) {
+            return true;
+        }
+        for (int i = 0; i < myNodes.length; i++) {
+            if (!myNodes[myNodes.length - 1 - i].getID().equals(oNodes[i].getID())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * set properties.
      * @param gmlElement gml element
