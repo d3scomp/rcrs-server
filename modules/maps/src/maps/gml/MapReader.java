@@ -2,6 +2,7 @@ package maps.gml;
 
 import maps.gml.formats.RobocupFormat;
 import maps.gml.formats.OrdnanceSurveyFormat;
+import maps.gml.formats.MeijoFormat;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -119,6 +120,7 @@ public final class MapReader {
     private static MapFormat guessFormat(Document doc) {
         List<MapFormat> all = new ArrayList<MapFormat>();
         all.add(new RobocupFormat());
+        all.add(new MeijoFormat());
         all.add(new OrdnanceSurveyFormat());
         for (MapFormat next : all) {
             if (next.looksValid(doc)) {
