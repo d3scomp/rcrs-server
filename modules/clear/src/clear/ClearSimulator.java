@@ -15,12 +15,17 @@ import rescuecore2.standard.messages.AKClear;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    The area model clear simulator. This simulator processes AKClear messages.
  */
 public class ClearSimulator extends StandardSimulator {
+    private static final Log LOG = LogFactory.getLog(ClearSimulator.class);
+
     private static final String SIMULATOR_NAME = "Area model clear simulator";
 
     private static final String REPAIR_RATE_KEY = "clear.repair.rate";
@@ -39,6 +44,7 @@ public class ClearSimulator extends StandardSimulator {
                 if (!isValid(clear)) {
                     continue;
                 }
+                LOG.debug("Processing " + clear);
                 EntityID blockadeID = clear.getTarget();
                 Blockade blockade = (Blockade)model.getEntity(blockadeID);
                 Area area = (Area)model.getEntity(blockade.getPosition());
@@ -46,13 +52,14 @@ public class ClearSimulator extends StandardSimulator {
                 int rate = config.getIntValue(REPAIR_RATE_KEY);
                 if (rate > cost) {
                     // Remove the blockade entirely
-                    List<EntityID> ids = area.getBlockades();
+                    List<EntityID> ids = new ArrayList<EntityID>(area.getBlockades());
                     ids.remove(blockadeID);
                     area.setBlockades(ids);
                     model.removeEntity(blockadeID);
                     changes.addChange(area, area.getBlockadesProperty());
                     changes.entityDeleted(blockadeID);
                     partiallyCleared.remove(blockade);
+                    LOG.debug("Cleared " + blockade);
                 }
                 else {
                     // Update the repair cost
@@ -72,6 +79,7 @@ public class ClearSimulator extends StandardSimulator {
             double current = b.getRepairCost();
             // d is the new size relative to the old size
             double d = current / original;
+            LOG.debug("Partially cleared " + b + ": " + d);
             int[] apexes = b.getApexes();
             double cx = b.getX();
             double cy = b.getY();
@@ -96,50 +104,57 @@ public class ClearSimulator extends StandardSimulator {
         StandardEntity agent = model.getEntity(clear.getAgentID());
         StandardEntity target = model.getEntity(clear.getTarget());
         if (agent == null) {
-            System.out.println("Rejecting clear command " + clear + ": agent does not exist");
+            LOG.info("Rejecting clear command " + clear + ": agent does not exist");
             return false;
         }
         if (target == null) {
-            System.out.println("Rejecting clear command " + clear + ": target does not exist");
+            LOG.info("Rejecting clear command " + clear + ": target does not exist");
             return false;
         }
         if (!(agent instanceof PoliceForce)) {
-            System.out.println("Rejecting clear command " + clear + ": agent is not a police officer");
+            LOG.info("Rejecting clear command " + clear + ": agent is not a police officer");
             return false;
         }
         if (!(target instanceof Blockade)) {
-            System.out.println("Rejecting clear command " + clear + ": target is not a road");
+            LOG.info("Rejecting clear command " + clear + ": target is not a road");
             return false;
         }
         PoliceForce police = (PoliceForce)agent;
         StandardEntity agentPosition = police.getPosition(model);
         if (agentPosition == null) {
-            System.out.println("Rejecting clear command " + clear + ": could not locate agent");
+            LOG.info("Rejecting clear command " + clear + ": could not locate agent");
             return false;
         }
         if (!police.isHPDefined() || police.getHP() <= 0) {
-            System.out.println("Rejecting clear command " + clear + ": agent is dead");
+            LOG.info("Rejecting clear command " + clear + ": agent is dead");
             return false;
         }
         if (police.isBuriednessDefined() && police.getBuriedness() > 0) {
-            System.out.println("Rejecting clear command " + clear + ": agent is buried");
+            LOG.info("Rejecting clear command " + clear + ": agent is buried");
             return false;
         }
         Blockade targetBlockade = (Blockade)target;
         if (!targetBlockade.isPositionDefined()) {
-            System.out.println("Rejecting clear command " + clear + ": blockade has no position");
+            LOG.info("Rejecting clear command " + clear + ": blockade has no position");
             return false;
         }
         if (!targetBlockade.isRepairCostDefined()) {
-            System.out.println("Rejecting clear command " + clear + ": blockade has no repair cost");
+            LOG.info("Rejecting clear command " + clear + ": blockade has no repair cost");
             return false;
         }
-        EntityID agentPositionID = police.getPosition();
+        // Check location
+        EntityID agentPositionID = agentPosition.getID();
         EntityID targetPositionID = targetBlockade.getPosition();
-        if (agentPositionID == null || !agentPositionID.equals(targetPositionID)) {
-            System.out.println("Rejecting clear command " + clear + ": agent is not adjacent to target");
-            return false;
+        // Same position?
+        if (agentPositionID.equals(targetPositionID)) {
+            return true;
         }
-        return true;
+        // Neighbouring location?
+        Area targetArea = (Area)model.getEntity(targetPositionID);
+        if (targetArea.getNeighbours().contains(agentPositionID)) {
+            return true;
+        }
+        LOG.info("Rejecting clear command " + clear + ": agent is not adjacent to target");
+        return false;
     }
 }
