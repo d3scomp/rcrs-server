@@ -52,9 +52,9 @@ import org.apache.commons.logging.Log;
 public class TrafficSimulator extends StandardSimulator implements GUIComponent {
     private static final Log LOG = LogFactory.getLog(TrafficSimulator.class);
 
-    private static final double STEP_TIME = 100; // 100ms
-    //    private static final int MICROSTEPS = (int)(1 / STEP_TIME) * 60;
-    private static final int MICROSTEPS = 600 * 5;
+    private static final double STEP_TIME_MS = 100; // 100ms
+    private static final double REAL_TIME = 60;
+    private static final int MICROSTEPS = (int)((1000.0 / STEP_TIME_MS) * REAL_TIME);
 
     private static final int RESCUE_AGENT_RADIUS = 500;
     private static final int CIVILIAN_RADIUS = 200;
@@ -172,6 +172,8 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
     }
 
     private void convertAreaToTrafficArea(Area area) throws WorldManagerException {
+        LOG.debug("Converting area to traffic area");
+        LOG.debug(area.getFullDescription());
         List<Edge> edges = area.getEdges();
         String[] neighbourText = new String[edges.size()];
         for (int i = 0; i < neighbourText.length; i++) {
@@ -183,7 +185,7 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
         }
         double cx = area.getX();
         double cy = area.getY();
-        TrafficArea result = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexList(), neighbourText);
+        TrafficArea result = new TrafficArea(worldManager, "rcrs(" + area.getID() + ")", cx, cy, area.getApexList(), neighbourText, area, model);
         if (area instanceof Building) {
             result.setType("building");
         }
@@ -261,6 +263,9 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
     }
 
     private void timestep() {
+        for (TrafficAgent agent : worldManager.getAgentList()) {
+            agent.clearPositionHistory();
+        }
         LOG.debug("Running " + MICROSTEPS + " microsteps");
         for (int i = 0; i < MICROSTEPS; i++) {
             microstep();
@@ -272,7 +277,7 @@ public class TrafficSimulator extends StandardSimulator implements GUIComponent 
             agent.plan();
         }
         for (TrafficAgent agent : worldManager.getAgentList()) {
-            agent.step(STEP_TIME);
+            agent.step(STEP_TIME_MS);
         }
         worldManager.stepFinished(this);
         gui.refresh();

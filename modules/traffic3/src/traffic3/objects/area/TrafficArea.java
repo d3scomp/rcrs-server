@@ -18,10 +18,19 @@ import traffic3.objects.area.event.TrafficAreaListener;
 import traffic3.objects.area.event.TrafficAreaEvent;
 import org.util.xml.element.TagElement;
 
+import rescuecore2.worldmodel.EntityID;
+import rescuecore2.standard.entities.Area;
+import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.StandardWorldModel;
+
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
+
 /**
  * Traffic area.
  */
 public class TrafficArea extends TrafficObject {
+    private static final Log LOG = LogFactory.getLog(TrafficArea.class);
 
     private String[] edgeIDs;
     private String type;
@@ -36,6 +45,12 @@ public class TrafficArea extends TrafficObject {
     private TrafficAgent[] agentListBuf = null;
     private Line2D[] getLinesCACHE = null;
     private Line2D[] getNeighborLinesCACHE = null;
+
+    private List<TrafficEdge> edges;
+    private List<Line2D> blocking;
+
+    private Area area;
+    private StandardWorldModel world;
 
     /**
      * Constructor.
@@ -93,8 +108,13 @@ public class TrafficArea extends TrafficObject {
      * @param xyList apexces of this area
      * @param nexts nexts area it must be correspnds xyList
      */
-    public TrafficArea(WorldManager worldManager, String id, double cx, double cy, int[] xyList, String[] nexts) {
+    public TrafficArea(WorldManager worldManager, String id, double cx, double cy, int[] xyList, String[] nexts, Area area, StandardWorldModel world) {
         super(worldManager, id);
+        edges = new ArrayList<TrafficEdge>();
+        this.area = area;
+        this.world = world;
+
+
         edgeIDs = new String[]{};
 
         center[0] = cx;
@@ -104,39 +124,37 @@ public class TrafficArea extends TrafficObject {
         try {
             List<TrafficAreaNode> nodeList = new ArrayList<TrafficAreaNode>();
             int apexesLength = xyList.length / 2;
+            LOG.debug("Creating traffic area " + id + " with " + apexesLength + " apexes");
+            LOG.debug("Neighbours: ");
+            for (String next : nexts) {
+                LOG.debug("  " + next);
+            }
             for (int i = 0; i < apexesLength; i++) {
                 double x = xyList[i * 2];
                 double y = xyList[i * 2 + 1];
                 TrafficAreaNode node = worldManager.createAreaNode(x, y, 0);
                 nodeList.add(node);
+                LOG.debug("Node " + i + ": " + node);
             }
 
             String tmp = nexts[0];
             List<String> edgeIDList = new ArrayList<String>();
-            for (int index = 0; index < nexts.length; ) {
+            for (int index = 0; index < nexts.length; ++index) {
+                LOG.debug("Processing edge " + index);
                 String next = nexts[index];
-                List<TrafficAreaNode> list = new ArrayList<TrafficAreaNode>();
-                boolean loop = true;
-                for (int i = 0; loop; i++) {
-                    String newNext = nexts[(index + i) % nexts.length];
-                    //System.out.println(index + ":" + i + ":" + nexts.length + "[" + next + "|" + newNext + "]");
-                    list.add(nodeList.get((index + i) % nexts.length));
-                    if (index + i > nexts.length + 1) {
-                        index += i;
-                        loop = false;
-                    }
-                    else if ((next == newNext) || (next != null && next.equals(newNext)) || (newNext != null && newNext.equals(next))) {
-                    }
-                    else {
-                        index += i;
-                        loop = false;
-                    }
-                }
+                TrafficAreaNode[] nodes = new TrafficAreaNode[2];
+                nodes[0] = nodeList.get(index);
+                nodes[1] = nodeList.get(index == nexts.length - 1 ? 0 : index + 1);
+                Line2D line = new Line2D.Double(nodes[0].getX(), nodes[0].getY(), nodes[1].getX(), nodes[1].getY());
+
+                TrafficEdge tEdge = new TrafficEdge(line, next != null);
+                edges.add(tEdge);
+                LOG.debug("Traffic edge: " + tEdge);
 
 
                 String eid = worldManager.getUniqueID("_");
-                TrafficAreaNode[] nodes = list.toArray(new TrafficAreaNode[0]);
-                //System.out.println(nodeList+"||"+nodes);
+                //                TrafficAreaNode[] nodes = list.toArray(new TrafficAreaNode[0]);
+                //                LOG.debug("Node list: " + list);
                 TrafficAreaEdge edge = new TrafficAreaEdge(worldManager, eid, nodes);
                 if (next == null || "rcrs(-1)".equals(next)) {
                     edge.setAreaIDs(getID());
@@ -163,6 +181,11 @@ public class TrafficArea extends TrafficObject {
                     }
                     edge.setAreaIDs(getID(), next); 
                     //System.out.println(edge + " == [" + getID() + " , " + next + "]");
+                }
+                LOG.debug("New edge: " + edge);
+                edge.createCache();
+                for (Line2D l : edge.getLines()) {
+                    LOG.debug(l.getX1() + ", " + l.getY1() + " -> " + l.getX2() + ", " + l.getY2());
                 }
             }
             edgeIDs = edgeIDList.toArray(new String[0]);
@@ -305,6 +328,37 @@ public class TrafficArea extends TrafficObject {
         }
     }
     */
+
+    public List<TrafficEdge> getEdges() {
+        return edges;
+    }
+
+    public List<Line2D> getBlockingLines() {
+        if (blocking == null) {
+            blocking = new ArrayList<Line2D>();
+            for (TrafficEdge edge : edges) {
+                if (!edge.isPassable()) {
+                    blocking.add(edge.getLine());
+                }
+            }
+        }
+        return blocking;
+    }
+
+    public List<Line2D> getBlockadeLines() {
+        List<Line2D> result = new ArrayList<Line2D>();
+        if (area.isBlockadesDefined()) {
+            for (EntityID blockadeID : area.getBlockades()) {
+                Blockade b = (Blockade)world.getEntity(blockadeID);
+                int[] apexes = b.getApexes();
+                for (int i = 0; i < apexes.length - 2; i += 2) {
+                    result.add(new Line2D.Double(apexes[i], apexes[i + 1], apexes[i + 2], apexes[i + 3]));
+                }
+            }
+        }
+        return result;
+    }
+
 
     /**
      * add blockade.
@@ -626,8 +680,11 @@ public class TrafficArea extends TrafficObject {
      */
     public Line2D[] getLines() {
         if (getLinesCACHE == null) {
+            LOG.debug(this + " computing edges");
             List<Line2D> lineList = new ArrayList<Line2D>();
+            LOG.debug(directedEdges.length + " directed edges");
             for (int i = 0; i < directedEdges.length; i++) {
+                LOG.debug("Next directed edge: " + directedEdges[i]);
                 //                if (directedEdges[i].getAreas().length < 2) {
                 for (Line2D line : directedEdges[i].getLines()) {
                     lineList.add(line);
@@ -638,6 +695,10 @@ public class TrafficArea extends TrafficObject {
                 for (Line2D line : blockade.getLineList()) {
                     lineList.add(line);
                 }
+            }
+            LOG.debug("Lines");
+            for (Line2D next : lineList) {
+                LOG.debug(next.getX1() + ", " + next.getY1() + " -> " + next.getX2() + ", " + next.getY2());
             }
             getLinesCACHE = lineList.toArray(new Line2D[0]);
         }

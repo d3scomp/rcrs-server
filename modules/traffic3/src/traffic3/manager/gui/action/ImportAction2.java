@@ -155,7 +155,7 @@ public class ImportAction2 extends TrafficAction {
                 }
                 centerX = sumX / length;
                 centerY = sumY / length;
-                TrafficArea area = new TrafficArea(worldManager, areaID, centerX, centerY, xys, nexts);
+                TrafficArea area = new TrafficArea(worldManager, areaID, centerX, centerY, xys, nexts, null, null);
                 worldManager.appendWithoutCheck(area);
             }
         }

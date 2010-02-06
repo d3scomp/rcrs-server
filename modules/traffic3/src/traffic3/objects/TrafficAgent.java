@@ -750,15 +750,16 @@ public class TrafficAgent extends TrafficObject {
         double sumwy = 0;
         double sumwz = 0;
         if (this.nowArea != null) {
-            Line2D[] lineList = this.nowArea.getNeighborLines();
+            List<Line2D> lineList = this.nowArea.getBlockingLines();
+            lineList.addAll(this.nowArea.getBlockadeLines());
             double r = getRadius() + valueWallWidth;
             double dx;
             double dy;
             double dist;
             final double cutoffDistance = 3000;
-            for (int j = 0; j < lineList.length; j++) {
-                Point2D p1 = lineList[j].getP1();
-                Point2D p2 = lineList[j].getP2();
+            for (Line2D line : lineList) {
+                Point2D p1 = line.getP1();
+                Point2D p2 = line.getP2();
                 double p1p2X = p2.getX() - p1.getX();
                 double p1p2Y = p2.getY() - p1.getY();
                 double p1pX =  location[0] - p1.getX();

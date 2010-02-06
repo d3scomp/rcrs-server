@@ -26,10 +26,14 @@ import javax.swing.SwingUtilities;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
+import java.awt.geom.Line2D;
 
 import traffic3.manager.WorldManager;
 import traffic3.objects.area.TrafficArea;
+import traffic3.objects.area.TrafficEdge;
 import traffic3.objects.TrafficAgent;
 import traffic3.objects.TrafficBlockade;
 
@@ -44,13 +48,12 @@ public class TrafficSimulatorGUI extends JPanel {
 
     private static final Color SELECTED_AREA_COLOUR = new Color(0, 0, 255, 128);
     private static final Color AREA_OUTLINE_COLOUR = new Color(0, 0, 0);
-    private static final Color NEIGHBOUR_LINE_COLOUR = new Color(255, 255, 255);
     private static final Color BLOCKADE_OUTLINE_COLOUR = new Color(0, 0, 0);
     private static final Color BLOCKADE_FILL_COLOUR = new Color(255, 0, 0, 128);
 
-    private static final Stroke AREA_OUTLINE_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
-    private static final Stroke SELECTED_AREA_OUTLINE_STROKE = new BasicStroke(6, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
-    private static final Stroke NEIGHBOUR_LINE_STROKE = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+    private static final Stroke PASSABLE_EDGE_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+    private static final Stroke IMPASSABLE_EDGE_STROKE = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+    private static final Stroke SELECTED_AREA_OUTLINE_STROKE = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
     private static final Stroke BLOCKADE_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
 
     private WorldManager manager;
@@ -209,42 +212,46 @@ public class TrafficSimulatorGUI extends JPanel {
         private void drawObjects(Graphics2D g) {
             drawAreas((Graphics2D)g.create());
             drawAgents((Graphics2D)g.create());
+            drawBlockades((Graphics2D)g.create());
         }
 
         private void drawAreas(Graphics2D g) {
             areas.clear();
             for (TrafficArea area : manager.getAreaList()) {
                 Path2D shape = new Path2D.Double();
-                Line2D[] lines = area.getLines();
-                shape.moveTo(transform.xToScreen(lines[0].getX1()), transform.yToScreen(lines[0].getY1()));
-                for (Line2D line : area.getLines()) {
-                    shape.lineTo(transform.xToScreen(line.getX2()), transform.yToScreen(line.getY2()));
-                    //                    g.drawLine(transform.xToScreen(line.getX1()),
-                    //                               transform.yToScreen(line.getY1()),
-                    //                               transform.xToScreen(line.getX2()),
-                    //                               transform.yToScreen(line.getY2()));
+                List<TrafficEdge> edges = area.getEdges();
+                TrafficEdge e = edges.get(0);
+                shape.moveTo(transform.xToScreen(e.getLine().getX1()), transform.yToScreen(e.getLine().getY1()));
+                for (TrafficEdge edge : edges) {
+                    shape.lineTo(transform.xToScreen(edge.getLine().getX2()), transform.yToScreen(edge.getLine().getY2()));
                 }
                 if (area == selectedArea) {
                     g.setColor(SELECTED_AREA_COLOUR);
                     g.fill(shape);
-                    g.setStroke(SELECTED_AREA_OUTLINE_STROKE);
                     g.setColor(AREA_OUTLINE_COLOUR);
-                    g.draw(shape);
-                    g.setStroke(NEIGHBOUR_LINE_STROKE);
-                    g.setColor(NEIGHBOUR_LINE_COLOUR);
-                    for (Line2D line : area.getNeighborLines()) {
-                        g.drawLine(transform.xToScreen(line.getX1()),
-                                   transform.yToScreen(line.getY1()),
-                                   transform.xToScreen(line.getX2()),
-                                   transform.yToScreen(line.getY2()));
-                    }
+                    paintEdges(edges, g);
                 }
                 else {
-                    g.setStroke(AREA_OUTLINE_STROKE);
                     g.setColor(AREA_OUTLINE_COLOUR);
-                    g.draw(shape);
+                    paintEdges(edges, g);
                 }
                 areas.put(shape, area);
+            }
+        }
+
+        private void paintEdges(List<TrafficEdge> edges, Graphics2D g) {
+            for (TrafficEdge edge : edges) {
+                if (edge.isPassable()) {
+                    g.setStroke(PASSABLE_EDGE_STROKE);
+                }
+                else {
+                    g.setStroke(IMPASSABLE_EDGE_STROKE);
+                }
+                Line2D line = edge.getLine();
+                g.drawLine(transform.xToScreen(line.getX1()),
+                           transform.yToScreen(line.getY1()),
+                           transform.xToScreen(line.getX2()),
+                           transform.yToScreen(line.getY2()));
             }
         }
 
@@ -281,26 +288,36 @@ public class TrafficSimulatorGUI extends JPanel {
 
         private void drawAgents(Graphics2D g) {
             for (TrafficAgent agent : manager.getAgentList()) {
-                int x = transform.xToScreen(agent.getX());
-                int y = transform.yToScreen(agent.getY());
-                int x1 = transform.xToScreen(agent.getX() - agent.getRadius());
-                int y1 = transform.yToScreen(agent.getY() - agent.getRadius());
-                int x2 = transform.xToScreen(agent.getX() + agent.getRadius());
-                int y2 = transform.yToScreen(agent.getY() + agent.getRadius());
-                int vx = transform.xToScreen(agent.getX() + (agent.getVX() * 1000));
-                int vy = transform.yToScreen(agent.getY() + (agent.getVY() * 1000));
-                int fx = transform.xToScreen(agent.getX() + (agent.getFX() * 1000));
-                int fy = transform.yToScreen(agent.getY() + (agent.getFY() * 1000));
+                double agentX = agent.getX();
+                double agentY = agent.getY();
+                double ellipseX1 = agentX - agent.getRadius();
+                double ellipseY1 = agentY + agent.getRadius();
+                double ellipseX2 = agentX + agent.getRadius();
+                double ellipseY2 = agentY - agent.getRadius();
+                double velocityX = agentX + (agent.getVX() * 1000);
+                double velocityY = agentY + (agent.getVX() * 1000);
+                double forceX = agentX + (agent.getFX() * 1000);
+                double forceY = agentY + (agent.getFX() * 1000);
+
+                int x = transform.xToScreen(agentX);
+                int y = transform.yToScreen(agentY);
+                int x1 = transform.xToScreen(ellipseX1);
+                int y1 = transform.yToScreen(ellipseY1);
+                int x2 = transform.xToScreen(ellipseX2);
+                int y2 = transform.yToScreen(ellipseY2);
+                int vx = transform.xToScreen(velocityX);
+                int vy = transform.yToScreen(velocityY);
+                int fx = transform.xToScreen(forceX);
+                int fy = transform.yToScreen(forceY);
+                int ellipseWidth = x2 - x1;
+                int ellipseHeight = y2 - y1;
+
                 g.setColor(Color.red);
-                g.fillOval(x1, y1, x2 - x1, y1 - y2);
+                g.fillOval(x1, y1, ellipseWidth, ellipseHeight);
                 g.setColor(Color.blue);
                 g.drawLine(x, y, vx, vy);
                 g.setColor(Color.green);
                 g.drawLine(x, y, fx, fy);
-                LOG.debug("Agent " + agent + " at " + x + ", " + y + " (radius = " + agent.getRadius() + ")");
-                LOG.debug("Ellipse : " + x1 + ", " + y1 + ", " + (x2 - x1) + ", " + (y1 - y2));
-                LOG.debug("Velocity: " + agent.getVX() + ", " + agent.getVY() + " : " + x + ", " + y + " -> " + vx + ", " + vy);
-                LOG.debug("Force   : " + agent.getFX() + ", " + agent.getFY() + " : " + x + ", " + y + " -> " + fx + ", " + fy);
             }
         }
     }
