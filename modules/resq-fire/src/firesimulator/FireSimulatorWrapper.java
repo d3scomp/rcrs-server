@@ -10,6 +10,8 @@ import rescuecore2.messages.control.KSCommands;
 
 import rescuecore2.standard.messages.AKExtinguish;
 import rescuecore2.standard.components.StandardSimulator;
+import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
 
 import firesimulator.kernel.Kernel;
 import firesimulator.world.World;
@@ -42,6 +44,8 @@ import org.apache.commons.logging.Log;
  */
 public class FireSimulatorWrapper extends StandardSimulator {
     private static final Log LOG = LogFactory.getLog(FireSimulatorWrapper.class);
+
+    private static final String MAX_WATER_KEY = "fire.tank.maximum";
 
     private Simulator sim;
     private World world;
@@ -89,7 +93,10 @@ public class FireSimulatorWrapper extends StandardSimulator {
             Entity e = model.getEntity(id);
             RescueObject r = world.getObject(id.getValue());
             if (r == null) {
-                world.putObject(mapEntity(e));
+                r = mapEntity(e);
+                if (r != null) {
+                    world.putObject(r);
+                }
             }
             else {
                 if (r instanceof Building && e instanceof rescuecore2.standard.entities.Building) {
@@ -138,6 +145,14 @@ public class FireSimulatorWrapper extends StandardSimulator {
         }
         catch (BrokenBarrierException e) {
             LOG.error("FireSimulatorWrapper.handleCommands", e);
+        }
+        if (c.getTime() == 1) {
+            // Set initial water quantity for all fire brigades
+            for (StandardEntity next : model.getEntitiesOfType(StandardEntityURN.FIRE_BRIGADE)) {
+                rescuecore2.standard.entities.FireBrigade fb = (rescuecore2.standard.entities.FireBrigade)next;
+                fb.setWater(config.getIntValue(MAX_WATER_KEY));
+                changes.addChange(fb, fb.getWaterProperty());
+            }
         }
     }
 
@@ -192,6 +207,9 @@ public class FireSimulatorWrapper extends StandardSimulator {
             return at;
         }
         if (e instanceof rescuecore2.standard.entities.Road) {
+            return null;
+        }
+        if (e instanceof rescuecore2.standard.entities.Blockade) {
             return null;
         }
         LOG.error("Don't know how to map this: " + e);
