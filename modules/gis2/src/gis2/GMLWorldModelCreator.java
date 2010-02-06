@@ -149,10 +149,12 @@ public class GMLWorldModelCreator implements WorldModelCreator {
     }
 
     private void readScenarioData(File scenarioFile, StandardWorldModel result) throws DocumentException, ScenarioException {
-        SAXReader reader = new SAXReader();
-        Document doc = reader.read(scenarioFile);
-        Scenario scenario = new Scenario(doc);
-        scenario.apply(result);
+        if (scenarioFile.exists()) {
+            SAXReader reader = new SAXReader();
+            Document doc = reader.read(scenarioFile);
+            Scenario scenario = new Scenario(doc);
+            scenario.apply(result);
+        }
     }
 
     private List<Edge> createEdges(GMLShape s, CoordinateConversion conversion) {
