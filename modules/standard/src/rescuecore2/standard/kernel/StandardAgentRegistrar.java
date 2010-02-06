@@ -155,7 +155,7 @@ public class StandardAgentRegistrar implements AgentRegistrar {
         for (Property next : h.getProperties()) {
             // Human properties: POSITION, X, Y
             // Everything else should be undefined
-            StandardPropertyURN urn = StandardPropertyURN.valueOf(next.getURN());
+            StandardPropertyURN urn = StandardPropertyURN.fromString(next.getURN());
             switch (urn) {
             case X:
             case Y:
