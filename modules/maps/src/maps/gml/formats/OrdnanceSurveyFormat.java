@@ -7,6 +7,8 @@ import maps.gml.GMLCoordinates;
 import maps.gml.GMLBuilding;
 import maps.gml.GMLRoad;
 import maps.gml.MapFormat;
+import maps.gml.CoordinateSystem;
+import maps.gml.debug.GMLShapeInfo;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
@@ -21,12 +23,12 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import java.awt.Color;
 
 import rescuecore2.misc.gui.ShapeDebugFrame;
-import java.awt.Color;
-import maps.gml.debug.GMLShapeInfo;
+
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 // TO DO: Handle inner boundaries
 
@@ -34,7 +36,7 @@ import maps.gml.debug.GMLShapeInfo;
    A MapFormat that can handle maps from the UK Ordnance Survey.
  */
 public final class OrdnanceSurveyFormat implements MapFormat {
-    private static final Logger LOG = LogManager.getLogger(OrdnanceSurveyFormat.class);
+    private static final Log LOG = LogFactory.getLog(OrdnanceSurveyFormat.class);
 
     private static final String FEATURE_CODE_BUILDING = "10021";
     private static final String FEATURE_CODE_ROAD = "10172";
@@ -101,7 +103,7 @@ public final class OrdnanceSurveyFormat implements MapFormat {
 
     @Override
     public GMLMap read(Document doc) {
-        GMLMap result = new GMLMap();
+        GMLMap result = new GMLMap(CoordinateSystem.M);
         readBuildings(doc, result);
         readRoads(doc, result);
         readSpaces(doc, result);

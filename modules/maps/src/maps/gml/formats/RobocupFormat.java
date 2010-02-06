@@ -10,6 +10,7 @@ import maps.gml.GMLNode;
 import maps.gml.GMLEdge;
 import maps.gml.GMLDirectedEdge;
 import maps.gml.MapFormat;
+import maps.gml.CoordinateSystem;
 
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -136,7 +137,7 @@ public final class RobocupFormat implements MapFormat {
 
     @Override
     public GMLMap read(Document doc) {
-        GMLMap result = new GMLMap();
+        GMLMap result = new GMLMap(CoordinateSystem.LATLON);
         readNodes(doc, result);
         readEdges(doc, result);
         readBuildings(doc, result);
