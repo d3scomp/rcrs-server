@@ -7,7 +7,7 @@ import rescuecore2.worldmodel.EntityID;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.geometry.Line2D;
 import rescuecore2.misc.geometry.Vector2D;
-import rescuecore2.misc.gui.ShapeDebugFrame;
+import rescuecore2.misc.geometry.GeometryTools2D;
 import rescuecore2.misc.collections.LazyMap;
 
 import rescuecore2.standard.components.StandardSimulator;
@@ -30,10 +30,12 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import java.awt.Color;
 import java.awt.geom.Path2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.PathIterator;
+
+//import rescuecore2.misc.gui.ShapeDebugFrame;
+//import java.awt.Color;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
@@ -64,6 +66,8 @@ public class CollapseSimulator extends StandardSimulator {
 
     private static final double FLOOR_HEIGHT = 7000;
 
+    private static final double REPAIR_COST_FACTOR = 0.000001;
+
     private GaussianGenerator destroyed;
     private GaussianGenerator severe;
     private GaussianGenerator moderate;
@@ -71,7 +75,7 @@ public class CollapseSimulator extends StandardSimulator {
 
     private Map<StandardEntityConstants.BuildingCode, CollapseStats> stats;
 
-    private ShapeDebugFrame debug;
+    //    private ShapeDebugFrame debug;
 
     @Override
     public String getName() {
@@ -81,7 +85,7 @@ public class CollapseSimulator extends StandardSimulator {
     @Override
     protected void postConnect() {
         super.postConnect();
-        debug = new ShapeDebugFrame();
+        //        debug = new ShapeDebugFrame();
         stats = new EnumMap<StandardEntityConstants.BuildingCode, CollapseStats>(StandardEntityConstants.BuildingCode.class);
         for (StandardEntityConstants.BuildingCode code : StandardEntityConstants.BuildingCode.values()) {
             stats.put(code, new CollapseStats(code, config));
@@ -102,7 +106,7 @@ public class CollapseSimulator extends StandardSimulator {
 
     @Override
     protected void processCommands(KSCommands c, ChangeSet changes) {
-        debug.activate();
+        //        debug.activate();
         int time = c.getTime();
         Map<StandardEntityConstants.BuildingCode, Map<CollapseDegree, Integer>> count = new EnumMap<StandardEntityConstants.BuildingCode, Map<CollapseDegree, Integer>>(StandardEntityConstants.BuildingCode.class);
         Map<StandardEntityConstants.BuildingCode, Integer> total = new EnumMap<StandardEntityConstants.BuildingCode, Integer>(StandardEntityConstants.BuildingCode.class);
@@ -197,7 +201,7 @@ public class CollapseSimulator extends StandardSimulator {
             changes.addAll(entry.getValue());
             changes.addChange(r, r.getBlockadesProperty());
         }
-        debug.deactivate();
+        //        debug.deactivate();
     }
 
     private void createBlockages(Building b, Map<Road, Collection<Blockade>> roadBlockages) {
@@ -240,7 +244,10 @@ public class CollapseSimulator extends StandardSimulator {
                 for (java.awt.geom.Area area : entry.getValue()) {
                     EntityID id = it.next();
                     Collection<Blockade> c = roadBlockages.get(r);
-                    c.add(makeBlockade(id, area, r.getID()));
+                    Blockade blockade = makeBlockade(id, area, r.getID());
+                    if (blockade != null) {
+                        c.add(blockade);
+                    }
                 }
             }
         }
@@ -294,11 +301,11 @@ public class CollapseSimulator extends StandardSimulator {
             existing.add(intersection);
             List<java.awt.geom.Area> blockadeAreas = fix(intersection);
             result.put(r, blockadeAreas);
-            debug.show("Road blockage",
-                       new ShapeDebugFrame.AWTShapeInfo(buildingArea, "Building area", Color.BLACK, false),
-                       new ShapeDebugFrame.AWTShapeInfo(roadArea, "Road area", Color.BLUE, false),
-                       new ShapeDebugFrame.AWTShapeInfo(intersection, "Intersection", Color.GREEN, true)
-                       );
+            //            debug.show("Road blockage",
+            //                       new ShapeDebugFrame.AWTShapeInfo(buildingArea, "Building area", Color.BLACK, false),
+            //                       new ShapeDebugFrame.AWTShapeInfo(roadArea, "Road area", Color.BLUE, false),
+            //                       new ShapeDebugFrame.AWTShapeInfo(intersection, "Intersection", Color.GREEN, true)
+            //                       );
         }
         return result;
     }
@@ -327,13 +334,13 @@ public class CollapseSimulator extends StandardSimulator {
         // CHECKSTYLE:OFF:MagicNumber
         double[] d = new double[6];
         while (!it.isDone()) {
-            it.next();
             switch (it.currentSegment(d)) {
             case PathIterator.SEG_MOVETO:
                 if (current != null) {
                     result.add(new java.awt.geom.Area(current));
                 }
                 current = new Path2D.Double();
+                current.moveTo(d[0], d[1]);
                 break;
             case PathIterator.SEG_LINETO:
                 current.lineTo(d[0], d[1]);
@@ -348,6 +355,7 @@ public class CollapseSimulator extends StandardSimulator {
                 current.closePath();
                 break;
             }
+            it.next();
         }
         // CHECKSTYLE:ON:MagicNumber
         if (current != null) {
@@ -359,8 +367,17 @@ public class CollapseSimulator extends StandardSimulator {
     private Blockade makeBlockade(EntityID id, java.awt.geom.Area area, EntityID roadID) {
         Blockade result = new Blockade(id);
         int[] apexes = getApexes(area);
+        List<Point2D> points = GeometryTools2D.vertexArrayToPoints(apexes);
+        int cost = (int)(GeometryTools2D.computeArea(points) * REPAIR_COST_FACTOR);
+        if (cost == 0) {
+            return null;
+        }
+        Point2D centroid = GeometryTools2D.computeCentroid(points);
         result.setApexes(apexes);
         result.setPosition(roadID);
+        result.setX((int)centroid.getX());
+        result.setY((int)centroid.getY());
+        result.setRepairCost((int)cost);
         LOG.debug("Created new blockade: " + result.getFullDescription());
         return result;
     }
