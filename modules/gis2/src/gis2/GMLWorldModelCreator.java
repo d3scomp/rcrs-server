@@ -7,6 +7,8 @@ import rescuecore2.config.Config;
 import rescuecore2.worldmodel.WorldModel;
 import rescuecore2.worldmodel.Entity;
 import rescuecore2.worldmodel.EntityID;
+import rescuecore2.misc.geometry.Point2D;
+import rescuecore2.misc.geometry.GeometryTools2D;
 
 import rescuecore2.standard.entities.StandardWorldModel;
 import rescuecore2.standard.entities.Building;
@@ -23,11 +25,12 @@ import maps.gml.MapReader;
 import maps.gml.GMLException;
 import maps.CoordinateConversion;
 import maps.ScaleConversion;
+import maps.ConstantConversion;
+import maps.IdentityConversion;
 import maps.MapTools;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -46,8 +49,11 @@ import org.apache.commons.logging.Log;
 public class GMLWorldModelCreator implements WorldModelCreator {
     private static final Log LOG = LogFactory.getLog(GMLWorldModelCreator.class);
 
-    private static final String MAP_FILE_KEY = "gis.map";
-    private static final String SCENARIO_FILE_KEY = "gis.scenario";
+    private static final String MAP_DIRECTORY_KEY = "gis.map.dir";
+    private static final String MAP_FILE_KEY = "gis.map.file";
+    private static final String DEFAULT_MAP_FILE = "map.gml";
+    private static final String SCENARIO_FILE_KEY = "gis.map.scenario";
+    private static final String DEFAULT_SCENARIO_FILE = "scenario.xml";
 
     // CHECKSTYLE:OFF:MagicNumber
     private static final double AREA_SCALE_FACTOR = 1.0 / 10000.0;
@@ -66,8 +72,11 @@ public class GMLWorldModelCreator implements WorldModelCreator {
     public WorldModel<? extends Entity> buildWorldModel(Config config) throws KernelException {
         try {
             StandardWorldModel result = new StandardWorldModel();
-            readMapData(config, result);
-            readScenarioData(config, result);
+            File dir = new File(config.getValue(MAP_DIRECTORY_KEY));
+            File mapFile = new File(dir, config.getValue(MAP_FILE_KEY, DEFAULT_MAP_FILE));
+            File scenarioFile = new File(dir, config.getValue(SCENARIO_FILE_KEY, DEFAULT_SCENARIO_FILE));
+            readMapData(mapFile, result);
+            readScenarioData(scenarioFile, result);
             for (Entity e : result) {
                 nextID = Math.max(nextID, e.getID().getValue());
             }
@@ -80,6 +89,9 @@ public class GMLWorldModelCreator implements WorldModelCreator {
         catch (DocumentException e) {
             throw new KernelException("Couldn't read scenario file", e);
         }
+        catch (ScenarioException e) {
+            throw new KernelException("Invalid scenario file", e);
+        }
     }
 
     @Override
@@ -91,29 +103,34 @@ public class GMLWorldModelCreator implements WorldModelCreator {
         return MapReader.readGMLMap(fileName);
     }
 
-    private void readMapData(Config config, StandardWorldModel result) throws GMLException {
-        GMLMap map = readMap(config.getValue(MAP_FILE_KEY));
-        // Convert lat/lon to millimeters
-        double scale = 1000.0 / MapTools.sizeOf1Metre((map.getMinX() + map.getMaxX()) / 2, (map.getMinY() + map.getMaxY()) / 2);
-        CoordinateConversion conversion = new ScaleConversion(map.getMinX(), map.getMinY(), scale, scale);
+    private void readMapData(File mapFile, StandardWorldModel result) throws GMLException {
+        GMLMap map = MapReader.readGMLMap(mapFile);
+        CoordinateConversion conversion = getCoordinateConversion(map);
         for (GMLBuilding next : map.getBuildings()) {
             // Create a new Building entity
             EntityID id = new EntityID(next.getID());
             Building b = new Building(id);
+            List<Point2D> vertices = convertShapeToPoints(next, conversion);
+            double area = GeometryTools2D.computeArea(vertices);
+            Point2D centroid = GeometryTools2D.computeCentroid(vertices);
+
+            LOG.debug("Building vertices: " + vertices);
+            LOG.debug("Area: " + area);
+            LOG.debug("Centroid: " + centroid);
+
             // Building properties
             b.setFloors(1);
             b.setFieryness(0);
             b.setBrokenness(0);
             b.setBuildingCode(0);
             b.setBuildingAttributes(0);
-            double area = computeArea(next, conversion);
             b.setGroundArea((int)Math.abs(area * AREA_SCALE_FACTOR));
             b.setTotalArea((int)Math.abs(area * AREA_SCALE_FACTOR));
             b.setImportance(1);
             // Area properties
             b.setEdges(createEdges(next, conversion));
-            b.setX((int)computeCentroidX(next, conversion, area));
-            b.setY((int)computeCentroidY(next, conversion, area));
+            b.setX((int)centroid.getX());
+            b.setY((int)centroid.getY());
             result.addEntity(b);
             //                LOG.debug(b.getFullDescription());
         }
@@ -131,10 +148,9 @@ public class GMLWorldModelCreator implements WorldModelCreator {
         }
     }
 
-    private void readScenarioData(Config config, StandardWorldModel result) throws DocumentException {
-        String fileName = config.getValue(SCENARIO_FILE_KEY);
+    private void readScenarioData(File scenarioFile, StandardWorldModel result) throws DocumentException, ScenarioException {
         SAXReader reader = new SAXReader();
-        Document doc = reader.read(new File(fileName));
+        Document doc = reader.read(scenarioFile);
         Scenario scenario = new Scenario(doc);
         scenario.apply(result);
     }
@@ -147,12 +163,12 @@ public class GMLWorldModelCreator implements WorldModelCreator {
             GMLCoordinates end = edge.getEndCoordinates();
             Integer neighbourID = s.getNeighbour(edge);
             EntityID id = neighbourID == null ? null : new EntityID(neighbourID);
-            LOG.debug("Edge: " + start + " -> " + end);
+            //            LOG.debug("Edge: " + start + " -> " + end);
             double sx = conversion.convertX(start.getX());
             double sy = conversion.convertY(start.getY());
             double ex = conversion.convertX(end.getX());
             double ey = conversion.convertY(end.getY());
-            LOG.debug("Scaled edge: " + sx + "," + sy + " -> " + ex + "," + ey);
+            LOG.debug(edge.getEdge() + " : " + sx + "," + sy + " -> " + ex + "," + ey);
             result.add(new Edge((int)sx,
                                 (int)sy,
                                 (int)ex,
@@ -162,79 +178,26 @@ public class GMLWorldModelCreator implements WorldModelCreator {
         return result;
     }
 
-    private double computeArea(GMLShape shape, CoordinateConversion conversion) {
-        Iterator<GMLCoordinates> it = shape.getCoordinates().iterator();
-        GMLCoordinates last = it.next();
-        GMLCoordinates first = last;
-        double sum = 0;
-        while (it.hasNext()) {
-            GMLCoordinates next = it.next();
-            double lastX = conversion.convertX(last.getX());
-            double lastY = conversion.convertY(last.getY());
-            double nextX = conversion.convertX(next.getX());
-            double nextY = conversion.convertY(next.getY());
-            sum += (lastX * nextY) - (nextX * lastY);
-            last = next;
+    private List<Point2D> convertShapeToPoints(GMLShape shape, CoordinateConversion conversion) {
+        List<Point2D> points = new ArrayList<Point2D>();
+        for (GMLCoordinates next : shape.getCoordinates()) {
+            points.add(new Point2D(conversion.convertX(next.getX()), conversion.convertY(next.getY())));
         }
-        double lastX = conversion.convertX(last.getX());
-        double lastY = conversion.convertY(last.getY());
-        double nextX = conversion.convertX(first.getX());
-        double nextY = conversion.convertY(first.getY());
-        sum += (lastX * nextY) - (nextX * lastY);
-        sum /= 2.0;
-        LOG.debug("Area of " + shape + ": " + Math.abs(sum));
-        return sum;
+        return points;
     }
 
-    private double computeCentroidX(GMLShape shape, CoordinateConversion conversion, double area) {
-        Iterator<GMLCoordinates> it = shape.getCoordinates().iterator();
-        GMLCoordinates last = it.next();
-        GMLCoordinates first = last;
-        double sum = 0;
-        while (it.hasNext()) {
-            GMLCoordinates next = it.next();
-            double lastX = conversion.convertX(last.getX());
-            double lastY = conversion.convertY(last.getY());
-            double nextX = conversion.convertX(next.getX());
-            double nextY = conversion.convertY(next.getY());
-            sum += (lastX + nextX) * ((lastX * nextY) - (nextX * lastY));
-            last = next;
+    private CoordinateConversion getCoordinateConversion(GMLMap map) {
+        switch (map.getCoordinateSystem()) {
+        case LATLON:
+            // Convert lat/lon to millimeters
+            double scale = 1000.0 / MapTools.sizeOf1Metre((map.getMinX() + map.getMaxX()) / 2, (map.getMinY() + map.getMaxY()) / 2);
+            return new ScaleConversion(map.getMinX(), map.getMinY(), scale, scale);
+        case M:
+            return new ConstantConversion(1000);
+        case MM:
+            return new IdentityConversion();
+        default:
+            throw new IllegalArgumentException("Unrecognised coordinate system: " + map.getCoordinateSystem());
         }
-        double lastX = conversion.convertX(last.getX());
-        double lastY = conversion.convertY(last.getY());
-        double nextX = conversion.convertX(first.getX());
-        double nextY = conversion.convertY(first.getY());
-        sum += (lastX + nextX) * ((lastX * nextY) - (nextX * lastY));
-        // CHECKSTYLE:OFF:MagicNumber
-        sum /= 6.0 * area;
-        // CHECKSTYLE:ON:MagicNumber
-        LOG.debug("X centroid of " + shape + ": " + sum);
-        return sum;
-    }
-
-    private double computeCentroidY(GMLShape shape, CoordinateConversion conversion, double area) {
-        Iterator<GMLCoordinates> it = shape.getCoordinates().iterator();
-        GMLCoordinates last = it.next();
-        GMLCoordinates first = last;
-        double sum = 0;
-        while (it.hasNext()) {
-            GMLCoordinates next = it.next();
-            double lastX = conversion.convertX(last.getX());
-            double lastY = conversion.convertY(last.getY());
-            double nextX = conversion.convertX(next.getX());
-            double nextY = conversion.convertY(next.getY());
-            sum += (lastY + nextY) * ((lastX * nextY) - (nextX * lastY));
-            last = next;
-        }
-        double lastX = conversion.convertX(last.getX());
-        double lastY = conversion.convertY(last.getY());
-        double nextX = conversion.convertX(first.getX());
-        double nextY = conversion.convertY(first.getY());
-        sum += (lastY + nextY) * ((lastX * nextY) - (nextX * lastY));
-        // CHECKSTYLE:OFF:MagicNumber
-        sum /= 6.0 * area;
-        // CHECKSTYLE:ON:MagicNumber
-        LOG.debug("Y centroid of " + shape + ": " + sum);
-        return sum;
     }
 }
