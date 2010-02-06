@@ -2,6 +2,7 @@ package maps.convert.osm2gml;
 
 import maps.osm.OSMMap;
 import maps.gml.GMLMap;
+import maps.gml.CoordinateSystem;
 import maps.convert.ConvertStep;
 
 import javax.swing.JFrame;
@@ -35,7 +36,7 @@ public class Convertor {
        @return A new GMLMap.
     */
     public GMLMap convert(OSMMap map) {
-        GMLMap gmlMap = new GMLMap();
+        GMLMap gmlMap = new GMLMap(CoordinateSystem.LATLON);
 
         JFrame frame = new JFrame("OSM to GML converter");
         JPanel main = new JPanel(new BorderLayout());

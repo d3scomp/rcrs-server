@@ -17,6 +17,8 @@ public class GMLMap {
     private double maxY;
     private boolean boundsKnown;
 
+    private CoordinateSystem cs;
+
     private Map<Integer, GMLNode> nodes;
     private Map<Integer, GMLEdge> edges;
     private Map<Integer, GMLBuilding> buildings;
@@ -28,8 +30,9 @@ public class GMLMap {
 
     /**
        Construct an empty GML map.
+       @param system The coordinate system of this map.
      */
-    public GMLMap() {
+    public GMLMap(CoordinateSystem system) {
         nodes = new HashMap<Integer, GMLNode>();
         edges = new HashMap<Integer, GMLEdge>();
         buildings = new HashMap<Integer, GMLBuilding>();
@@ -38,6 +41,15 @@ public class GMLMap {
         allShapes = new HashSet<GMLShape>();
         boundsKnown = false;
         nextID = 0;
+        cs = system;
+    }
+
+    /**
+       Get the coordinate system of this map.
+       @return The coordinate system.
+    */
+    public CoordinateSystem getCoordinateSystem() {
+        return cs;
     }
 
     /**
@@ -331,6 +343,31 @@ public class GMLMap {
     */
     public Set<GMLShape> getAllShapes() {
         return Collections.unmodifiableSet(allShapes);
+    }
+
+    /**
+       Add an object.
+       @param object The object to add.
+    */
+    public void add(GMLObject object) {
+        if (object instanceof GMLNode) {
+            addNode((GMLNode)object);
+        }
+        else if (object instanceof GMLEdge) {
+            addEdge((GMLEdge)object);
+        }
+        else if (object instanceof GMLRoad) {
+            addRoad((GMLRoad)object);
+        }
+        else if (object instanceof GMLBuilding) {
+            addBuilding((GMLBuilding)object);
+        }
+        else if (object instanceof GMLSpace) {
+            addSpace((GMLSpace)object);
+        }
+        else {
+            throw new IllegalArgumentException("Don't know how to add " + object + " (class: " + object.getClass().getName() + ")");
+        }
     }
 
     /**
