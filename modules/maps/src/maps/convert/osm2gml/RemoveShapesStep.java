@@ -8,14 +8,14 @@ import java.util.Collection;
 
 import maps.convert.ConvertStep;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    This step removes shapes that are duplicates or contained entirely inside another shape.
 */
 public class RemoveShapesStep extends ConvertStep {
-    private static final Logger LOG = LogManager.getLogger(RemoveShapesStep.class);
+    private static final Log LOG = LogFactory.getLog(RemoveShapesStep.class);
 
     private TemporaryMap map;
 

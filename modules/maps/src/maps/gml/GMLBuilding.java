@@ -32,4 +32,9 @@ public class GMLBuilding extends GMLShape {
     public GMLBuilding(int id, List<GMLDirectedEdge> edges, List<Integer> neighbours) {
         super(id, edges, neighbours);
     }
+
+    @Override
+    public String toString() {
+        return "GMLBuilding " + getID();
+    }
 }

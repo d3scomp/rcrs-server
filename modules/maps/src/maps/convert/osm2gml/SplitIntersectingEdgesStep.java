@@ -12,14 +12,14 @@ import rescuecore2.misc.geometry.GeometryTools2D;
 
 import maps.convert.ConvertStep;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    This step splits any edges that intersect.
 */
 public class SplitIntersectingEdgesStep extends ConvertStep {
-    private static final Logger LOG = LogManager.getLogger(SplitIntersectingEdgesStep.class);
+    private static final Log LOG = LogFactory.getLog(SplitIntersectingEdgesStep.class);
 
     private TemporaryMap map;
     private int splitCount;

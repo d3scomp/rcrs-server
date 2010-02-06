@@ -1,5 +1,9 @@
 package maps.gml;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+
 /**
    A GML edge. An edge is a line between two nodes.
  */
@@ -7,6 +11,7 @@ public class GMLEdge extends GMLObject {
     private GMLNode start;
     private GMLNode end;
     private boolean passable;
+    private List<GMLCoordinates> points;
 
     /**
        Construct a new GMLEdge.
@@ -20,15 +25,27 @@ public class GMLEdge extends GMLObject {
         this.start = start;
         this.end = end;
         this.passable = passable;
+        points = new ArrayList<GMLCoordinates>();
+        points.add(start.getCoordinates());
+        points.add(end.getCoordinates());
     }
 
     /**
        Get the points along the edge.
        @return The coordinates along the edge.
      */
-    //    public List<GMLCoordinates> getPoints() {
-    //        return points;
-    //    }
+    public List<GMLCoordinates> getPoints() {
+        return Collections.unmodifiableList(points);
+    }
+
+    /**
+       Set the points along the edge.
+       @param newPoints The new coordinates along the edge.
+     */
+    public void setPoints(List<GMLCoordinates> newPoints) {
+        points.clear();
+        points.addAll(newPoints);
+    }
 
     /**
        Get the start node.
@@ -65,7 +82,9 @@ public class GMLEdge extends GMLObject {
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
-        result.append("GMLEdge from ");
+        result.append("GMLEdge ");
+        result.append(getID());
+        result.append(" from ");
         result.append(start);
         result.append(" to ");
         result.append(end);

@@ -1,9 +1,13 @@
 package maps.gml;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 
 import java.awt.geom.Rectangle2D;
+
+import rescuecore2.misc.geometry.Point2D;
 
 /**
    Useful tools for manipulating GML.
@@ -29,6 +33,33 @@ public final class GMLTools {
             }
         }
         return result.toString();
+    }
+
+    /**
+       Turn a coordinates string into a list of GMLCoordinates.
+       @param coords The coordinates string.
+       @return A list of GMLCoordinates.
+    */
+    public static List<GMLCoordinates> getCoordinatesList(String coords) {
+        List<GMLCoordinates> result = new ArrayList<GMLCoordinates>();
+        StringTokenizer tokens = new StringTokenizer(coords, " ");
+        while (tokens.hasMoreTokens()) {
+            result.add(new GMLCoordinates(tokens.nextToken()));
+        }
+        return result;
+    }
+
+    /**
+       Convert a list of GMLCoordinates to Point2D objects.
+       @param coords The GMLCoordinates to convert.
+       @return A list of Point2D objects.
+    */
+    public static List<Point2D> coordinatesAsPoints(List<GMLCoordinates> coords) {
+        List<Point2D> result = new ArrayList<Point2D>(coords.size());
+        for (GMLCoordinates next : coords) {
+            result.add(new Point2D(next.getX(), next.getY()));
+        }
+        return result;
     }
 
     /**

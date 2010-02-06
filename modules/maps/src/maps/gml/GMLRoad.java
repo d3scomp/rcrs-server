@@ -32,4 +32,9 @@ public class GMLRoad extends GMLShape {
     public GMLRoad(int id, List<GMLDirectedEdge> edges, List<Integer> neighbours) {
         super(id, edges, neighbours);
     }
+
+    @Override
+    public String toString() {
+        return "GMLRoad " + getID();
+    }
 }

@@ -21,14 +21,14 @@ import rescuecore2.misc.geometry.Point2D;
 import maps.gml.GMLCoordinates;
 import maps.gml.GMLTools;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    Abstract base class for temporary data structures during conversion.
 */
 public abstract class TemporaryObject {
-    private static final Logger LOG = LogManager.getLogger(TemporaryObject.class);
+    private static final Log LOG = LogFactory.getLog(TemporaryObject.class);
 
     private List<DirectedEdge> edges;
     private Map<DirectedEdge, TemporaryObject> neighbours;

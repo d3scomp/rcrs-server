@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Collections;
 
 import java.awt.geom.Rectangle2D;
+
+import rescuecore2.misc.geometry.Point2D;
 
 /**
    Abstract base class for shapes in GML space.
@@ -14,7 +17,9 @@ import java.awt.geom.Rectangle2D;
 public abstract class GMLShape extends GMLObject {
     private List<GMLDirectedEdge> edges;
     private Map<GMLDirectedEdge, Integer> neighbours;
+    private List<GMLCoordinates> points;
     private Rectangle2D bounds;
+    private Point2D centroid;
 
     /**
        Construct a GMLShape.
@@ -24,6 +29,8 @@ public abstract class GMLShape extends GMLObject {
         super(id);
         this.edges = new ArrayList<GMLDirectedEdge>();
         neighbours = new HashMap<GMLDirectedEdge, Integer>();
+        bounds = null;
+        centroid = null;
     }
 
     /**
@@ -34,7 +41,6 @@ public abstract class GMLShape extends GMLObject {
     protected GMLShape(int id, List<GMLDirectedEdge> edges) {
         this(id);
         this.edges.addAll(edges);
-        bounds = GMLTools.getBounds(getCoordinates());
     }
 
     /**
@@ -50,6 +56,7 @@ public abstract class GMLShape extends GMLObject {
         while (it.hasNext() && ix.hasNext()) {
             setNeighbour(it.next(), ix.next());
         }
+        points = getUnderlyingCoordinates();
     }
 
     /**
@@ -58,6 +65,30 @@ public abstract class GMLShape extends GMLObject {
     */
     public List<GMLDirectedEdge> getEdges() {
         return new ArrayList<GMLDirectedEdge>(edges);
+    }
+
+    /**
+       Set the list of edges.
+       @param newEdges The new edge list.
+    */
+    public void setEdges(List<GMLDirectedEdge> newEdges) {
+        edges.clear();
+        neighbours.clear();
+        edges.addAll(newEdges);
+        bounds = null;
+        centroid = null;
+        points = getUnderlyingCoordinates();
+    }
+
+    /**
+       Reorder the list of edges. This will not clear the neighbour map or the bounds.
+       @param newEdges The reordered edge list.
+    */
+    public void reorderEdges(List<GMLDirectedEdge> newEdges) {
+        edges.clear();
+        edges.addAll(newEdges);
+        points = getUnderlyingCoordinates();
+        centroid = null;
     }
 
     /**
@@ -120,10 +151,10 @@ public abstract class GMLShape extends GMLObject {
     }
 
     /**
-       Get the coordinates of the apexes of this shape.
-       @return The apex coordinates.
+       Get the coordinates of the edges that make up this shape.
+       @return The underlying edge coordinates.
     */
-    public List<GMLCoordinates> getCoordinates() {
+    public List<GMLCoordinates> getUnderlyingCoordinates() {
         List<GMLCoordinates> result = new ArrayList<GMLCoordinates>();
         for (GMLDirectedEdge next : edges) {
             result.add(next.getStartCoordinates());
@@ -132,19 +163,60 @@ public abstract class GMLShape extends GMLObject {
     }
 
     /**
-       Get the x coordinate of the centre of this shape.
-       @return The x coordinate of the centre.
+       Get the coordinates of the apexes of this shape.
+       @return The apex coordinates.
     */
-    public double getCentreX() {
-        return bounds.getX() + (bounds.getWidth() / 2.0);
+    public List<GMLCoordinates> getCoordinates() {
+        return Collections.unmodifiableList(points);
     }
 
     /**
-       Get the y coordinate of the centre of this shape.
-       @return The y coordinate of the centre.
+       Set the coordinates of the apexes of this shape.
+       @param newPoints The new apex coordinates.
+     */
+    public void setCoordinates(List<GMLCoordinates> newPoints) {
+        points.clear();
+        points.addAll(newPoints);
+        bounds = null;
+        centroid = null;
+    }
+
+    /**
+       Get the x coordinate of the centroid of this shape.
+       @return The x coordinate of the centroid.
+    */
+    public double getCentreX() {
+        return getCentroid().getX();
+    }
+
+    /**
+       Get the y coordinate of the centroid of this shape.
+       @return The y coordinate of the centroid.
     */
     public double getCentreY() {
-        return bounds.getY() + (bounds.getHeight() / 2.0);
+        return getCentroid().getY();
+    }
+
+    /**
+       Get the bounds of this shape.
+       @return The bounds of the shape.
+    */
+    public Rectangle2D getBounds() {
+        if (bounds == null) {
+            bounds = GMLTools.getBounds(getCoordinates());
+        }
+        return bounds;
+    }
+
+    /**
+       Get the centroid of this shape.
+       @return The centroid of the shape.
+    */
+    public Point2D getCentroid() {
+        if (centroid == null) {
+            centroid = GeometryTools2D.computeCentroid(GMLTools.coordinatesAsPoints(getCoordinates()));
+        }
+        return centroid;
     }
 
     private GMLDirectedEdge findDirectedEdge(GMLEdge e) {

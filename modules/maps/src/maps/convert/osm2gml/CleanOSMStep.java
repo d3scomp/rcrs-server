@@ -17,14 +17,14 @@ import java.util.Collections;
 
 import rescuecore2.misc.geometry.Line2D;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    This step cleans the OpenStreetMap data by removing duplicate nodes and way, fixing degenerate ways, and fixing building edge orderings.
 */
 public class CleanOSMStep extends ConvertStep {
-    private static final Logger LOG = LogManager.getLogger(CleanOSMStep.class);
+    private static final Log LOG = LogFactory.getLog(CleanOSMStep.class);
 
     private TemporaryMap map;
 

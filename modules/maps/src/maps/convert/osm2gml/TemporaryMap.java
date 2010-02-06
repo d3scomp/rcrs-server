@@ -13,14 +13,14 @@ import maps.osm.OSMMap;
 import rescuecore2.misc.geometry.Point2D;
 import rescuecore2.misc.collections.LazyMap;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    This class holds all temporary information during map conversion.
 */
 public class TemporaryMap {
-    private static final Logger LOG = LogManager.getLogger(TemporaryMap.class);
+    private static final Log LOG = LogFactory.getLog(TemporaryMap.class);
 
     /**
        The threshold for determining if nodes are co-located in metres.

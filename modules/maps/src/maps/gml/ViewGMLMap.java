@@ -16,16 +16,16 @@ import java.io.File;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    A GML map viewer.
 */
 public final class ViewGMLMap {
-    private static final int VIEWER_SIZE = 500;
+    private static final Log LOG = LogFactory.getLog(ViewGMLMap.class);
 
-    private static final Logger LOG = LogManager.getLogger(ViewGMLMap.class);
+    private static final int VIEWER_SIZE = 500;
 
     private ViewGMLMap() {
     }

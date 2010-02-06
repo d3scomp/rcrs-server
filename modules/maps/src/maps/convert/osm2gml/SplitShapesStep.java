@@ -8,14 +8,14 @@ import java.util.Collection;
 
 import maps.convert.ConvertStep;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    This step splits any shapes that overlap.
 */
 public class SplitShapesStep extends ConvertStep {
-    private static final Logger LOG = LogManager.getLogger(SplitShapesStep.class);
+    private static final Log LOG = LogFactory.getLog(SplitShapesStep.class);
 
     private TemporaryMap map;
 
@@ -64,9 +64,9 @@ public class SplitShapesStep extends ConvertStep {
             List<DirectedEdge> result = new ArrayList<DirectedEdge>();
             result.add(dEdge);
             // Now walk around
-            //            System.out.println("Starting walk from " + edge);
-            //            System.out.println("Start: " + start);
-            //            System.out.println("End: " + end);
+            LOG.debug("Starting walk from " + dEdge);
+            LOG.debug("Start: " + start);
+            LOG.debug("End: " + end);
             while (!end.equals(start)) {
                 Set<Edge> candidates = map.getAttachedEdges(end);
                 //                LOG.debug("From edge: " + dEdge);
@@ -75,7 +75,7 @@ public class SplitShapesStep extends ConvertStep {
                 //                    LOG.debug("  " + e);
                 //                }
                 Edge turn = ConvertTools.findLeftTurn(dEdge, candidates);
-                //                LOG.debug("Best turn: " + turn);
+                LOG.debug("Best turn: " + turn);
                 DirectedEdge newDEdge = new DirectedEdge(turn, end);
                 //                debug.show("Splitting shapes",
                 //                           new TemporaryObjectInfo(shape, "Shape", Constants.BLACK, Constants.TRANSPARENT_ORANGE),
@@ -85,8 +85,8 @@ public class SplitShapesStep extends ConvertStep {
                 end = dEdge.getEndNode();
                 edgesRemaining.remove(dEdge);
                 result.add(dEdge);
-                //                LOG.debug("Added " + dEdge);
-                //                LOG.debug("New end: " + end);
+                LOG.debug("Added " + dEdge);
+                LOG.debug("New end: " + end);
             }
             if (!firstShape || !edgesRemaining.isEmpty()) {
                 // Didn't cover all edges so new shapes are needed.

@@ -14,6 +14,7 @@ import rescuecore2.misc.gui.DrawingTools;
 
 import maps.gml.GMLFace;
 import maps.gml.GMLCoordinates;
+import maps.gml.GMLTools;
 
 /**
    A ShapeInfo that knows how to draw GMLFaces.
@@ -40,7 +41,7 @@ public class GMLFaceShapeInfo extends ShapeDebugFrame.ShapeInfo {
         this.fillColour = fillColour;
         this.drawEdgeDirections = drawEdgeDirections;
         if (face != null) {
-            bounds = face.getArea().getBounds2D();
+            bounds = GMLTools.getBounds(face.getPoints());
         }
     }
 
@@ -49,7 +50,7 @@ public class GMLFaceShapeInfo extends ShapeDebugFrame.ShapeInfo {
         if (face == null) {
             return null;
         }
-        List<GMLCoordinates> coordinates = face.getOutline();
+        List<GMLCoordinates> coordinates = face.getPoints();
         int n = coordinates.size();
         int[] xs = new int[n];
         int[] ys = new int[n];

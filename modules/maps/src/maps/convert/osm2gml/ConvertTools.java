@@ -35,14 +35,14 @@ import java.util.Iterator;
 
 import java.awt.Color;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 
 /**
    Useful tools for converting OSM to GML.
  */
 public final class ConvertTools {
-    private static final Logger LOG = LogManager.getLogger(ConvertTools.class);
+    private static final Log LOG = LogFactory.getLog(ConvertTools.class);
 
     private static final Color BACKGROUND_BUILDING_COLOUR = new Color(0, 255, 0, 32); // Transparent lime
     private static final Color BACKGROUND_INTERSECTION_COLOUR = new Color(192, 192, 192, 32); // Transparent silver
@@ -278,23 +278,7 @@ public final class ConvertTools {
                 GMLFace face = (GMLFace)object;
                 Color c = Constants.TRANSPARENT_RED;
                 String name = "Unknown";
-                switch (face.getFaceType()) {
-                case ROAD:
-                    c = BACKGROUND_ROAD_COLOUR;
-                    name = "Roads";
-                    break;
-                case INTERSECTION:
-                    c = BACKGROUND_INTERSECTION_COLOUR;
-                    name = "Intersections";
-                    break;
-                case BUILDING:
-                    c = BACKGROUND_BUILDING_COLOUR;
-                    name = "Buildings";
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unrecognised face type: " + face.getFaceType());
-                }
-                allShapes.add(new GMLFaceShapeInfo(face, name, null, c, false));
+                allShapes.add(new GMLFaceShapeInfo(face, "Faces", Constants.BLACK, Constants.TRANSPARENT_AQUA, false));
             }
         }
         return allShapes;

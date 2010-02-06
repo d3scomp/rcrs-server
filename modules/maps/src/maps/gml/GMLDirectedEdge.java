@@ -47,6 +47,13 @@ public class GMLDirectedEdge {
     }
 
     /**
+       Reverse the direction of this edge.
+    */
+    public void reverse() {
+        forward = !forward;
+    }
+
+    /**
        Get the node at the start of the underlying edge.
        @return The start node.
      */
@@ -106,7 +113,7 @@ public class GMLDirectedEdge {
 
     @Override
     public int hashCode() {
-        return edge.hashCode() ^ (forward ? 1 : 0);
+        return edge.hashCode();
     }
 
     @Override
