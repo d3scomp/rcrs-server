@@ -1,6 +1,6 @@
 DIR=`pwd`
 BASEDIR="`cd .. && pwd`"
-PIDS=
+TMUX_SERVER="tmux-$$"
 
 # Wait for a regular expression to appear in a file.
 # $1 is the log to check
@@ -50,16 +50,14 @@ function makeClasspath {
 
 # Print the usage statement
 function printUsage {
-    echo "Usage: $0 <mapfulldir> [options]"
+    echo "Usage: $0 [options]"
     echo "Options"
     echo "======="
-    echo "<mapfulldir>                    The directory of map and config file Default is empty"     
     echo "-m    --map       <mapdir>      Set the map directory. Default is \"$BASEDIR/maps/gml/test\""
+    echo "-p    --port      <portnumber>  Set the port number to listen on. Default is \"7000\""
     echo "-l    --log       <logdir>      Set the log directory. Default is \"logs\""
     echo "-s    --timestamp               Append a timestamp, the team name and map name to the log directory name"
     echo "-t    --team      <teamname>    Set the team name. Default is \"\""
-    echo "+x    -x                        Yes/No Xterm "
-
 }
 
 # Process arguments
@@ -67,16 +65,9 @@ function processArgs {
     LOGDIR="logs"
     MAP="$BASEDIR/maps/gml/Kobe2013/map"
     CONFIGDIR="$BASEDIR/maps/gml/Kobe2013/config"
+    PORTNUMBER="7000"
     TEAM=""
     TIMESTAMP_LOGS=""
-    XTERM="yes"
-
-    if [[ $1 != "-*" ]];then
-	MAP="$1/map"
-	CONFIGDIR="$1/config"
-	XTERM="no"
-	shift 1
-    fi
 
     while [[ ! -z "$1" ]]; do
         case "$1" in
@@ -88,6 +79,10 @@ function processArgs {
                 CONFIGDIR="$2"
                 shift 2
                 ;;
+			-p | --port)
+				PORTNUMBER="$2"
+				shift 2
+				;;
             -l | --log)
                 LOGDIR="$2"
                 shift 2
@@ -98,14 +93,6 @@ function processArgs {
                 ;;
             -s | --timestamp)
                 TIMESTAMP_LOGS="yes";
-                shift
-                ;;
-            -x)
-                XTERM="no";
-                shift
-                ;;
-            +x)
-                XTERM="yes";
                 shift
                 ;;
             -h | --help)
@@ -143,26 +130,16 @@ function processArgs {
             LOGDIR="$LOGDIR/$TIME-$TEAM-$MAPNAME"
         fi
     fi
-    LOGDIR=`readlink -f $LOGDIR`
+    LOGDIR=`readlink -m $LOGDIR`
     mkdir -p $LOGDIR
 }
 
-function execute {
-    title=$1
-    command=$2
-    if [[ $XTERM == "yes" ]];then
-        xterm -T $title -e "$command  2>&1 |tee $LOGDIR/$title-out.log" &
-    else
-         sh -c "$command  2>&1 |tee $LOGDIR/$title-out.log" &
-    fi
-    PIDS="$PIDS $!"
-}
 # Start the kernel
 function startKernel {
-    KERNEL_OPTIONS="-c $CONFIGDIR/kernel.cfg --gis.map.dir=$MAP --kernel.logname=$LOGDIR/rescue.log $*"
+    KERNEL_OPTIONS="-c $CONFIGDIR/kernel.cfg -p $PORTNUMBER --gis.map.dir=$MAP --kernel.logname=$LOGDIR/rescue.log $*"
     makeClasspath $BASEDIR/jars $BASEDIR/lib
 
-    execute kernel "java -Xmx2048m -cp $CP -Dlog4j.log.dir=$LOGDIR kernel.StartKernel $KERNEL_OPTIONS"
+    tmux -L $TMUX_SERVER new -s kernel -d "java -Xmx2048m -cp $CP -Dlog4j.log.dir=$LOGDIR kernel.StartKernel $KERNEL_OPTIONS 2>&1 | tee $LOGDIR/kernel-out.log"
     # Wait for the kernel to start
     waitFor $LOGDIR/kernel.log "Listening for connections"
 }
@@ -176,15 +153,22 @@ function startSims {
         TEAM_NAME_ARG="\"--viewer.team-name=$TEAM\"";
     fi
 
+    # tmux -L $TMUX_SERVER new -s human -d "java -Xmx1024m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/sample.jar:$BASEDIR/jars/human.jar human.ControlledAgentGUI -c $CONFIGDIR/human.cfg $* 2>&1 | tee $LOGDIR/human-out.log"
+    
     # Simulators
 
-    execute misc "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/misc.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents misc.MiscSimulator -c $CONFIGDIR/misc.cfg $*"
-    execute traffic "java -Xmx1024m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/traffic3.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents traffic3.simulator.TrafficSimulator -c $CONFIGDIR/traffic3.cfg $*"
-    execute fire "java -Xmx1024m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/resq-fire.jar:$BASEDIR/oldsims/firesimulator/lib/commons-logging-1.1.1.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents firesimulator.FireSimulatorWrapper -c $CONFIGDIR/resq-fire.cfg $*"
-    execute ignition "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/ignition.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents ignition.IgnitionSimulator -c $CONFIGDIR/ignition.cfg $*"
-    execute collapse "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/collapse.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents collapse.CollapseSimulator -c $CONFIGDIR/collapse.cfg $*"
-    execute clear "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/clear.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents clear.ClearSimulator -c $CONFIGDIR/clear.cfg $*"
+    tmux -L $TMUX_SERVER new -s misc -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/misc.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents misc.MiscSimulator -c $CONFIGDIR/misc.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/misc-out.log"
     
+    tmux -L $TMUX_SERVER new -s traffic -d "java -Xmx1024m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/traffic3.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents traffic3.simulator.TrafficSimulator -c $CONFIGDIR/traffic3.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/traffic-out.log"
+    
+    tmux -L $TMUX_SERVER new -s fire -d "java -Xmx1024m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/resq-fire.jar:$BASEDIR/oldsims/firesimulator/lib/commons-logging-1.1.1.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents firesimulator.FireSimulatorWrapper -c $CONFIGDIR/resq-fire.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/fire-out.log"
+    
+    tmux -L $TMUX_SERVER new -s ignition -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/ignition.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents ignition.IgnitionSimulator -c $CONFIGDIR/ignition.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/ignition-out.log"
+    
+    tmux -L $TMUX_SERVER new -s collapse -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/collapse.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents collapse.CollapseSimulator -c $CONFIGDIR/collapse.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/collapse-out.log"
+    
+    tmux -L $TMUX_SERVER new -s clear -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/clear.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents clear.ClearSimulator -c $CONFIGDIR/clear.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/clear-out.log"
+
 echo "waiting for misc to connect..."
     waitFor $LOGDIR/misc-out.log "success"
 echo "waiting for traffic to connect..."
@@ -199,14 +183,17 @@ echo "waiting for collapse to connect..."
 echo "waiting for clear to connect..."    
     waitFor $LOGDIR/clear-out.log "success"
 
-    execute civilian "java -Xmx1324m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/sample.jar:$BASEDIR/jars/kernel.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents sample.SampleCivilian*n -c $CONFIGDIR/civilian.cfg $*"
-sleep 2
-    execute viewer "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/sample.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents sample.SampleViewer -c $CONFIGDIR/viewer.cfg $TEAM_NAME_ARG $*"
-
-
-
-    # Wait for all simulators to start
-echo "waiting for viewer to connect..."
-    waitFor $LOGDIR/viewer-out.log "success"
+    tmux -L $TMUX_SERVER new -s civilian -d "java -Xmx1324m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/sample.jar:$BASEDIR/jars/kernel.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents sample.SampleCivilian*n -c $CONFIGDIR/civilian.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/civilian-out.log"
+    
+    if echo $* | grep --silent -v -- "--noviewer" 
+    then
+		sleep 2
+		tmux -L $TMUX_SERVER new -s viewer -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/sample.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents sample.SampleViewer -c $CONFIGDIR/viewer.cfg $TEAM_NAME_ARG -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/viewer-out.log"
+		
+		
+		# Wait for all simulators to start
+		echo "waiting for viewer to connect..."
+		waitFor $LOGDIR/viewer-out.log "success"
+	fi
 
 }

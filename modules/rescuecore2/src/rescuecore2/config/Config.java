@@ -632,7 +632,7 @@ public class Config {
                         seed = String.valueOf(mtime);
                     }
 
-                    Logger.debug("Using seed " + seed);
+                    Logger.info("Using seed " + seed);
                     // CHECKSTYLE:OFF:MagicNumber
                     BigInteger bi = new BigInteger(seed, 16);
                     // CHECKSTYLE:ON:MagicNumber
