@@ -6,9 +6,7 @@ processArgs $*
 
 trap terminate INT
 function terminate(){
-	echo
 	echo "Killing the tmux server $TMUX_SERVER"
-	echo
 	tmux -L $TMUX_SERVER kill-server
 	exit 0
 }
