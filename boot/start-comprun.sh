@@ -24,8 +24,7 @@ echo
 
 #startGIS
 startKernel --nomenu --autorun --nogui
-startSims --nogui
-#startSims --nogui --noviewer
+startSims --nogui --noviewer
 
 echo "Start your agents"
 waitFor $LOGDIR/kernel.log "Kernel has shut down" 30
