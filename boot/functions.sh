@@ -175,18 +175,18 @@ function startSims {
 	sleep 1
     tmux -L $TMUX_SERVER new -s clear -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/clear.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents clear.ClearSimulator -c $CONFIGDIR/clear.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/clear-out.log"
 
-echo "waiting for misc to connect..."
+	echo "waiting for misc to connect..."
     waitFor $LOGDIR/misc-out.log "success"
-echo "waiting for traffic to connect..."
+	echo "waiting for traffic to connect..."
     waitFor $LOGDIR/traffic-out.log "success"
 
-echo "waiting for fire to connect..."
+	echo "waiting for fire to connect..."
     waitFor $LOGDIR/fire-out.log "success"
-echo "waiting for ignition to connect..."
+	echo "waiting for ignition to connect..."
     waitFor $LOGDIR/ignition-out.log "success"
-echo "waiting for collapse to connect..."
+	echo "waiting for collapse to connect..."
     waitFor $LOGDIR/collapse-out.log "success"
-echo "waiting for clear to connect..."    
+	echo "waiting for clear to connect..."    
     waitFor $LOGDIR/clear-out.log "success"
 
 	sleep 1

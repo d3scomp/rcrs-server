@@ -26,6 +26,10 @@ echo
 startKernel --nomenu --autorun --nogui
 startSims --nogui --noviewer
 
+echo "All connected."
+echo "Creating started.log"
+echo "$(date) RCRS Started" > $LOGDIR/started.log
+
 echo "Start your agents"
 waitFor $LOGDIR/kernel.log "Kernel has shut down" 30
 
