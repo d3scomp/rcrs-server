@@ -157,16 +157,22 @@ function startSims {
     
     # Simulators
 
+	sleep 1
     tmux -L $TMUX_SERVER new -s misc -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/misc.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents misc.MiscSimulator -c $CONFIGDIR/misc.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/misc-out.log"
-    
+
+	sleep 1
     tmux -L $TMUX_SERVER new -s traffic -d "java -Xmx1024m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/traffic3.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents traffic3.simulator.TrafficSimulator -c $CONFIGDIR/traffic3.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/traffic-out.log"
     
+	sleep 1
     tmux -L $TMUX_SERVER new -s fire -d "java -Xmx1024m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/resq-fire.jar:$BASEDIR/oldsims/firesimulator/lib/commons-logging-1.1.1.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents firesimulator.FireSimulatorWrapper -c $CONFIGDIR/resq-fire.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/fire-out.log"
     
+	sleep 1
     tmux -L $TMUX_SERVER new -s ignition -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/ignition.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents ignition.IgnitionSimulator -c $CONFIGDIR/ignition.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/ignition-out.log"
     
+	sleep 1
     tmux -L $TMUX_SERVER new -s collapse -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/collapse.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents collapse.CollapseSimulator -c $CONFIGDIR/collapse.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/collapse-out.log"
     
+	sleep 1
     tmux -L $TMUX_SERVER new -s clear -d "java -Xmx512m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/clear.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents clear.ClearSimulator -c $CONFIGDIR/clear.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/clear-out.log"
 
 echo "waiting for misc to connect..."
@@ -183,6 +189,7 @@ echo "waiting for collapse to connect..."
 echo "waiting for clear to connect..."    
     waitFor $LOGDIR/clear-out.log "success"
 
+	sleep 1
     tmux -L $TMUX_SERVER new -s civilian -d "java -Xmx1324m -cp $CP:$BASEDIR/jars/rescuecore2.jar:$BASEDIR/jars/standard.jar:$BASEDIR/jars/sample.jar:$BASEDIR/jars/kernel.jar -Dlog4j.log.dir=$LOGDIR rescuecore2.LaunchComponents sample.SampleCivilian*n -c $CONFIGDIR/civilian.cfg -p $PORTNUMBER $* 2>&1 | tee $LOGDIR/civilian-out.log"
     
     if echo $* | grep --silent -v -- "--noviewer" 
