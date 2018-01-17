@@ -1,8 +1,11 @@
 # roborescue simulator
 
-[Roborescue simulator](https://sourceforge.net/projects/roborescue/) used for [tcof](https://github.com/d3scomp/tcof) framework evaluation. 
-Tested on Ubuntu linux Ubuntu 14.04 with JRE 1.8.0.
+[RoboCup Rescue Simulator](https://github.com/roborescue/rcrs-server) used for [Adapting Fire Fighters](https://github.com/d3scomp/rcrs-adapting-firefighters) meta-adaptation evaluation. 
+Tested on Ubuntu linux Ubuntu 16.04 with java-8-openjdk-amd64.
 
 1. To build sources run `ant` from repository root.
-2. Start simulator by running `start-comprun.sh` from `boot` dir.
-3. Start agents (see readme from [tcof](https://github.com/d3scomp/tcof))
+A. Run server and agents separately
+  2a. Start simulator by running `start-comprun.sh` from `boot` dir.
+  3a. Start agents (see readme from [Adapting Fire Fighters](https://github.com/d3scomp/rcrs-adapting-firefighters))
+B. Run server and gents together
+  2a. Use `Simulate.py` script in [Adapting Fire Fighters](https://github.com/d3scomp/rcrs-adapting-firefighters))
