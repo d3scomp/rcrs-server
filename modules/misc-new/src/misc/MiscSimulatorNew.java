@@ -1,40 +1,41 @@
 package misc;
 
-import rescuecore2.config.Config;
-import rescuecore2.messages.control.KSCommands;
-import rescuecore2.messages.control.KSUpdate;
-import rescuecore2.messages.Command;
-import rescuecore2.worldmodel.Entity;
-import rescuecore2.worldmodel.ChangeSet;
-import rescuecore2.worldmodel.EntityID;
-import rescuecore2.worldmodel.Property;
-import rescuecore2.misc.EntityTools;
-import rescuecore2.log.Logger;
-
-import rescuecore2.standard.components.StandardSimulator;
-import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.StandardEntityURN;
-import rescuecore2.standard.entities.StandardPropertyURN;
-import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.Refuge;
-import rescuecore2.standard.entities.Road;
-import rescuecore2.standard.entities.Human;
-import rescuecore2.standard.entities.Civilian;
-import rescuecore2.standard.entities.AmbulanceTeam;
-import rescuecore2.standard.entities.PoliceForce;
-import rescuecore2.standard.messages.AKClear;
-import rescuecore2.standard.messages.AKRescue;
-import rescuecore2.standard.messages.AKLoad;
-import rescuecore2.standard.messages.AKUnload;
+import java.util.Formatter;
+import java.util.List;
 
 import org.uncommons.maths.random.GaussianGenerator;
 
-import java.util.Formatter;
+import rescuecore2.config.Config;
+import rescuecore2.log.Logger;
+import rescuecore2.messages.Command;
+import rescuecore2.messages.control.KSCommands;
+import rescuecore2.messages.control.KSUpdate;
+import rescuecore2.misc.EntityTools;
+import rescuecore2.standard.components.StandardSimulator;
+import rescuecore2.standard.entities.AmbulanceTeam;
+import rescuecore2.standard.entities.Blockade;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Civilian;
+import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.PoliceForce;
+import rescuecore2.standard.entities.Refuge;
+import rescuecore2.standard.entities.Road;
+import rescuecore2.standard.entities.StandardEntity;
+import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.standard.entities.StandardPropertyURN;
+import rescuecore2.standard.messages.AKClear;
+import rescuecore2.standard.messages.AKLoad;
+import rescuecore2.standard.messages.AKRescue;
+import rescuecore2.standard.messages.AKUnload;
+import rescuecore2.worldmodel.ChangeSet;
+import rescuecore2.worldmodel.Entity;
+import rescuecore2.worldmodel.EntityID;
+import rescuecore2.worldmodel.Property;
 
 /**
    A simple misc simulator. This simulator handles buriedness, health, loading, unloading and road clearing.
  */
-public class MiscSimulator extends StandardSimulator {
+public class MiscSimulatorNew extends StandardSimulator {
     private static final String[] CODES = {"wood", "steel", "concrete"};
 
     private static final String PREFIX = "misc.";
@@ -68,7 +69,7 @@ public class MiscSimulator extends StandardSimulator {
     /**
        Create a MiscSimulator.
     */
-    public MiscSimulator() {
+    public MiscSimulatorNew() {
         changes = new ChangeSet();
     }
 
@@ -182,21 +183,27 @@ public class MiscSimulator extends StandardSimulator {
             return;
         }
         Road targetRoad = (Road)target;
-        if (!targetRoad.isBlockDefined() || targetRoad.getBlock() <= 0) {
+        if (!targetRoad.isBlockadesDefined() || targetRoad.getBlockades().size() <= 0) {
             Logger.warn("Rejecting clear command " + clear + ": road is not blocked");
             return;
         }
         EntityID agentPositionID = police.getPosition();
-        if (agentPositionID == null || !agentPositionID.equals(target.getID()) && !agentPositionID.equals(targetRoad.getHead()) && !agentPositionID.equals(targetRoad.getTail())) {
+        if (agentPositionID == null || !agentPositionID.equals(target.getID()) && !agentPositionID.equals(targetRoad.getID())) {
             Logger.warn("Rejecting clear command " + clear + ": agent is not adjacent to target road");
             return;
         }
         // All checks passed
-        int block = targetRoad.getBlock();
-        targetRoad.setBlock(Math.max(0, block - clearRate));
-        changes.addChange(targetRoad, targetRoad.getBlockProperty());
+        List<EntityID> blockades= targetRoad.getBlockades();
+        Blockade blockade = (Blockade) model.getEntity(blockades.get(0));
+        int preCost = blockade.getRepairCost();
+        int postCost = preCost - clearRate;
+        blockade.setRepairCost(Math.max(0, postCost));
+        if(postCost <= 0) {
+        	blockades.remove(blockade.getID());
+        }
+        changes.addChange(targetRoad, targetRoad.getBlockadesProperty());
         Logger.debug("Clear: " + clear);
-        Logger.debug("Reduced road block from " + block + " to: " + targetRoad.getBlock());
+        Logger.debug("Reduced road block from " + preCost + " to: " + postCost);
     }
 
     private void processRescue(AKRescue rescue) {
@@ -431,7 +438,7 @@ public class MiscSimulator extends StandardSimulator {
         format.format("----------------------%n");
         for (Entity e : EntityTools.sortedList(model.getEntitiesOfType(StandardEntityURN.ROAD))) {
             Road r = (Road)e;
-            int block = r.isBlockDefined() ? r.getBlock() : 0;
+            int block = r.isBlockadesDefined() ? r.getBlockades().size() : 0;
             if (block > 0) {
                 format.format("| %1$9d | %2$6d |%n", r.getID().getValue(), block);
             }
