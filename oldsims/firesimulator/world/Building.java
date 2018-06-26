@@ -99,10 +99,10 @@ public class Building extends StationaryObject {
         connectedBuildings=new Hashtable(30);
         initFuel = -1;
         prevBurned=0;
-        java.util.Random random = new java.util.Random(new Long(Configuration.getValue("random.seed")).longValue());
-        burnRate = new GaussianGenerator(new Double(Configuration.getValue("resq-fire.burn-rate-average")).doubleValue(),
-                                                  new Double(Configuration.getValue("resq-fire.burn-rate-variance")).doubleValue(),
-                                                  random);
+        java.util.Random random = new java.util.Random(Configuration.getLongValue("resq-fire.random.seed"));
+        burnRate = new GaussianGenerator(Configuration.getDoubleValue("resq-fire.burn-rate-average"),
+        		Configuration.getDoubleValue("resq-fire.burn-rate-variance"),
+        		random);
     }
 
     public float getBurningTemp(){

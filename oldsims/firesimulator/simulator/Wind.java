@@ -77,10 +77,15 @@ public class Wind {
 	}
 	
 	private static final int CIRCLE_MAX_ANGLE = 360; // deg
-	private static final double WIND_CHANGE_PROBABILITY = 0.95;
-	private static final int WIND_SPEED_CHANGE = 2000; // mm/step
-	private static final int WIND_HIGH_SPEED_CHANGE = 10000; // mm/step
-	private static final int WIND_DIRECTION_CHANGE = 15; // deg
+
+	public static boolean WIND_RANDOM = false;
+	public static double WIND_BIG_CHANGE_PROBABILITY = 0.05;
+	
+	public static int WIND_SPEED = 0;
+	public static int WIND_SPEED_CHANGE = 2000; // mm/step
+	public static int WIND_BIG_SPEED_CHANGE = 10000; // mm/step
+	public static int WIND_DIRECTION = 0;
+	public static int WIND_DIRECTION_CHANGE = 15; // deg
 	
 	World world;
 	/**
@@ -102,9 +107,9 @@ public class Wind {
 	 * @param speed Speed in mm/step
 	 * @param direction Angle in degrees.
 	 */
-	public void initialize(int speed, int direction) {
-		this.speed = speed;
-		this.direction = normalizeDirection(direction);
+	public void initialize() {
+		this.speed = WIND_SPEED;
+		this.direction = normalizeDirection(WIND_DIRECTION);
 	}
 	
 	private int normalizeDirection(int direction) {
@@ -132,26 +137,29 @@ public class Wind {
 		// Hurricane: ≥ 32.7 m/s
 		
 		// This can be parameterized in the future, now let's keep in Calm - Fresh breeze
-		if(Simulator.WIND_RANDOM != 0) {
+		if(WIND_RANDOM) {
+			System.out.println("RANDOM WIND");
 			// with higher probability
 			 	// change direction by up to 15°
 				// change speed by up to 2 m
 			// with small probability
 				// set random direction
 				// set random speed
-			if(Rnd.get01() < WIND_CHANGE_PROBABILITY) {
+			if(Rnd.get01() < WIND_BIG_CHANGE_PROBABILITY) {
+				int newDirection = (int) (Rnd.get01() * CIRCLE_MAX_ANGLE);
+				direction = normalizeDirection(newDirection);
+				
+				speed = (int) (Rnd.get01() * WIND_BIG_SPEED_CHANGE);
+			} else {
 				int sign = Rnd.get01() < 0.5 ? 1 : -1;
 				int newDirection = (int) (direction + sign * Rnd.get01() * WIND_DIRECTION_CHANGE);
 				direction = normalizeDirection(newDirection);
 				
 				sign = Rnd.get01() < 0.5 ? 1 : -1;
 				speed = (int) (speed + sign * Rnd.get01() * WIND_SPEED_CHANGE);
-			} else {
-				int newDirection = (int) (Rnd.get01() * CIRCLE_MAX_ANGLE);
-				direction = normalizeDirection(newDirection);
-				
-				speed = (int) (Rnd.get01() * WIND_HIGH_SPEED_CHANGE);
 			}
+		} else {
+			System.out.println("CONSTANT WIND");
 		}
 		
 		world.setWindForce(speed);

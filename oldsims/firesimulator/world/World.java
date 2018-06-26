@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import firesimulator.simulator.ExtinguishRequest;
 import firesimulator.util.Configuration;
 
 /**
@@ -30,12 +31,12 @@ public class World implements WorldConstants {
     public static final double DEFAULT_TEMPERATURE = 20;
     
     private Hashtable pool;
-    private Collection extinguishRequests;
+    private Collection<ExtinguishRequest> extinguishRequests;
     private int time;
     private Collection updatelist;
     private Collection<Building> buildings;
 	private WorldInfo worldInfo;
-    private Collection firebrigades;	
+    private Collection<FireBrigade> firebrigades;	
     //    private Collection streetNodes;
     //    private Collection roads;
     private int maxX;
@@ -61,9 +62,9 @@ public class World implements WorldConstants {
         hashValue=null;
         pool=new Hashtable();
         allWalls=new LinkedList();
-        extinguishRequests=new LinkedList();
+        extinguishRequests=new LinkedList<>();
         updatelist=new LinkedList();
-        firebrigades=new HashSet();
+        firebrigades=new HashSet<>();
         buildings=new HashSet<Building>();
         //        streetNodes=new HashSet();
         //        roads=new HashSet();
@@ -82,11 +83,11 @@ public class World implements WorldConstants {
         return maxX;
     }
 	
-    public Iterator getExtinguishIterator(){
-        return extinguishRequests.iterator();
+    public Collection<ExtinguishRequest> getExtinguishRequests(){
+        return extinguishRequests;
     }
 	
-    public void addExtinguishRequest(Object request){
+    public void addExtinguishRequest(ExtinguishRequest request){
         extinguishRequests.add(request);		
     }
 	
@@ -115,31 +116,31 @@ public class World implements WorldConstants {
     }
 	
     private void loadVars(){		
-        SAMPLE_SIZE=new Integer(Configuration.getValue("resq-fire.cell_size")).intValue();
-        Building.concreteBurning=new Float(Configuration.getValue("resq-fire.concrete_burning")).floatValue();
-        Building.concreteCapacity=new Float(Configuration.getValue("resq-fire.concrete_capacity")).floatValue();
-        Building.concreteEnergie=new Float(Configuration.getValue("resq-fire.concrete_energy")).floatValue();
-        Building.concreteIgnition=new Float(Configuration.getValue("resq-fire.concrete_ignition")).floatValue();
-        Building.concreteSpeed=new Float(Configuration.getValue("resq-fire.concrete_speed")).floatValue();
-        Building.steelBurning=new Float(Configuration.getValue("resq-fire.steel_burning")).floatValue();
-        Building.steelCapacity=new Float(Configuration.getValue("resq-fire.steel_capacity")).floatValue();
-        Building.steelEnergie=new Float(Configuration.getValue("resq-fire.steel_energy")).floatValue();
-        Building.steelIgnition=new Float(Configuration.getValue("resq-fire.steel_ignition")).floatValue();
-        Building.steelSpeed=new Float(Configuration.getValue("resq-fire.steel_speed")).floatValue();
-        Building.woodBurning=new Float(Configuration.getValue("resq-fire.wooden_burning")).floatValue();
-        Building.woodCapacity=new Float(Configuration.getValue("resq-fire.wooden_capacity")).floatValue();
-        Building.woodEnergie=new Float(Configuration.getValue("resq-fire.wooden_energy")).floatValue();
-        Building.woodIgnition=new Float(Configuration.getValue("resq-fire.wooden_ignition")).floatValue();
-        Building.woodSpeed=new Float(Configuration.getValue("resq-fire.wooden_speed")).floatValue();
-        Building.FIRE_INFALMEABLE=new Boolean(Configuration.getValue("resq-fire.fire_station_inflammable")).booleanValue();
-        Building.AMBULANCE_INFALMEABLE=new Boolean(Configuration.getValue("resq-fire.ambulance_center_inflammable")).booleanValue();
-        Building.POLICE_INFALMEABLE=new Boolean(Configuration.getValue("resq-fire.police_office_inflammable")).booleanValue();
-        Building.REFUGE_INFALMEABLE=new Boolean(Configuration.getValue("resq-fire.refuge_inflammable")).booleanValue();
-        Wall.RAY_RATE=new Float(Configuration.getValue("resq-fire.ray_rate")).floatValue();
-        Wall.MAX_SAMPLE_DISTANCE=new Integer(Configuration.getValue("resq-fire.max_ray_distance")).intValue();
-        FireBrigade.REFILL_QUANTITY=new Integer(Configuration.getValue("resq-fire.water_refill_rate")).intValue();
-        FireBrigade.REFILL_HYDRANT_QUANTITY=new Integer(Configuration.getValue("resq-fire.water_hydrant_refill_rate")).intValue();
-        FireBrigade.MAX_WATER_QUANTITY=new Integer(Configuration.getValue("resq-fire.water_capacity")).intValue();
+        SAMPLE_SIZE=Configuration.getIntValue("resq-fire.cell_size");
+        Building.concreteBurning=Configuration.getFloatValue("resq-fire.concrete_burning");
+        Building.concreteCapacity=Configuration.getFloatValue("resq-fire.concrete_capacity");
+        Building.concreteEnergie=Configuration.getFloatValue("resq-fire.concrete_energy");
+        Building.concreteIgnition=Configuration.getFloatValue("resq-fire.concrete_ignition");
+        Building.concreteSpeed=Configuration.getFloatValue("resq-fire.concrete_speed");
+        Building.steelBurning=Configuration.getFloatValue("resq-fire.steel_burning");
+        Building.steelCapacity=Configuration.getFloatValue("resq-fire.steel_capacity");
+        Building.steelEnergie=Configuration.getFloatValue("resq-fire.steel_energy");
+        Building.steelIgnition=Configuration.getFloatValue("resq-fire.steel_ignition");
+        Building.steelSpeed=Configuration.getFloatValue("resq-fire.steel_speed");
+        Building.woodBurning=Configuration.getFloatValue("resq-fire.wooden_burning");
+        Building.woodCapacity=Configuration.getFloatValue("resq-fire.wooden_capacity");
+        Building.woodEnergie=Configuration.getFloatValue("resq-fire.wooden_energy");
+        Building.woodIgnition=Configuration.getFloatValue("resq-fire.wooden_ignition");
+        Building.woodSpeed=Configuration.getFloatValue("resq-fire.wooden_speed");
+        Building.FIRE_INFALMEABLE=Configuration.getBoolValue("resq-fire.fire_station_inflammable");
+        Building.AMBULANCE_INFALMEABLE=Configuration.getBoolValue("resq-fire.ambulance_center_inflammable");
+        Building.POLICE_INFALMEABLE=Configuration.getBoolValue("resq-fire.police_office_inflammable");
+        Building.REFUGE_INFALMEABLE=Configuration.getBoolValue("resq-fire.refuge_inflammable");
+        Wall.RAY_RATE=Configuration.getFloatValue("resq-fire.ray_rate");
+        Wall.MAX_SAMPLE_DISTANCE=Configuration.getIntValue("resq-fire.max_ray_distance");
+        FireBrigade.REFILL_QUANTITY=Configuration.getIntValue("resq-fire.water_refill_rate");
+        FireBrigade.REFILL_HYDRANT_QUANTITY=Configuration.getIntValue("resq-fire.water_hydrant_refill_rate");
+        FireBrigade.MAX_WATER_QUANTITY=Configuration.getIntValue("resq-fire.water_capacity");
     }
 	
     public void initialize(){	
@@ -188,7 +189,7 @@ public class World implements WorldConstants {
     private void initRayValues() {		
         long hash=hash();
         boolean loaded=false;
-        String fname=Configuration.getValue("resq-fire.rays.dir") + "/" + hash + ".rays";			
+        String fname=Configuration.getRawValue("resq-fire.rays.dir") + "/" + hash + ".rays";			
         try{
             File f=new File(fname);
             BufferedReader br=new BufferedReader(new FileReader(f));
@@ -335,7 +336,7 @@ public class World implements WorldConstants {
     public void putObject(RescueObject obj){
         pool.put(new Integer(obj.getID()),obj);
         if (obj instanceof FireBrigade) {
-            firebrigades.add(obj);
+            firebrigades.add((FireBrigade) obj);
         }
         if (obj instanceof Building) {
             buildings.add((Building)obj);
@@ -495,7 +496,7 @@ public class World implements WorldConstants {
 	
 
 
-    public Collection getFirebrigades() {
+    public Collection<FireBrigade> getFirebrigades() {
         return firebrigades;
     }
 

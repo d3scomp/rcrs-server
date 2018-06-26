@@ -1,7 +1,5 @@
 package firesimulator;
 
-import java.util.Collection;
-
 import firesimulator.simulator.ExtinguishRequest;
 import firesimulator.simulator.Simulator;
 import firesimulator.util.Configuration;
@@ -44,9 +42,8 @@ public class FireSimulatorWrapper extends StandardSimulator {
 	@Override
 	protected void postConnect() {
 		super.postConnect();
-		Configuration c = new Configuration();
-		c.initialize();
-		for (String next : c.getPropertyNames()) {
+		(new Configuration()).initialize();
+		for (String next : Configuration.getPropertyNames()) {
 			try {
 				String value = config.getValue(next);
 				Configuration.setProperty(next, value, true);
@@ -319,12 +316,12 @@ public class FireSimulatorWrapper extends StandardSimulator {
 		}
 	}
 
-	private int[] collectionToIDArray(Collection<EntityID> list) {
+	/*private int[] collectionToIDArray(Collection<EntityID> list) {
 		int[] ids = new int[list.size()];
 		int i = 0;
 		for (EntityID next : list) {
 			ids[i++] = next.getValue();
 		}
 		return ids;
-	}
+	}*/
 }
