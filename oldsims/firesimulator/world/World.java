@@ -7,18 +7,15 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.HashSet;
 
-import firesimulator.simulator.ExtinguishRequest;
-import firesimulator.util.Configuration;
-
-import rescuecore.InputBuffer;
-
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import firesimulator.util.Configuration;
 
 /**
  * @author tn
@@ -27,11 +24,17 @@ import org.apache.commons.logging.Log;
 public class World implements WorldConstants {   
     private static final Log LOG = LogFactory.getLog(World.class);
     
+    /**
+     * Default temperature is 20°C
+     */
+    public static final double DEFAULT_TEMPERATURE = 20;
+    
     private Hashtable pool;
     private Collection extinguishRequests;
     private int time;
     private Collection updatelist;
     private Collection<Building> buildings;
+	private WorldInfo worldInfo;
     private Collection firebrigades;	
     //    private Collection streetNodes;
     //    private Collection roads;
@@ -51,6 +54,7 @@ public class World implements WorldConstants {
     public Collection allWalls;
     private Long hashValue;
     private static World me;
+    
 	
     public World(){
         me = this;
@@ -336,6 +340,10 @@ public class World implements WorldConstants {
         if (obj instanceof Building) {
             buildings.add((Building)obj);
         }
+        if (obj instanceof WorldInfo) {
+        	worldInfo = (WorldInfo) obj;
+        }
+        //if (obj instanceof World)
         //        if (obj instanceof StreetNode) {
         //            streetNodes.add(obj);
         //        }
@@ -493,6 +501,30 @@ public class World implements WorldConstants {
 
     public void setFirebrigades(Collection collection) {
         firebrigades = collection;
+    }
+    
+    public boolean isWorldInfoDefined() {
+    	return worldInfo != null;
+    }
+    
+    public int getWorldInfoID() {
+    	return worldInfo.getID();
+    }
+    
+    public void setWindForce(int windForce) {
+    	worldInfo.setWindForce(windForce);
+    }
+    
+    public int getWindForce() {
+    	return worldInfo.getWindForce();
+    }
+    
+    public void setWindDirection(int windDirection) {
+    	worldInfo.setWindDirection(windDirection);
+    }
+    
+    public int getWindDirection() {
+    	return worldInfo.getWindDirection();
     }
 
     /*

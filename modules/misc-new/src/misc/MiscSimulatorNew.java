@@ -444,7 +444,9 @@ public class MiscSimulatorNew extends StandardSimulator {
             }
         }
         format.format("---------------------%n");
+        format.flush();
         Logger.info(builder.toString());
+        format.close();
     }
 
     private static class BuriednessStats {

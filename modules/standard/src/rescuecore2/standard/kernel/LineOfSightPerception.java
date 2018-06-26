@@ -37,6 +37,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import rescuecore2.standard.entities.StandardWorldModel;
+import rescuecore2.standard.entities.World;
 import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.Area;
@@ -171,6 +172,10 @@ public class LineOfSightPerception implements Perception, GUIComponent {
                 }
             }
         }
+
+        // Add world properties
+        addWorldProperties(result);
+        
         if (view != null) {
             view.repaint();
         }
@@ -205,6 +210,18 @@ public class LineOfSightPerception implements Perception, GUIComponent {
     }
 
     private void addAreaProperties(Area area, ChangeSet result) {
+    }
+    
+    private void addWorldProperties(ChangeSet result) {
+    	for(StandardEntity entity : world.getEntitiesOfType(StandardEntityURN.WORLD)) {
+    		World world = (World) entity;
+    		if(world.isWindForceDefined()) {
+    			result.addChange(world, world.getWindForceProperty());
+    		}
+    		if(world.isWindDirectionDefined()) {
+    			result.addChange(world, world.getWindDirectionProperty());
+    		}
+    	}
     }
 
     private void addFarBuildingProperties(Building building, ChangeSet result) {

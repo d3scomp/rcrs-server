@@ -1,42 +1,39 @@
 package gis2;
 
-import kernel.WorldModelCreator;
-import kernel.KernelException;
-
-import rescuecore2.config.Config;
-import rescuecore2.worldmodel.WorldModel;
-import rescuecore2.worldmodel.Entity;
-import rescuecore2.worldmodel.EntityID;
-import rescuecore2.misc.geometry.Point2D;
-import rescuecore2.misc.geometry.GeometryTools2D;
-import rescuecore2.log.Logger;
-
-import rescuecore2.scenario.Scenario;
-import rescuecore2.scenario.exceptions.ScenarioException;
-import rescuecore2.standard.entities.StandardWorldModel;
-import rescuecore2.standard.entities.Building;
-import rescuecore2.standard.entities.Road;
-import rescuecore2.standard.entities.Edge;
-
-import maps.MapReader;
-import maps.MapException;
-import maps.gml.GMLMap;
-import maps.gml.GMLDirectedEdge;
-import maps.gml.GMLBuilding;
-import maps.gml.GMLRoad;
-import maps.gml.GMLShape;
-import maps.gml.GMLCoordinates;
-import maps.CoordinateConversion;
-import maps.ScaleConversion;
-
-import java.util.List;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
 
-import java.io.File;
+import kernel.KernelException;
+import kernel.WorldModelCreator;
+import maps.CoordinateConversion;
+import maps.MapException;
+import maps.MapReader;
+import maps.ScaleConversion;
+import maps.gml.GMLBuilding;
+import maps.gml.GMLCoordinates;
+import maps.gml.GMLDirectedEdge;
+import maps.gml.GMLMap;
+import maps.gml.GMLRoad;
+import maps.gml.GMLShape;
+import rescuecore2.config.Config;
+import rescuecore2.log.Logger;
+import rescuecore2.misc.geometry.GeometryTools2D;
+import rescuecore2.misc.geometry.Point2D;
+import rescuecore2.scenario.exceptions.ScenarioException;
+import rescuecore2.standard.entities.Building;
+import rescuecore2.standard.entities.Edge;
+import rescuecore2.standard.entities.Road;
+import rescuecore2.standard.entities.StandardEntityURN;
+import rescuecore2.standard.entities.StandardWorldModel;
+import rescuecore2.standard.entities.World;
+import rescuecore2.worldmodel.Entity;
+import rescuecore2.worldmodel.EntityID;
+import rescuecore2.worldmodel.WorldModel;
 
 //import rescuecore2.misc.gui.ShapeDebugFrame;
 
@@ -83,6 +80,10 @@ public class GMLWorldModelCreator implements WorldModelCreator {
 				nextID = Math.max(nextID, e.getID().getValue());
 			}
 			++nextID;
+			// Add WWorld entity to enable wind
+			if(result.getEntitiesOfType(StandardEntityURN.WORLD).size() == 0) {
+				result.addEntity(new World(generateID()));
+			}
 			result.index();
 			return result;
 		} catch (MapException e) {

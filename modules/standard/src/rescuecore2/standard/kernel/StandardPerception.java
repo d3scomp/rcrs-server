@@ -1,49 +1,48 @@
 package rescuecore2.standard.kernel;
 
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Collection;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Hashtable;
 import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
-import kernel.Perception;
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import handy.swing.SliderComponent;
 import kernel.AgentProxy;
-
-import rescuecore2.worldmodel.Entity;
-import rescuecore2.worldmodel.EntityID;
-import rescuecore2.worldmodel.WorldModel;
-import rescuecore2.worldmodel.ChangeSet;
-import rescuecore2.worldmodel.properties.IntProperty;
+import kernel.Perception;
+import rescuecore2.GUIComponent;
 import rescuecore2.config.Config;
 import rescuecore2.misc.Pair;
-import rescuecore2.standard.entities.StandardWorldModel;
-import rescuecore2.standard.entities.StandardEntity;
-import rescuecore2.standard.entities.Road;
 import rescuecore2.standard.entities.Area;
 import rescuecore2.standard.entities.Blockade;
 import rescuecore2.standard.entities.Building;
 import rescuecore2.standard.entities.FireBrigade;
 import rescuecore2.standard.entities.Human;
+import rescuecore2.standard.entities.Road;
+import rescuecore2.standard.entities.StandardEntity;
 import rescuecore2.standard.entities.StandardEntityURN;
-import rescuecore2.GUIComponent;
-
-import java.awt.GridLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JLabel;
-import javax.swing.JSlider;
-import javax.swing.JCheckBox;
-import javax.swing.SwingConstants;
-import javax.swing.BorderFactory;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
-
-import handy.swing.SliderComponent;
+import rescuecore2.standard.entities.StandardWorldModel;
+import rescuecore2.standard.entities.World;
+import rescuecore2.worldmodel.ChangeSet;
+import rescuecore2.worldmodel.Entity;
+import rescuecore2.worldmodel.EntityID;
+import rescuecore2.worldmodel.WorldModel;
+import rescuecore2.worldmodel.properties.IntProperty;
 
 /**
    Legacy implementation of perception with a GUI.
@@ -211,6 +210,8 @@ public class StandardPerception implements Perception, GUIComponent {
                         }
                     }
                 }
+                // Add world properties
+                addWorldProperties(result);
             }
             return result;
         }
@@ -238,6 +239,18 @@ public class StandardPerception implements Perception, GUIComponent {
     }
 
     private void addAreaProperties(Area area, ChangeSet result) {
+    }
+    
+    private void addWorldProperties(ChangeSet result) {
+    	for(StandardEntity entity : world.getEntitiesOfType(StandardEntityURN.WORLD)) {
+    		World world = (World) entity;
+    		if(world.isWindForceDefined()) {
+    			result.addChange(world, world.getWindForceProperty());
+    		}
+    		if(world.isWindDirectionDefined()) {
+    			result.addChange(world, world.getWindDirectionProperty());
+    		}
+    	}
     }
 
     private void addFarBuildingProperties(Building building, ChangeSet result) {
