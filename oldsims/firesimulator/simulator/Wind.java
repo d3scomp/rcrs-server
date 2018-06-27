@@ -74,6 +74,11 @@ public class Wind {
 		public double getWeight() {
 			return weight;
 		}
+		
+		@Override
+		public String toString() {
+			return String.format("(%.2f; %.2f) weight: %f", fractionX, fractionY, weight);
+		}
 	}
 	
 	private static final int CIRCLE_MAX_ANGLE = 360; // deg
@@ -172,7 +177,7 @@ public class Wind {
 		double [][] resultAirTemperature = new double[width][height];
 		for(int x = 0; x < width; x++) {
 			for(int y = 0; y < height; y++) {
-				resultAirTemperature[x][y] = getNewTemperature(resultAirTemperature, x, y);
+				resultAirTemperature[x][y] = getNewTemperature(airTemperature, x, y);
 			}
 		}
 		
