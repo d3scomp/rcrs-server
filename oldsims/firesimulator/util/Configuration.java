@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import firesimulator.simulator.Wind;
 import firesimulator.world.Wall;
 
 public class Configuration {
@@ -54,8 +55,8 @@ public class Configuration {
 			this(name, name, null, null, true, null);
 		}
 		
-		public Property(String name, boolean required) {
-			this(name, name, null, null, required, null);
+		public Property(String name, boolean required, String defaultValue) {
+			this(name, name, null, null, required, defaultValue);
 		}
 
 		public String getValue() {
@@ -130,12 +131,12 @@ public class Configuration {
 		Props.add(new Property("water_distance"));
 		Props.add(new Property("radiation_coefficient"));
 		Props.add(new Property("wind_random"));
-		Props.add(new Property("wind_big_change_probability", false));
+		Props.add(new Property("wind_big_change_probability", false, String.format("%f", Wind.WIND_BIG_CHANGE_PROBABILITY)));
 		Props.add(new Property("wind_speed"));
-		Props.add(new Property("wind_speed_small_change", false));
-		Props.add(new Property("wind_speed_big_change", false));
+		Props.add(new Property("wind_speed_small_change", false, String.format("%d", Wind.WIND_SPEED_CHANGE)));
+		Props.add(new Property("wind_speed_big_change", false, String.format("%d", Wind.WIND_BIG_SPEED_CHANGE)));
 		Props.add(new Property("wind_direction"));
-		Props.add(new Property("wind_direction_small_change", false));
+		Props.add(new Property("wind_direction_small_change", false, String.format("%d", Wind.WIND_DIRECTION_CHANGE)));
 		Props.add(new Property("random.seed"));
 		Props.add(new Property("refuge_inflammable"));
 		Props.add(new Property("fire_station_inflammable"));

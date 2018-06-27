@@ -1,5 +1,8 @@
 package firesimulator.simulator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import firesimulator.util.Rnd;
 import firesimulator.world.World;
 
@@ -8,6 +11,8 @@ import firesimulator.world.World;
  *
  */
 public class Wind {
+	
+	private static final Log LOG = LogFactory.getLog(Wind.class);
 		
 	private class Coordinate {
 		public final double fractionX;
@@ -98,7 +103,11 @@ public class Wind {
 	 */
 	int speed;
 	/**
-	 * Wind direction in degrees. 0 is East, 90 is North. It goes counter-clockwise.
+	 * Wind direction in degrees.
+	 * 0° is North
+	 * 90° is East
+	 * 180° is South
+	 * 270° is West
 	 */
 	int direction;
 	
@@ -115,6 +124,11 @@ public class Wind {
 	public void initialize() {
 		this.speed = WIND_SPEED;
 		this.direction = normalizeDirection(WIND_DIRECTION);
+		if(WIND_RANDOM) {
+			LOG.info("DYNAMIC WIND");
+		} else {
+			LOG.info("CONSTANT WIND");
+		}
 	}
 	
 	private int normalizeDirection(int direction) {
@@ -143,7 +157,6 @@ public class Wind {
 		
 		// This can be parameterized in the future, now let's keep in Calm - Fresh breeze
 		if(WIND_RANDOM) {
-			System.out.println("RANDOM WIND");
 			// with higher probability
 			 	// change direction by up to 15°
 				// change speed by up to 2 m
@@ -163,8 +176,6 @@ public class Wind {
 				sign = Rnd.get01() < 0.5 ? 1 : -1;
 				speed = (int) (speed + sign * Rnd.get01() * WIND_SPEED_CHANGE);
 			}
-		} else {
-			System.out.println("CONSTANT WIND");
 		}
 		
 		world.setWindForce(speed);
